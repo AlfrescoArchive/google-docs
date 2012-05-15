@@ -1,0 +1,10 @@
+<webscript>
+	<shortname>Complete Google Docs Auth</shortname>
+	<description>Complete Google Docs Auth</description>
+	<url>/googledocs/completeauth?access_token={access_token}</url>
+	<lifecycle>internal</lifecycle>
+	<authentication>user</authentication>
+	<format default="html" />
+	<transaction>requiresnew</transaction>
+	<family>googledocs</family>
+</webscript>

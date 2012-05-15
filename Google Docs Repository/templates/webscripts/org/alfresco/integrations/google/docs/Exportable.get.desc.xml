@@ -1,0 +1,10 @@
+<webscript>
+	<shortname>Google Docs Export Action</shortname>
+	<description>Google Docs Export Action</description>
+	<url>/googledocs/exportable?mimetype={mimetype}</url>
+	<lifecycle>internal</lifecycle>
+	<authentication>user</authentication>
+	<format default="json" />
+	<transaction>requiresnew</transaction>
+	<family>googledocs</family>
+</webscript>

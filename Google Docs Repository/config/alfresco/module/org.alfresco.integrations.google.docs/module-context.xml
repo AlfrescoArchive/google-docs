@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+   <!-- OAuth2 Store Bean Definitions -->
+   <import resource="classpath:alfresco/oauth2-services-context.xml" />
+
+   <!-- Load the Model -->
+   <bean id="googledocsModel.dictionaryBootstrap" parent="dictionaryModelBootstrap"
+      depends-on="dictionaryBootstrap">
+      <property name="models">
+         <list>
+            <value>alfresco/module/org.alfresco.integrations.google.docs/googledocs-model.xml</value>
+         </list>
+      </property>
+   </bean>
+
+   <!-- GoogleDocs Connection Factory -->
+
+   <bean id="googledocsConnectionFactory"
+      class="org.springframework.social.google.docs.connect.GoogleDocsConnectionFactory">
+      <constructor-arg value="176148111206.apps.googleusercontent.com" />
+      <constructor-arg value="m6lTsstN2mNm8IiTFQSr8rCW" />
+   </bean>
+
+
+   <!-- Googledocs Service -->
+
+   <bean id="googledocsService"
+      class="org.alfresco.integrations.google.docs.service.GoogleDocsService">
+      <property name="connectionFactory">
+         <ref bean="googledocsConnectionFactory" />
+      </property>
+      <property name="oauth2StoreService">
+         <ref bean="OAuth2StoreService" />
+      </property>
+      <property name="importFormats">
+         <map>
+            <entry
+               key="application/vnd.openxmlformats-officedocument.presentationml.presentation">
+               <value>presentation</value>
+            </entry>
+            <entry key="application/vnd.ms-powerpoint">
+               <value>presentation</value>
+            </entry>
+            <entry key="text/tab-separated-values">
+               <value>spreadsheet</value>
+            </entry>
+            <entry key="application/vnd.sun.xml.writer">
+               <value>document</value>
+            </entry>
+            <entry key="application/vnd.ms-excel">
+               <value>spreadsheet</value>
+            </entry>
+            <entry
+               key="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+               <value>spreadsheet</value>
+            </entry>
+            <entry key="application/rtf">
+               <value>document</value>
+            </entry>
+            <entry key="application/msword">
+               <value>document</value>
+            </entry>
+            <entry key="application/vnd.oasis.opendocument.text">
+               <value>document</value>
+            </entry>
+            <entry key="text/plain">
+               <value>document</value>
+            </entry>
+            <entry key="text/csv">
+               <value>spreadsheet</value>
+            </entry>
+            <entry key="application/x-vnd.oasis.opendocument.spreadsheet">
+               <value>spreadsheet</value>
+            </entry>
+            <entry
+               key="application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+               <value>document</value>
+            </entry>
+            <entry key="text/html">
+               <value>document</value>
+            </entry>
+         </map>
+      </property>
+      <property name="exportFormats">
+         <map>
+            <entry key="document">
+               <set>
+                  <value>application/msword</value>
+                  <value>application/rtf</value>
+                  <value>text/plain</value>
+                  <value>text/html</value>
+                  <value>application/vnd.oasis.opendocument.text</value>
+                  <value>text/rtf</value>
+               </set>
+            </entry>
+            <entry key="spreadsheet">
+               <set>
+                  <value>application/x-vnd.oasis.opendocument.spreadsheet</value>
+                  <value>application/vnd.ms-excel</value>
+               </set>
+            </entry>
+            <entry key="presentation">
+               <set>
+                  <value>application/vnd.ms-powerpoint</value>
+               </set>
+            </entry>
+         </map>
+      </property>
+      <property name="upgradeMappings">
+         <map>
+            <entry key="application/vnd.sun.xml.writer">
+               <value>application/vnd.oasis.opendocument.text</value>
+            </entry>
+         </map>
+      </property>
+      <property name="downgradeMappings">
+         <map>
+            <entry
+               key="application/vnd.openxmlformats-officedocument.presentationml.presentation">
+               <value>application/vnd.ms-powerpoint</value>
+            </entry>
+            <entry
+               key="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+               <value>application/vnd.ms-excel</value>
+            </entry>
+            <entry
+               key="application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+               <value>application/msword</value>
+            </entry>
+         </map>
+      </property>
+   </bean>
+
+   <!-- Property Decorator -->
+   <!-- bean id="googleDocsImportable" class="org.alfresco.integrations.google.docs.repo.jscript.app.Importable"> 
+      <property name="googledocsService"> <ref bean="googledocsService"/> </property> 
+      </bean> <bean id="googleDocsApplicationScriptUtils" parent="applicationScriptUtils"> 
+      <property name="decoratedProperties"> <map merge="true"> <entry key="cm:content"> 
+      <ref bean="googleDocsImportable"/> </entry> </map> </property> </bean> -->
+
+   <!-- Custom Response -->
+   <bean id="googleDocsImportFormats"
+      class="org.alfresco.integrations.google.docs.repo.jscript.app.GoogleDocsCustomResponse">
+      <property name="googledocsService">
+         <ref bean="googledocsService" />
+      </property>
+   </bean>
+
+   <bean id="googleDocsCustomResponses" parent="slingshotDocLibCustomResponse">
+      <property name="customResponses">
+         <map merge="true">
+            <entry key="importFormats">
+               <ref bean="googleDocsImportFormats" />
+            </entry>
+         </map>
+      </property>
+   </bean>
+
+   <!-- Custom WebScripts -->
+   <bean id="webscript.org.alfresco.integrations.google.docs.AuthURL.get"
+      class="org.alfresco.integrations.google.docs.webscripts.AuthURL"
+      parent="webscript">
+      <property name="googledocsService">
+         <ref bean="googledocsService" />
+      </property>
+   </bean>
+
+   <bean
+      id="webscript.org.alfresco.integrations.google.docs.CompleteAuth.get"
+      class="org.alfresco.integrations.google.docs.webscripts.CompleteAuth"
+      parent="webscript">
+      <property name="googledocsService">
+         <ref bean="googledocsService" />
+      </property>
+   </bean>
+
+   <bean
+      id="webscript.org.alfresco.integrations.google.docs.Exportable.get"
+      class="org.alfresco.integrations.google.docs.webscripts.Exportable"
+      parent="webscript">
+      <property name="googledocsService">
+         <ref bean="googledocsService" />
+      </property>
+   </bean>
+
+</beans>
