@@ -22,6 +22,8 @@
 		<delete dir="${build.dir}" includeemptydirs="true" />
 		<delete>
 			<fileset dir="${project.dir}/src/META-INF/${component.name}/components/documentlibrary" includes="**/*" excludes="actions.js, actions.css"/>
+	      <fileset dir="${project.dir}/src/META-INF/modules/${component.name}/" includes="**/*" excludes="${component.name}-editor.js, ${component.name}-editor.css, images/bg_alf.gif, images/bg_back.png"/>
+
 		</delete>
 	</target>
 
@@ -42,6 +44,7 @@
 	   <target name="compress-updated-slingshot-javascript">
    		<echo>Compressing Updated Slingshot Javascript...</echo>
       	<minimize-javascript sourcedir="${project.dir}/src/META-INF/${component.name}/components/documentlibrary" destdir="${project.dir}/src/META-INF/${component.name}/components/documentlibrary" />
+	      <minimize-javascript sourcedir="${project.dir}/src/META-INF/modules/${component.name}" destdir="${project.dir}/src/META-INF/modules/${component.name}" />
    </target>
 
 	<target name="package-jar" depends="compile">
