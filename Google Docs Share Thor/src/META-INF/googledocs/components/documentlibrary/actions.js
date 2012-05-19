@@ -177,6 +177,8 @@
       }
    }),
    
+   //Start Create Content Actions
+   
    YAHOO.Bubbling.fire("registerAction", {
       actionName : "onGoogledocsActionCreateDocument",
       fn : function dlA_onGoogledocsActionCreateDocument(record) {
@@ -228,7 +230,36 @@
          timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage);
          
          var createDocument = function Googledocs_createDocument(){
-            destroyLoaderMessage();
+            
+            var success = {
+              fn : function(response){
+                 loadingMessageShowing = true;
+                 destroyLoaderMessage();
+                 alert("Move to Editor: "+ response.json.nodeRef + ", " + response.json.editorURL);
+                 
+              },
+              scope : this
+            };
+            
+            var failure = {
+              fn : function(response) {
+                 destroyLoaderMessage();
+                 Alfresco.util.PopupManager.displayMessage( {
+                          text : this.msg("create-content.googledocs.document.failure")
+                       });
+                 
+              },
+              scope : this
+            };
+            
+            Alfresco.util.Ajax.jsonGet( {
+               url : Alfresco.constants.PROXY_URI + 'googledocs/createContent?contenttype=document&parent=' + record.nodeRef,
+               dataObj : {},
+               successCallback : success,
+               failureCallback : failure
+            });
+            
+            
          };
          
          
@@ -243,7 +274,7 @@
                     window.showModalDialog(response.json.authURL);   
                   }
                   
-                  alert(record.nodeRef);
+                  createDocument();
                   
                },
                scope : this
@@ -323,7 +354,35 @@
          timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage);
          
          var createSpreadsheet = function Googledocs_createSpreadsheet(){
-            destroyLoaderMessage();
+            
+            var success = {
+                  fn : function(response){
+                     loadingMessageShowing = true;
+                     destroyLoaderMessage();
+                     alert("Move to Editor: "+ response.json.nodeRef + ", " + response.json.editorURL);
+                     
+                  },
+                  scope : this
+                };
+                
+                var failure = {
+                  fn : function(response) {
+                     destroyLoaderMessage();
+                     Alfresco.util.PopupManager.displayMessage( {
+                              text : this.msg("create-content.googledocs.spreadsheet.failure")
+                           });
+                     
+                  },
+                  scope : this
+                };
+                
+                Alfresco.util.Ajax.jsonGet( {
+                   url : Alfresco.constants.PROXY_URI + 'googledocs/createContent?contenttype=spreadsheet&parent=' + record.nodeRef,
+                   dataObj : {},
+                   successCallback : success,
+                   failureCallback : failure
+                });
+            
          };
          
          
@@ -338,7 +397,7 @@
                     window.showModalDialog(response.json.authURL);   
                   }
                   
-                  alert(record.nodeRef);
+                  createSpreadsheet();
                   
                },
                scope : this
@@ -418,7 +477,33 @@
          timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage);
          
          var createPresentation = function Googledocs_createPresentation(){
-            destroyLoaderMessage();
+            var success = {
+                  fn : function(response){
+                     loadingMessageShowing = true;
+                     destroyLoaderMessage();
+                     alert("Move to Editor: "+ response.json.nodeRef + ", " + response.json.editorURL);
+                     
+                  },
+                  scope : this
+                };
+                
+                var failure = {
+                  fn : function(response) {
+                     destroyLoaderMessage();
+                     Alfresco.util.PopupManager.displayMessage( {
+                              text : this.msg("create-content.googledocs.presentation.failure")
+                           });
+                     
+                  },
+                  scope : this
+                };
+                
+                Alfresco.util.Ajax.jsonGet( {
+                   url : Alfresco.constants.PROXY_URI + 'googledocs/createContent?contenttype=presentation&parent=' + record.nodeRef,
+                   dataObj : {},
+                   successCallback : success,
+                   failureCallback : failure
+                });
          };
          
          
@@ -433,7 +518,7 @@
                     window.showModalDialog(response.json.authURL);   
                   }
                   
-                  alert(record.nodeRef);
+                  createPresentation();
                   
                },
                scope : this
