@@ -35,6 +35,9 @@
       <property name="oauth2StoreService">
          <ref bean="OAuth2StoreService" />
       </property>
+      <property name="fileFolderService">
+         <ref bean="fileFolderService"/>
+      </property>
       <property name="importFormats">
          <map>
             <entry
@@ -183,6 +186,18 @@
       parent="webscript">
       <property name="googledocsService">
          <ref bean="googledocsService" />
+      </property>
+   </bean>
+   
+   <bean  id="webscript.org.alfresco.integrations.google.docs.CreateContent.get" class="org.alfresco.integrations.google.docs.webscripts.CreateContent" parent="webscript">
+      <property name="googledocsService">
+         <ref bean="googledocsService" />
+      </property>
+      <property name="nodeService">
+         <ref bean="nodeService" />
+      </property>
+      <property name="fileFolderService">
+         <ref bean="fileFolderService"/>
       </property>
    </bean>
 

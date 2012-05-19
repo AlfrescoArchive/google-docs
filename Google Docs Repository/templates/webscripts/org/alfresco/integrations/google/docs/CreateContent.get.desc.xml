@@ -1,0 +1,10 @@
+<webscript>
+   <shortname>Google Docs Create Content</shortname>
+   <description>Google Docs Create Content</description>
+   <url>/googledocs/createContent?contenttype={type}&amp;parent={parent}</url>
+   <lifecycle>internal</lifecycle>
+   <authentication>user</authentication>
+   <format default="json" />
+   <transaction>requiresnew</transaction>
+   <family>googledocs</family>
+</webscript>

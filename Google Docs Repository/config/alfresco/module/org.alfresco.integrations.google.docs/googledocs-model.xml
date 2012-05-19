@@ -19,10 +19,8 @@
         <aspect name="g:googledocs">
             <title>Google Docs</title>
 			<properties>
-				<property name="g:importable">
-					<type>d:boolean</type>
-					<default>false</default>
-					<index enabled="false"/>
+				<property name="g:resourceID">
+					<type>d:text</type>
 				</property>
 			</properties>
 		</aspect>
