@@ -1,3 +1,3 @@
-<div>
-<p>This is where the iframe goes</p>
+<div class="gdocs-wrapper">
+   <iframe class="gdocs-embed" src="${editorURL!""}"></iframe>
 </div>

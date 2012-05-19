@@ -1,8 +1,5 @@
 <#include "include/alfresco-template.ftl">
-<@templateHeader>
-   <@script type="text/javascript" src="${url.context}/res/modules/googledocs/googledocs-editor.js"></@script>
-   <@link rel="stylesheet" type="text/css" href="${url.context}/res/modules/googledocs/googledocs-editor.css" />
-</@>
+<@templateHeader />
 
 <@templateBody>
    <div id="alf-hd">
@@ -15,7 +12,5 @@
 
 
 <@templateFooter>
- <div id="alt-ft">
-   <@region id="footer" scope="global"/>
- </div>
+ <!-- The iframe in the template above overlays the footer. Removed for now-->
 </@>
