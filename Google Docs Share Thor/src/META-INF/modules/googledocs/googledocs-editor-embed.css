@@ -1,0 +1,12 @@
+.gdocs-wrapper {
+   position: absolute;
+   margin: 0px -10px;
+   top: 45px;
+   width: 100%;
+   height: 100%;
+}
+
+.gdocs-embed {
+    height: 100%;
+    width: 100%;
+}

@@ -1,0 +1,5 @@
+<webscript>
+   <shortname>Google Docs Editor</shortname>
+   <description>Google Docs Editor iframe</description>
+   <url>/components/googledocs/editor</url>
+</webscript>

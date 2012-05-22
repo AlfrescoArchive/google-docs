@@ -1,0 +1,5 @@
+<webscript>
+   <shortname>Google Docs Toolbar</shortname>
+   <description>Google Docs Navigation Toolbar</description>
+   <url>/components/googledocs/toolbar</url>
+</webscript>

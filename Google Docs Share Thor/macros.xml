@@ -1,0 +1,25 @@
+<project name="macros">
+   <macrodef name="minimize-javascript">
+      <attribute name="sourcedir" />
+      <attribute name="destdir" />
+      <sequential>
+         <apply executable="java" parallel="false" dest="@{destdir}">
+            <fileset dir="@{sourcedir}">
+               <include name="**/*.js" />
+               <exclude name="**/*-min.js" />
+               <exclude name="**/WEB-INF/**" />
+               <exclude name="**/tiny_mce/**" />
+               <exclude name="**/yui/**" />
+               <exclude name="**/log4javascript*.js" />
+            </fileset>
+            <arg line="-jar"/>
+            <arg path="3rd-party/lib/yuicompressor-2.4.3.jar"/>
+            <arg line="-p"/>
+            <arg line="-o"/>
+            <targetfile />
+            <srcfile />
+            <mapper type="glob" from="*.js" to="*-min.js"/>
+         </apply>
+      </sequential>
+   </macrodef>
+</project>

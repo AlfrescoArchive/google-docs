@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model name="g:googledocs" xmlns="http://www.alfresco.org/model/dictionary/1.0">
+    
+    <description>Google Docs</description>
+    <author>Jared Ottley</author>
+    <version>1.0</version>
+    
+    
+    <imports>
+        <import uri="http://www.alfresco.org/model/dictionary/1.0" prefix="d"/>
+		<import uri="http://www.alfresco.org/model/content/1.0" prefix="cm"/>
+    </imports>
+    
+    <namespaces>
+        <namespace uri="http://www.alfresco.org/model/googledocs/1.0" prefix="g"/>
+    </namespaces>
+    
+    <aspects>
+        <aspect name="g:googledocs">
+            <title>Google Docs</title>
+			<properties>
+				<property name="g:resourceID">
+					<type>d:text</type>
+				</property>
+            <property name="g:locked">
+               <type>d:boolean</type>
+            </property>
+            <property name="g:editorURL">
+               <type>d:text</type>
+            </property>
+			</properties>
+		</aspect>
+	</aspects>
+    
+ </model>
+ 
+    
