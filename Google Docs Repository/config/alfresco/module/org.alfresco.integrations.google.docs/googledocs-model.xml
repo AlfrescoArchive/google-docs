@@ -22,6 +22,12 @@
 				<property name="g:resourceID">
 					<type>d:text</type>
 				</property>
+            <property name="g:locked">
+               <type>d:boolean</type>
+            </property>
+            <property name="g:editorURL">
+               <type>d:text</type>
+            </property>
 			</properties>
 		</aspect>
 	</aspects>

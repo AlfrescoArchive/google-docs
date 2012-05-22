@@ -38,6 +38,9 @@
       <property name="fileFolderService">
          <ref bean="fileFolderService"/>
       </property>
+      <property name="nodeService">
+         <ref bean="nodeService"/>
+      </property>
       <property name="importFormats">
          <map>
             <entry
@@ -90,25 +93,49 @@
       <property name="exportFormats">
          <map>
             <entry key="document">
-               <set>
-                  <value>application/msword</value>
-                  <value>application/rtf</value>
-                  <value>text/plain</value>
-                  <value>text/html</value>
-                  <value>application/vnd.oasis.opendocument.text</value>
-                  <value>text/rtf</value>
-               </set>
+               <map>
+                  <entry key="application/msword">
+                     <value>doc</value>
+                  </entry>
+                  <entry key="application/rtf">
+                     <value>rtf</value>
+                  </entry>
+                  <entry key="text/plain">
+                     <value>txt</value>
+                  </entry>
+                  <entry key="text/html">
+                     <value>html</value>
+                  </entry>
+                  <entry key="application/vnd.oasis.opendocument.text">
+                     <value>odt</value>
+                  </entry>
+                  <entry key="text/rtf">
+                     <value>rtf</value>
+                  </entry>
+               </map>
             </entry>
             <entry key="spreadsheet">
-               <set>
-                  <value>application/x-vnd.oasis.opendocument.spreadsheet</value>
-                  <value>application/vnd.ms-excel</value>
-               </set>
+               <map>
+                  <entry key="application/x-vnd.oasis.opendocument.spreadsheet">
+                     <value>ods</value>
+                  </entry>
+                  <entry key="application/vnd.ms-excel">
+                     <value>xls</value>
+                  </entry>
+                  <entry key="text/tab-separated-values">
+                     <value>tsv</value>
+                  </entry>
+                  <entry key="text/csv">
+                     <value>csv</value>
+                  </entry>
+               </map>
             </entry>
             <entry key="presentation">
-               <set>
-                  <value>application/vnd.ms-powerpoint</value>
-               </set>
+               <map>
+                  <entry key="application/vnd.ms-powerpoint">
+                     <value>ppt</value>
+                  </entry>
+               </map>
             </entry>
          </map>
       </property>
@@ -134,6 +161,15 @@
                <value>application/msword</value>
             </entry>
          </map>
+      </property>
+      <property name="newDocument">
+         <value>classpath:alfresco/module/org.alfresco.integrations.google.docs/resources/UntitledDocument</value>
+      </property>
+      <property name="newSpreadsheet">
+         <value>classpath:alfresco/module/org.alfresco.integrations.google.docs/resources/UntitledSpreadsheet</value>
+      </property>
+      <property name="newPresentation">
+         <value>classpath:alfresco/module/org.alfresco.integrations.google.docs/resources/UntitledPresentation</value>
       </property>
    </bean>
 
@@ -193,11 +229,20 @@
       <property name="googledocsService">
          <ref bean="googledocsService" />
       </property>
-      <property name="nodeService">
-         <ref bean="nodeService" />
-      </property>
       <property name="fileFolderService">
          <ref bean="fileFolderService"/>
+      </property>
+   </bean>
+   
+   <bean  id="webscript.org.alfresco.integrations.google.docs.UploadContent.get" class="org.alfresco.integrations.google.docs.webscripts.UploadContent" parent="webscript">
+      <property name="googledocsService">
+         <ref bean="googledocsService" />
+      </property>
+   </bean>
+   
+   <bean  id="webscript.org.alfresco.integrations.google.docs.SaveContent.get" class="org.alfresco.integrations.google.docs.webscripts.SaveContent" parent="webscript">
+      <property name="googledocsService">
+         <ref bean="googledocsService" />
       </property>
    </bean>
 
