@@ -71,6 +71,37 @@
          destroyLoaderMessage();
          timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage);
          
+         var editDocument = function Googledocs_editDocument(){
+            
+            var success = {   
+                 fn : function(response){
+                    loadingMessageShowing = true;
+                    destroyLoaderMessage();
+                    window.location = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT+"site/"+Alfresco.constants.SITE + "/googledocsEditor?nodeRef=" + response.json.nodeRef; 
+                 },
+                 scope : this
+            };
+            
+            var failure = {
+                  fn : function(response){
+                     destroyLoaderMessage();
+                     Alfresco.util.PopupManager.displayMessage( {
+                              text : this.msg("googledocs.actions.editing.failure")
+                           });
+                 },
+                 scope : this
+            };
+            
+            Alfresco.util.Ajax.jsonGet( {
+               url : Alfresco.constants.PROXY_URI + 'googledocs/uploadContent?nodeRef='+record.nodeRef,
+               dataObj : {},
+               successCallback : success,
+               failureCallback : failure
+            });
+            
+            
+         };
+         
          var conversionWarning = function Googledocs_conversionWarning(conversion){
             
             Alfresco.util.PopupManager.displayPrompt(
@@ -84,6 +115,7 @@
                         handler: function continueToEdit()
                         {
                            this.destroy();
+                           editDocument();
                         }
                      },
                      {
@@ -107,6 +139,8 @@
                   fn : function(response){
                      if (response.json.export_action != "default"){
                         conversionWarning(response.json.export_action);
+                     } else {
+                        editDocument();
                      }
                   },
                   scope : this
@@ -130,12 +164,7 @@
                failureCallback : failure
             });
             
-         };
-         
-         var editDocument = function Googledocs_editDocument(){
-            destroyLoaderMessage();
-         };
-         
+         };         
          
          var success = {
                fn : function(response){
@@ -235,7 +264,7 @@
               fn : function(response){
                  loadingMessageShowing = true;
                  destroyLoaderMessage();
-                 alert("Move to Editor: "+ response.json.nodeRef + ", " + response.json.editorURL);
+                 window.location = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT+"site/"+Alfresco.constants.SITE + "/googledocsEditor?nodeRef=" + response.json.nodeRef; 
                  
               },
               scope : this
@@ -359,7 +388,7 @@
                   fn : function(response){
                      loadingMessageShowing = true;
                      destroyLoaderMessage();
-                     alert("Move to Editor: "+ response.json.nodeRef + ", " + response.json.editorURL);
+                     window.location = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT+"site/"+Alfresco.constants.SITE + "/googledocsEditor?nodeRef=" + response.json.nodeRef; 
                      
                   },
                   scope : this
@@ -481,7 +510,7 @@
                   fn : function(response){
                      loadingMessageShowing = true;
                      destroyLoaderMessage();
-                     alert("Move to Editor: "+ response.json.nodeRef + ", " + response.json.editorURL);
+                     window.location = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT+"site/"+Alfresco.constants.SITE + "/googledocsEditor?nodeRef=" + response.json.nodeRef; 
                      
                   },
                   scope : this
