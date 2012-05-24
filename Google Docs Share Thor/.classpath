@@ -2,7 +2,10 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
-	<classpathentry kind="lib" path="/Users/jottley/alfresco/sdks/alfresco-enterprise-sdk-4.0.0/lib/share/alfresco-share-4.0.0.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/SDK AlfrescoEmbedded"/>
+	<classpathentry kind="lib" path="/Slingshot/build/dist/alfresco-share-4.0.0beta.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/3rd Party"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Remote API"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Repository"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Slingshot"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
