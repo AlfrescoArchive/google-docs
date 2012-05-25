@@ -242,7 +242,7 @@ public class GoogleDocsService extends AbstractIntegration implements GoogleDocs
         Connection<GoogleDocs> connection = null;
 
         OAuth2CredentialsInfo credentialInfo = oauth2StoreService
-                    .getOAuth2Credentials(REMOTE_SYSTEM);
+                    .getPersonalOAuth2Credentials(REMOTE_SYSTEM);
 
         if (credentialInfo != null)
         {
@@ -273,7 +273,7 @@ public class GoogleDocsService extends AbstractIntegration implements GoogleDocs
         boolean authenticated = false;
 
         OAuth2CredentialsInfo credentialInfo = oauth2StoreService
-                    .getOAuth2Credentials(REMOTE_SYSTEM);
+                    .getPersonalOAuth2Credentials(REMOTE_SYSTEM);
 
         if (credentialInfo != null)
         {
@@ -331,7 +331,7 @@ public class GoogleDocsService extends AbstractIntegration implements GoogleDocs
 
         try
         {
-            oauth2StoreService.storeOAuth2Credentials(REMOTE_SYSTEM, accessGrant.getAccessToken(),
+            oauth2StoreService.storePersonalOAuth2Credentials(REMOTE_SYSTEM, accessGrant.getAccessToken(),
                         accessGrant.getRefreshToken(), expiresIn, new Date());
 
             authenticationComplete = true;
@@ -346,7 +346,7 @@ public class GoogleDocsService extends AbstractIntegration implements GoogleDocs
     
     private AccessGrant refreshAccessToken(){
         OAuth2CredentialsInfo credentialInfo = oauth2StoreService
-                    .getOAuth2Credentials(REMOTE_SYSTEM);
+                    .getPersonalOAuth2Credentials(REMOTE_SYSTEM);
         
         if (credentialInfo.getOAuthRefreshToken() != null){
             
@@ -380,7 +380,7 @@ public class GoogleDocsService extends AbstractIntegration implements GoogleDocs
     
                 try
                 {
-                    oauth2StoreService.storeOAuth2Credentials(REMOTE_SYSTEM, accessGrant.getAccessToken(),
+                    oauth2StoreService.storePersonalOAuth2Credentials(REMOTE_SYSTEM, accessGrant.getAccessToken(),
                                 credentialInfo.getOAuthRefreshToken(), expiresIn, new Date());
                 }
                 catch (NoSuchSystemException nsse)
