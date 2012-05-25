@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+<bean id="OAuth2StoreService" class="org.springframework.aop.framework.ProxyFactoryBean">
+   <property name="proxyInterfaces">
+      <value>org.alfresco.service.cmr.oauth2.OAuth2StoreService</value>
+   </property>
+   <property name="target">
+      <ref bean="oauth2StoreService"/>
+   </property>
+   <property name="interceptorNames">
+      <list>
+         <idref bean="oauth2StoreServiceReadTxnAdvisor"/>
+         <idref bean="oauth2StoreServiceWriteTxnAdvisor"/>
+         <idref bean="AuditMethodInterceptor"/>
+         <idref bean="exceptionTranslator"/>
+         <idref bean="oauth2StoreService_security"/>
+      </list>
+   </property>
+</bean>
+
+<bean id="oauth2StoreService_security" class="org.alfresco.repo.security.permissions.impl.acegi.MethodSecurityInterceptor">
+   <property name="authenticationManager">
+      <ref bean="authenticationManager" />
+   </property>
+   <property name="accessDecisionManager">
+      <ref bean="accessDecisionManager"/>
+   </property>
+   <property name="afterInvocationManager">
+      <ref bean="afterInvocationManager"/>
+   </property>
+   <property name="objectDefinitionSource">
+      <value>
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.storePersonalOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.storeSharedOAuth2Credentials=ACL_ALLOW 
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.getPersonalOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.updateSharedOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.listSharedOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.deletePersonalOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.deleteSharedOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.updateCredentialsAuthenticationSucceeded=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.*=ACL_DENY
+      </value>
+   </property>
+</bean>
+
+<bean id="oauth2StoreServiceReadTxnAdvisor" class="org.springframework.aop.support.NameMatchMethodPointcutAdvisor">
+   <property name="advice">
+      <ref bean="retryingReadTxnAdvice"/>
+   </property>
+   <property name="mappedNames">
+      <list>
+         <value>getOAuth2Credentials</value>
+      </list>
+   </property>
+</bean>
+
+<bean id="oauth2StoreServiceWriteTxnAdvisor" class="org.springframework.aop.support.NameMatchMethodPointcutAdvisor">
+   <property name="advice">
+      <ref bean="retryingWriteTxnAdvice"/>
+   </property>
+   <property name="mappedNames">
+      <list>
+         <value>storeOAuth2Credentials</value>
+         <value>deleteOAuth2Credentials</value>
+      </list>
+   </property>
+</bean>
+
+<bean id="oauth2StoreService" class="org.alfresco.repo.oauth2.OAuth2StoreServiceImpl">
+   <property name="remoteCredentialsService">
+      <ref bean="RemoteCredentialsService" />
+   </property>
+   
+</bean>
+
+</beans>
