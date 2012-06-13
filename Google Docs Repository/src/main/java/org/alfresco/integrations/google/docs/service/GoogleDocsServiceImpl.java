@@ -103,7 +103,7 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
 
     private Resource newPresentation;
 
-    private int changeBuffer = 600;
+    private int idleThreshold = 0;
 
     public void setImportFormats(Map<String, String> importFormats)
     {
@@ -170,9 +170,9 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         this.newPresentation = newPresentation;
     }
 
-    public void setChangeBuffer(int chanegBuffer)
+    public void setIdleThreshold(int idleThreshold)
     {
-        this.changeBuffer = chanegBuffer;
+        this.idleThreshold = idleThreshold;
     }
 
     public boolean isImportable(String mimetype)
@@ -991,7 +991,7 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
 
     }
 
-    public boolean hasContentChanged(NodeRef nodeRef)
+    public boolean hasConcurrentEditors(NodeRef nodeRef)
     {
         DocsService docsService = getDocsService(getConnection());
 
@@ -1013,12 +1013,12 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
             {
                 Collections.sort(revisionList, new RevisionEntryComparator());
 
-                // Find any revisions occuring within the last 'changeBuffer'
+                // Find any revisions occuring within the last 'idleThreshold'
                 // seconds
                 List<RevisionEntry> workingList = new ArrayList<RevisionEntry>();
 
                 Calendar bufferTime = Calendar.getInstance();
-                bufferTime.add(Calendar.SECOND, -changeBuffer);
+                bufferTime.add(Calendar.SECOND, -idleThreshold);
 
                 for (RevisionEntry entry : revisionList)
                 {
@@ -1029,13 +1029,13 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
                     }
                     else
                     {
-                        // once we past 'changeBuffer' seconds get out of here
+                        // once we past 'idleThreshold' seconds get out of here
                         break;
                     }
                 }
 
                 // If there any revisions that occured within the last
-                // 'changeBuffer' seconds of time....
+                // 'idleThreshold' seconds of time....
                 if (workingList.size() > 0)
                 {
 
@@ -1062,7 +1062,7 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
                 }
 
                 // Are there are changes by other users within the last
-                // 'changeBuffer' seconds
+                // 'idleThreshold' seconds
                 if (workingList.size() > 0)
                 {
                     concurrentChange = true;
@@ -1081,7 +1081,7 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
                     if (!revisionList.get(0).getAuthors().get(0).getName().equals(username))
                     {
                         Calendar bufferTime = Calendar.getInstance();
-                        bufferTime.add(Calendar.SECOND, -changeBuffer);
+                        bufferTime.add(Calendar.SECOND, -idleThreshold);
 
                         if (new Date(revisionList.get(0).getUpdated().getValue()).before(new Date(
                                     bufferTime.getTimeInMillis())))

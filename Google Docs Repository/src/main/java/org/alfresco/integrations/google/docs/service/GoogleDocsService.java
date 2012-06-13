@@ -146,11 +146,11 @@ public interface GoogleDocsService
     public DocumentListEntry uploadFile(NodeRef nodeRef);
     
     /**
-     * Have other Users Modified the Content in Google Docs
+     * Google Doc has Concurrent Editors
      * 
      * @param nodeRef
      * @return
      */
     @Auditable(parameters = {"nodeRef"})
-    public boolean hasContentChanged(NodeRef nodeRef);
+    public boolean hasConcurrentEditors(NodeRef nodeRef);
 }

@@ -72,7 +72,7 @@
             org.alfresco.integrations.google.docs.service.GoogleDocsService.getSpreadSheet=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.getPresentation=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.uploadFile=ACL_ALLOW
-            org.alfresco.integrations.google.docs.service.GoogleDocsService.hasContentChanged=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.hasConcurrentEditors=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.*=ACL_DENY
          </value>
       </property>
@@ -87,7 +87,7 @@
             <value>isAuthenticated</value>
             <value>getUserMetadata</value>
             <value>getContentType</value>
-            <value>hasContentChanged</value>
+            <value>hasConcurrentEditors</value>
          </list>
       </property>
    </bean>
@@ -255,8 +255,8 @@
       <property name="newPresentation">
          <value>classpath:alfresco/module/org.alfresco.integrations.google.docs/resources/UntitledPresentation</value>
       </property>
-      <property name="changeBuffer">
-         <value>600</value>
+      <property name="idleThreshold">
+         <value>${integration.googleDocs.idleThresholdSeconds}</value>
       </property>
    </bean>
 
@@ -333,7 +333,7 @@
       </property>
    </bean>
    
-   <bean id="webscript.org.alfresco.integrations.google.docs.HasChanged.get" class="org.alfresco.integrations.google.docs.webscripts.HasChanged">
+   <bean id="webscript.org.alfresco.integrations.google.docs.HasConcurrentEditors.get" class="org.alfresco.integrations.google.docs.webscripts.HasConcurrentEditors">
       <property name="googledocsService">
          <ref bean="googledocsService"/>
       </property>

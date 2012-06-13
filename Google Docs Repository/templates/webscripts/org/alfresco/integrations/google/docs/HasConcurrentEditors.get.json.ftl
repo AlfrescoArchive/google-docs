@@ -1,5 +1,5 @@
 <#escape x as jsonUtils.encodeJSONString(x)>
 {
- "has_changed": ${has_changed?string}
+ "concurrentEditors": ${concurrentEditors?string}
 }
 </#escape>

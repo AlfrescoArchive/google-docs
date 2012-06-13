@@ -11,11 +11,11 @@ import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 
-public class HasChanged extends DeclarativeWebScript
+public class HasConcurrentEditors extends DeclarativeWebScript
 {
     private GoogleDocsService googledocsService;
 
-    private final static String MODEL_CHANGED = "has_changed";
+    private final static String MODEL_CONCURRENT_EDITORS = "concurrentEditors";
 
     private final static String PARAM_NODEREF = "nodeRef";
 
@@ -32,7 +32,7 @@ public class HasChanged extends DeclarativeWebScript
         String param_nodeRef = req.getParameter(PARAM_NODEREF);
         NodeRef nodeRef = new NodeRef(param_nodeRef);
 
-        model.put(MODEL_CHANGED, googledocsService.hasContentChanged(nodeRef));
+        model.put(MODEL_CONCURRENT_EDITORS, googledocsService.hasConcurrentEditors(nodeRef));
 
         return model;
     }
