@@ -27,6 +27,7 @@ import org.alfresco.integrations.google.docs.exceptions.MustUpgradeFormatExcepti
 import org.alfresco.integrations.google.docs.utils.FileNameUtil;
 import org.alfresco.integrations.google.docs.utils.RevisionEntryComparator;
 import org.alfresco.model.ContentModel;
+import org.alfresco.module.org_alfresco_module_cloud.analytics.Analytics;
 import org.alfresco.query.CannedQueryPageDetails;
 import org.alfresco.query.PagingRequest;
 import org.alfresco.query.PagingResults;
@@ -524,6 +525,10 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
             writer.setMimetype("application/msword");
             writer.putContent(newDocument.getInputStream());
+
+            // Cloud Analytics Service
+            Analytics.record_UploadDocument("application/msword", newDocument.contentLength(),
+                        false);
         }
         catch (IOException io)
         {
@@ -543,6 +548,10 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
             writer.setMimetype("application/vnd.ms-excel");
             writer.putContent(newSpreadsheet.getInputStream());
+
+            // Cloud Analtics Service
+            Analytics.record_UploadDocument("application/vnd.ms-excel",
+                        newSpreadsheet.contentLength(), false);
         }
         catch (IOException io)
         {
@@ -562,6 +571,10 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
             writer.setMimetype("application/vnd.ms-powerpoint");
             writer.putContent(newPresentation.getInputStream());
+
+            // Cloud Analytics Service
+            Analytics.record_UploadDocument("application/vnd.ms-powerpoint",
+                        newPresentation.contentLength(), false);
         }
         catch (IOException io)
         {
@@ -789,6 +802,10 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
             }
             uploaded = uploader.getResponse(DocumentListEntry.class);
 
+            // Cloud Analytics Service
+            Analytics.record_UploadDocument(fileInfo.getContentData().getMimetype(), fileInfo
+                        .getContentData().getSize(), true);
+
         }
         catch (IOException io)
         {
@@ -996,7 +1013,8 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
             {
                 Collections.sort(revisionList, new RevisionEntryComparator());
 
-                // Find any revisions occuring within the last 'changeBuffer' seconds
+                // Find any revisions occuring within the last 'changeBuffer'
+                // seconds
                 List<RevisionEntry> workingList = new ArrayList<RevisionEntry>();
 
                 Calendar bufferTime = Calendar.getInstance();
@@ -1027,14 +1045,17 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
                         RevisionEntry revisionEntry = workingList.get(i);
                         String username = getUserMetadata().getAuthors().get(0).getName();
 
-                        //if there is no author -- the entry is the initial creation
+                        // if there is no author -- the entry is the initial
+                        // creation
                         if (revisionEntry.getAuthors().size() > 0)
                         {
                             if (revisionEntry.getAuthors().get(0).getName().equals(username))
                             {
                                 workingList.remove(i);
                             }
-                        } else {
+                        }
+                        else
+                        {
                             workingList.remove(i);
                         }
                     }
