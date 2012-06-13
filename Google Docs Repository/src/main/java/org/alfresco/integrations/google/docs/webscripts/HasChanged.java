@@ -1,0 +1,40 @@
+
+package org.alfresco.integrations.google.docs.webscripts;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.alfresco.integrations.google.docs.service.GoogleDocsService;
+import org.alfresco.service.cmr.repository.NodeRef;
+import org.springframework.extensions.webscripts.Cache;
+import org.springframework.extensions.webscripts.DeclarativeWebScript;
+import org.springframework.extensions.webscripts.Status;
+import org.springframework.extensions.webscripts.WebScriptRequest;
+
+public class HasChanged extends DeclarativeWebScript
+{
+    private GoogleDocsService googledocsService;
+
+    private final static String MODEL_CHANGED = "has_changed";
+
+    private final static String PARAM_NODEREF = "nodeRef";
+
+    public void setGoogledocsService(GoogleDocsService googledocsService)
+    {
+        this.googledocsService = googledocsService;
+    }
+
+    @Override
+    protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
+    {
+        Map<String, Object> model = new HashMap<String, Object>();
+
+        String param_nodeRef = req.getParameter(PARAM_NODEREF);
+        NodeRef nodeRef = new NodeRef(param_nodeRef);
+
+        model.put(MODEL_CHANGED, googledocsService.hasContentChanged(nodeRef));
+
+        return model;
+    }
+
+}

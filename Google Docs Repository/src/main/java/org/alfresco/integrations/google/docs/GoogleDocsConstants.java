@@ -15,13 +15,14 @@ public interface GoogleDocsConstants
     public static final String APPLICATION_NAME = "Alfresco-GoogleDocs/2.0";
     
     //Google Document List API EndPoints
-    static final String BASE_URL = "https://docs.google.com/feeds";
-    static final String BASE_SPREADSHEET_URL = "https://spreadsheets.google.com/feeds";
+    public static final String BASE_URL = "https://docs.google.com/feeds";
+    public static final String METADATA_URL = BASE_URL + "/metadata/default";
+    public static final String BASE_SPREADSHEET_URL = "https://spreadsheets.google.com/feeds";
     public static final String URL_CREATE_NEW_MEDIA = BASE_URL + "/default/private/full";
-    public final String URL_CREATE_MEDIA = BASE_URL + "/upload/create-session/default/private/full";  
-    public final String URL_DOCUMENT_DOWNLOAD = BASE_URL + "/download/documents/Export";
-    public final String URL_PRESENTATION_DOWNLOAD = BASE_URL + "/download/presentations/Export";
-    public final String URL_SPREADSHEET_DOWNLOAD = BASE_SPREADSHEET_URL + "/download/spreadsheets/Export";
+    public static final String URL_CREATE_MEDIA = BASE_URL + "/upload/create-session/default/private/full";  
+    public static final String URL_DOCUMENT_DOWNLOAD = BASE_URL + "/download/documents/Export";
+    public static final String URL_PRESENTATION_DOWNLOAD = BASE_URL + "/download/presentations/Export";
+    public static final String URL_SPREADSHEET_DOWNLOAD = BASE_SPREADSHEET_URL + "/download/spreadsheets/Export";
     
     //Google contentTypes
     public static final String DOCUMENT_TYPE = "document";

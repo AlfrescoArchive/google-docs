@@ -7,6 +7,8 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,6 +25,7 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsTypeException;
 import org.alfresco.integrations.google.docs.exceptions.MustDowngradeFormatException;
 import org.alfresco.integrations.google.docs.exceptions.MustUpgradeFormatException;
 import org.alfresco.integrations.google.docs.utils.FileNameUtil;
+import org.alfresco.integrations.google.docs.utils.RevisionEntryComparator;
 import org.alfresco.model.ContentModel;
 import org.alfresco.query.CannedQueryPageDetails;
 import org.alfresco.query.PagingRequest;
@@ -61,31 +64,45 @@ import com.google.gdata.data.MediaContent;
 import com.google.gdata.data.PlainTextConstruct;
 import com.google.gdata.data.docs.DocumentEntry;
 import com.google.gdata.data.docs.DocumentListEntry;
+import com.google.gdata.data.docs.MetadataEntry;
 import com.google.gdata.data.docs.PresentationEntry;
+import com.google.gdata.data.docs.RevisionEntry;
+import com.google.gdata.data.docs.RevisionFeed;
 import com.google.gdata.data.docs.SpreadsheetEntry;
 import com.google.gdata.data.media.MediaFileSource;
 import com.google.gdata.data.media.MediaSource;
 import com.google.gdata.util.ServiceException;
 
-public class GoogleDocsServiceImpl extends AbstractIntegration implements GoogleDocsService, GoogleDocsConstants
+public class GoogleDocsServiceImpl extends AbstractIntegration implements GoogleDocsService
 {
-    //Services
+    // Services
     private OAuth2StoreService oauth2StoreService;
+
     private GoogleDocsConnectionFactory connectionFactory;
+
     private FileFolderService fileFolderService;
+
     private NodeService nodeService;
+
     private LockService lockservice;
 
-    //Property Mappings
+    // Property Mappings
     private Map<String, String> importFormats = new HashMap<String, String>();
+
     private Map<String, Map<String, String>> exportFormats = new HashMap<String, Map<String, String>>();
+
     private Map<String, String> upgradeMappings = new HashMap<String, String>();
+
     private Map<String, String> downgradeMappings = new HashMap<String, String>();
-    
-    //New Content
+
+    // New Content
     private Resource newDocument;
+
     private Resource newSpreadsheet;
+
     private Resource newPresentation;
+
+    private int changeBuffer = 600;
 
     public void setImportFormats(Map<String, String> importFormats)
     {
@@ -121,12 +138,12 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
     {
         this.fileFolderService = fileFolderService;
     }
-    
+
     public void setNodeService(NodeService nodeService)
     {
         this.nodeService = nodeService;
     }
-    
+
     public void setLockService(LockService lockService)
     {
         this.lockservice = lockService;
@@ -136,20 +153,25 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
     {
         return new ArrayList<String>(importFormats.keySet());
     }
-    
+
     public void setNewDocument(Resource newDocument)
     {
         this.newDocument = newDocument;
     }
-    
+
     public void setNewSpreadsheet(Resource newSpreadsheet)
     {
         this.newSpreadsheet = newSpreadsheet;
     }
-    
+
     public void setNewPresentation(Resource newPresentation)
     {
         this.newPresentation = newPresentation;
+    }
+
+    public void setChangeBuffer(int chanegBuffer)
+    {
+        this.changeBuffer = chanegBuffer;
     }
 
     public boolean isImportable(String mimetype)
@@ -198,42 +220,44 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
     {
         return downgradeMappings.containsKey(mimetype);
     }
-    
-    public String getContentType(NodeRef nodeRef){
+
+    public String getContentType(NodeRef nodeRef)
+    {
         String contentType = null;
-        
+
         String mimetype = fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype();
-        
+
         contentType = importFormats.get(mimetype);
-        
+
         return contentType;
     }
-    
+
     private String getExportFormat(String contentType, String mimeType)
     {
         String exportFormat = null;
-        
+
         mimeType = validateMimeType(mimeType);
-        
+
         if (exportFormats.containsKey(contentType))
         {
             exportFormat = exportFormats.get(contentType).get(mimeType);
         }
-        
+
         return exportFormat;
     }
-    
-    private String validateMimeType(String mimeType){
-        
+
+    private String validateMimeType(String mimeType)
+    {
+
         if (isDownGrade(mimeType))
         {
             mimeType = downgradeMappings.get(mimeType);
-        } 
+        }
         else if (isUpgrade(mimeType))
         {
             mimeType = upgradeMappings.get(mimeType);
         }
-        
+
         return mimeType;
     }
 
@@ -242,7 +266,7 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         Connection<GoogleDocs> connection = null;
 
         OAuth2CredentialsInfo credentialInfo = oauth2StoreService
-                    .getPersonalOAuth2Credentials(REMOTE_SYSTEM);
+                    .getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
 
         if (credentialInfo != null)
         {
@@ -255,13 +279,15 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
             }
             catch (ApiException ae)
             {
-                if (ae.getCause() instanceof ServiceException){
+                if (ae.getCause() instanceof ServiceException)
+                {
                     ServiceException se = (ServiceException) ae.getCause();
-                    if (se.getHttpErrorCodeOverride() == HttpStatus.SC_UNAUTHORIZED){
+                    if (se.getHttpErrorCodeOverride() == HttpStatus.SC_UNAUTHORIZED)
+                    {
                         accessGrant = refreshAccessToken();
                         connection = connectionFactory.createConnection(accessGrant);
                     }
-                } 
+                }
             }
         }
 
@@ -273,7 +299,7 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         boolean authenticated = false;
 
         OAuth2CredentialsInfo credentialInfo = oauth2StoreService
-                    .getPersonalOAuth2Credentials(REMOTE_SYSTEM);
+                    .getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
 
         if (credentialInfo != null)
         {
@@ -296,13 +322,15 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
              * OAuth2Parameters(); parameters.setRedirectUri(REDIRECT_URI);
              * parameters.setScope(SCOPE); parameters.setState(state);
              */
-            
-            //TODO Add offline
-            
-            MultiValueMap<String, String> additionalParameters = new LinkedMultiValueMap<String, String>(1);
+
+            // TODO Add offline
+
+            MultiValueMap<String, String> additionalParameters = new LinkedMultiValueMap<String, String>(
+                        1);
             additionalParameters.add("access_type", "offline");
-            
-            OAuth2Parameters parameters = new OAuth2Parameters(REDIRECT_URI, SCOPE, state, additionalParameters);
+
+            OAuth2Parameters parameters = new OAuth2Parameters(GoogleDocsConstants.REDIRECT_URI,
+                        GoogleDocsConstants.SCOPE, state, additionalParameters);
             parameters.getAdditionalParameters();
             authenticateUrl = connectionFactory.getOAuthOperations().buildAuthenticateUrl(
                         GrantType.AUTHORIZATION_CODE, parameters);
@@ -317,7 +345,7 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         boolean authenticationComplete = false;
 
         AccessGrant accessGrant = connectionFactory.getOAuthOperations().exchangeForAccess(
-                    access_token, REDIRECT_URI, null);
+                    access_token, GoogleDocsConstants.REDIRECT_URI, null);
 
         Date expiresIn = null;
 
@@ -331,8 +359,9 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
 
         try
         {
-            oauth2StoreService.storePersonalOAuth2Credentials(REMOTE_SYSTEM, accessGrant.getAccessToken(),
-                        accessGrant.getRefreshToken(), expiresIn, new Date());
+            oauth2StoreService.storePersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM,
+                        accessGrant.getAccessToken(), accessGrant.getRefreshToken(), expiresIn,
+                        new Date());
 
             authenticationComplete = true;
         }
@@ -343,33 +372,36 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
 
         return authenticationComplete;
     }
-    
-    private AccessGrant refreshAccessToken(){
+
+    private AccessGrant refreshAccessToken()
+    {
         OAuth2CredentialsInfo credentialInfo = oauth2StoreService
-                    .getPersonalOAuth2Credentials(REMOTE_SYSTEM);
-        
-        if (credentialInfo.getOAuthRefreshToken() != null){
-            
+                    .getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
+
+        if (credentialInfo.getOAuthRefreshToken() != null)
+        {
+
             AccessGrant accessGrant = null;
             try
             {
-                
-                accessGrant = connectionFactory.getOAuthOperations().refreshAccess(credentialInfo.getOAuthRefreshToken(), null, null);
+
+                accessGrant = connectionFactory.getOAuthOperations().refreshAccess(
+                            credentialInfo.getOAuthRefreshToken(), null, null);
             }
             catch (ApiException ae)
             {
-                if (ae.getCause() instanceof ServiceException){
+                if (ae.getCause() instanceof ServiceException)
+                {
                     ServiceException se = (ServiceException) ae.getCause();
-                    if (se.getHttpErrorCodeOverride() == HttpStatus.SC_UNAUTHORIZED){
-                        throw new GoogleDocsAuthenticationException("Token Refresh Failed.");
-                    }
+                    if (se.getHttpErrorCodeOverride() == HttpStatus.SC_UNAUTHORIZED) { throw new GoogleDocsAuthenticationException(
+                                "Token Refresh Failed."); }
                 }
             }
-            
+
             if (accessGrant != null)
             {
                 Date expiresIn = null;
-                
+
                 if (accessGrant.getExpireTime() != null)
                 {
                     if (accessGrant.getExpireTime() > 0L)
@@ -377,25 +409,28 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
                         expiresIn = new Date(new Date().getTime() + accessGrant.getExpireTime());
                     }
                 }
-    
+
                 try
                 {
-                    oauth2StoreService.storePersonalOAuth2Credentials(REMOTE_SYSTEM, accessGrant.getAccessToken(),
+                    oauth2StoreService.storePersonalOAuth2Credentials(
+                                GoogleDocsConstants.REMOTE_SYSTEM, accessGrant.getAccessToken(),
                                 credentialInfo.getOAuthRefreshToken(), expiresIn, new Date());
                 }
                 catch (NoSuchSystemException nsse)
                 {
                     throw new GoogleDocsAuthenticationException(nsse.getMessage());
-                } 
+                }
             }
             else
             {
                 throw new GoogleDocsAuthenticationException("No Access Grant Returned.");
-            } 
-            
+            }
+
             return accessGrant;
-            
-        } else {
+
+        }
+        else
+        {
             throw new GoogleDocsAuthenticationException("No Refresh Token Provided");
         }
     }
@@ -403,11 +438,15 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
     private DocsService getDocsService(Connection<GoogleDocs> connection)
     {
         DocsService docsService = null;
-        
-        try {
-            docsService = connection.getApi().setAuthentication(new DocsService(APPLICATION_NAME));
-        } catch (ApiException error){
-            //TODO Add logging
+
+        try
+        {
+            docsService = connection.getApi().setAuthentication(
+                        new DocsService(GoogleDocsConstants.APPLICATION_NAME));
+        }
+        catch (ApiException error)
+        {
+            // TODO Add logging
         }
 
         return docsService;
@@ -420,31 +459,30 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         DocsService docsService = getDocsService(getConnection());
 
         DocumentListEntry entry = null;
-        if (type.equals(DOCUMENT_TYPE))
+        if (type.equals(GoogleDocsConstants.DOCUMENT_TYPE))
         {
             if (name == null)
             {
-                name = NEW_DOCUMENT_NAME;
+                name = GoogleDocsConstants.NEW_DOCUMENT_NAME;
             }
             entry = new DocumentEntry();
         }
-        else if (type.equals(SPREADSHEET_TYPE))
+        else if (type.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
         {
             if (name == null)
             {
-                name = NEW_SPREADSHEET_NAME;
+                name = GoogleDocsConstants.NEW_SPREADSHEET_NAME;
             }
             entry = new SpreadsheetEntry();
         }
-        else if (type.equals(PRESENTATION_TYPE))
+        else if (type.equals(GoogleDocsConstants.PRESENTATION_TYPE))
         {
             if (name == null)
             {
-                name = NEW_PRESENTATION_NAME;
+                name = GoogleDocsConstants.NEW_PRESENTATION_NAME;
             }
             entry = new PresentationEntry();
         }
-        
 
         if (entry != null)
         {
@@ -454,7 +492,7 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
 
             try
             {
-                return docsService.insert(new URL(URL_CREATE_NEW_MEDIA), entry);
+                return docsService.insert(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA), entry);
             }
             catch (MalformedURLException error)
             {
@@ -477,53 +515,59 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
     }
 
     public DocumentListEntry createDocument(NodeRef nodeRef)
-    {  
-        DocumentListEntry documentListEntry = createContent(DOCUMENT_TYPE, fileFolderService.getFileInfo(nodeRef).getName());
-        
-        try {
+    {
+        DocumentListEntry documentListEntry = createContent(GoogleDocsConstants.DOCUMENT_TYPE,
+                    fileFolderService.getFileInfo(nodeRef).getName());
+
+        try
+        {
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
             writer.setMimetype("application/msword");
             writer.putContent(newDocument.getInputStream());
         }
-        catch(IOException io)
+        catch (IOException io)
         {
             throw new GoogleDocsServiceException(io.getMessage());
         }
-        
+
         return documentListEntry;
     }
 
     public DocumentListEntry createSpreadSheet(NodeRef nodeRef)
     {
-        DocumentListEntry documentListEntry = createContent(SPREADSHEET_TYPE, fileFolderService.getFileInfo(nodeRef).getName());
-        
-        try {
+        DocumentListEntry documentListEntry = createContent(GoogleDocsConstants.SPREADSHEET_TYPE,
+                    fileFolderService.getFileInfo(nodeRef).getName());
+
+        try
+        {
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
             writer.setMimetype("application/vnd.ms-excel");
             writer.putContent(newSpreadsheet.getInputStream());
         }
-        catch(IOException io)
+        catch (IOException io)
         {
             throw new GoogleDocsServiceException(io.getMessage());
         }
-        
+
         return documentListEntry;
     }
 
     public DocumentListEntry createPresentation(NodeRef nodeRef)
     {
-        DocumentListEntry documentListEntry = createContent(PRESENTATION_TYPE, fileFolderService.getFileInfo(nodeRef).getName());
-        
-        try {
+        DocumentListEntry documentListEntry = createContent(GoogleDocsConstants.PRESENTATION_TYPE,
+                    fileFolderService.getFileInfo(nodeRef).getName());
+
+        try
+        {
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
             writer.setMimetype("application/vnd.ms-powerpoint");
             writer.putContent(newPresentation.getInputStream());
         }
-        catch(IOException io)
+        catch (IOException io)
         {
             throw new GoogleDocsServiceException(io.getMessage());
         }
-        
+
         return documentListEntry;
     }
 
@@ -535,32 +579,33 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         try
         {
             MediaContent mc = new MediaContent();
-            
+
             String mimeType = null;
             String exportFormat = null;
-            
-            mimeType = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
-                exportFormat = getExportFormat(getContentType(nodeRef), mimeType);
 
-            mc.setUri(URL_DOCUMENT_DOWNLOAD + "?docID="
-                        + resourceID.substring(resourceID.lastIndexOf(':') + 1)
-                        + "&exportFormat=" + exportFormat);
+            mimeType = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData()
+                        .getMimetype());
+            exportFormat = getExportFormat(getContentType(nodeRef), mimeType);
+
+            mc.setUri(GoogleDocsConstants.URL_DOCUMENT_DOWNLOAD + "?docID="
+                        + resourceID.substring(resourceID.lastIndexOf(':') + 1) + "&exportFormat="
+                        + exportFormat);
 
             MediaSource ms = docsService.getMedia(mc);
 
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
             writer.setMimetype(mimeType);
             writer.putContent(ms.getInputStream());
-            
+
             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
             }
-            
-            DocumentListEntry documentListEntry = docsService.getEntry(new URL(URL_CREATE_NEW_MEDIA + "/" + resourceID.substring(resourceID.lastIndexOf(':') + 1)), DocumentListEntry.class);
-            
+
+            DocumentListEntry documentListEntry = getDocumentListEntry(resourceID);
+
             renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
-            
+
             deleteContent(nodeRef, documentListEntry);
 
         }
@@ -573,13 +618,14 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
             throw new GoogleDocsServiceException(error.getMessage());
         }
     }
-    
+
     public void getDocument(NodeRef nodeRef)
     {
-        //TODO Wrap with try for null
-        String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
-            
-        getDocument(nodeRef, resourceID); 
+        // TODO Wrap with try for null
+        String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID)
+                    .toString();
+
+        getDocument(nodeRef, resourceID);
     }
 
     private void getSpreadSheet(NodeRef nodeRef, String resourceID)
@@ -590,32 +636,33 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         try
         {
             MediaContent mc = new MediaContent();
-            
+
             String mimeType = null;
             String exportFormat = null;
-            
-            mimeType = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
+
+            mimeType = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData()
+                        .getMimetype());
             exportFormat = getExportFormat(getContentType(nodeRef), mimeType);
 
-            mc.setUri(URL_SPREADSHEET_DOWNLOAD + "?key="
-                        + resourceID.substring(resourceID.lastIndexOf(':') + 1)
-                        + "&exportFormat=" + exportFormat);
+            mc.setUri(GoogleDocsConstants.URL_SPREADSHEET_DOWNLOAD + "?key="
+                        + resourceID.substring(resourceID.lastIndexOf(':') + 1) + "&exportFormat="
+                        + exportFormat);
 
             MediaSource ms = docsService.getMedia(mc);
 
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
             writer.setMimetype(mimeType);
             writer.putContent(ms.getInputStream());
-            
+
             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
             }
-            
-            DocumentListEntry documentListEntry = docsService.getEntry(new URL(URL_CREATE_NEW_MEDIA + "/" + resourceID.substring(resourceID.lastIndexOf(':') + 1)), DocumentListEntry.class);
-            
+
+            DocumentListEntry documentListEntry = getDocumentListEntry(resourceID);
+
             renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
-            
+
             deleteContent(nodeRef, documentListEntry);
 
         }
@@ -626,14 +673,15 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         catch (ServiceException error)
         {
             throw new GoogleDocsServiceException(error.getMessage());
-        } 
+        }
     }
-    
+
     public void getSpreadSheet(NodeRef nodeRef)
     {
-        //TODO Wrap with try for null
-        String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
-        
+        // TODO Wrap with try for null
+        String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID)
+                    .toString();
+
         getSpreadSheet(nodeRef, resourceID);
     }
 
@@ -645,32 +693,33 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         try
         {
             MediaContent mc = new MediaContent();
-            
+
             String mimeType = null;
             String exportFormat = null;
-            
-            mimeType = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
+
+            mimeType = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData()
+                        .getMimetype());
             exportFormat = getExportFormat(getContentType(nodeRef), mimeType);
-            
-            mc.setUri(URL_PRESENTATION_DOWNLOAD + "?docID="
-                        + resourceID.substring(resourceID.lastIndexOf(':') + 1)
-                        + "&exportFormat=" + exportFormat);
+
+            mc.setUri(GoogleDocsConstants.URL_PRESENTATION_DOWNLOAD + "?docID="
+                        + resourceID.substring(resourceID.lastIndexOf(':') + 1) + "&exportFormat="
+                        + exportFormat);
 
             MediaSource ms = docsService.getMedia(mc);
 
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
             writer.setMimetype(mimeType);
             writer.putContent(ms.getInputStream());
-            
+
             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
             }
-            
-            DocumentListEntry documentListEntry = docsService.getEntry(new URL(URL_CREATE_NEW_MEDIA + "/" + resourceID.substring(resourceID.lastIndexOf(':') + 1)), DocumentListEntry.class);
-            
+
+            DocumentListEntry documentListEntry = getDocumentListEntry(resourceID);
+
             renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
-            
+
             deleteContent(nodeRef, documentListEntry);
 
         }
@@ -681,53 +730,60 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         catch (ServiceException error)
         {
             throw new GoogleDocsServiceException(error.getMessage());
-        } 
+        }
     }
-    
+
     public void getPresentation(NodeRef nodeRef)
     {
-        //TODO Wrap with try for null
-        String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
-        
+        // TODO Wrap with try for null
+        String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID)
+                    .toString();
+
         getPresentation(nodeRef, resourceID);
     }
-    
+
     public DocumentListEntry uploadFile(NodeRef nodeRef)
     {
         DocsService docsService = getDocsService(getConnection());
-        
+
         DocumentListEntry uploaded = null;
-        
-        //It makes me want to cry that the don't support inputStreams.
+
+        // It makes me want to cry that the don't support inputStreams.
         File file = null;
-        
+
         try
         {
-            //Get the read
+            // Get the read
             ContentReader reader = fileFolderService.getReader(nodeRef);
             file = File.createTempFile(nodeRef.getId(), ".tmp", TempFileProvider.getTempDir());
             reader.getContent(file);
-            
-            //Get the mimetype
+
+            // Get the mimetype
             FileInfo fileInfo = fileFolderService.getFileInfo(nodeRef);
             String mimetype = fileInfo.getContentData().getMimetype();
-            
-            //Create MediFileSource
-            MediaFileSource mediaFile = new MediaFileSource(file, mimetype); 
-            
+
+            // Create MediFileSource
+            MediaFileSource mediaFile = new MediaFileSource(file, mimetype);
+
             DocumentListEntry entry = new DocumentListEntry();
             entry.setTitle(new PlainTextConstruct(fileInfo.getName()));
-            //In prodcution this should always be true
+            // In prodcution this should always be true
             entry.setHidden(false);
 
-            //Will this be Sync?
-            ResumableGDataFileUploader uploader = new ResumableGDataFileUploader.Builder(docsService, new URL(URL_CREATE_MEDIA), mediaFile, entry).chunkSize(10485760L).build();
+            // Will this be Sync?
+            ResumableGDataFileUploader uploader = new ResumableGDataFileUploader.Builder(
+                        docsService, new URL(GoogleDocsConstants.URL_CREATE_MEDIA), mediaFile,
+                        entry).chunkSize(10485760L).build();
             uploader.start();
-            
-            while (!uploader.isDone()){
-                try {
+
+            while (!uploader.isDone())
+            {
+                try
+                {
                     Thread.sleep(100);
-                } catch (InterruptedException ie) {
+                }
+                catch (InterruptedException ie)
+                {
                     throw new GoogleDocsServiceException(ie.getMessage());
                 }
             }
@@ -740,7 +796,8 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         }
         catch (ServiceException se)
         {
-            throw new GoogleDocsServiceException(se.getHttpErrorCodeOverride() + ": " + se.getMessage());
+            throw new GoogleDocsServiceException(se.getHttpErrorCodeOverride() + ": "
+                        + se.getMessage());
         }
         finally
         {
@@ -749,12 +806,11 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
                 file.delete();
             }
         }
-        
+
         return uploaded;
     }
-    
+
     /**
-     * 
      * @param nodeRef
      * @param documentListEntry Must be the most current DocumentListEntry
      * @return
@@ -762,13 +818,19 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
     private boolean deleteContent(NodeRef nodeRef, DocumentListEntry documentListEntry)
     {
         boolean deleted = false;
-        
+
         DocsService docsService = getDocsService(getConnection());
 
         try
         {
-            docsService.delete(new URL(URL_CREATE_NEW_MEDIA + "/" + documentListEntry.getResourceId().substring(documentListEntry.getResourceId().lastIndexOf(':') + 1)+ "?delete=true"), documentListEntry.getEtag());
-            
+            docsService.delete(
+                        new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA
+                                    + "/"
+                                    + documentListEntry.getResourceId()
+                                                .substring(documentListEntry.getResourceId()
+                                                            .lastIndexOf(':') + 1) + "?delete=true"),
+                        documentListEntry.getEtag());
+
             unDecorateNode(nodeRef);
         }
         catch (MalformedURLException error)
@@ -781,15 +843,18 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         }
         catch (ServiceException error)
         {
-           throw new GoogleDocsServiceException(error.getHttpErrorCodeOverride() + ": " + error.getMessage());
+            throw new GoogleDocsServiceException(error.getHttpErrorCodeOverride() + ": "
+                        + error.getMessage());
         }
-        
+
         return deleted;
     }
-    
-    public void decorateNode(NodeRef nodeRef, DocumentListEntry documentListEntry, boolean newcontent)
+
+    public void decorateNode(NodeRef nodeRef, DocumentListEntry documentListEntry,
+                boolean newcontent)
     {
-        if (newcontent){
+        if (newcontent)
+        {
             // Mark temporary until first save
             nodeService.addAspect(nodeRef, ContentModel.ASPECT_TEMPORARY, null);
         }
@@ -798,10 +863,11 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         // TODO Do we need to add eTag for discard/revision
         Map<QName, Serializable> aspectProperties = new HashMap<QName, Serializable>();
         aspectProperties.put(GoogleDocsModel.PROP_RESOURCE_ID, documentListEntry.getResourceId());
-        aspectProperties.put(GoogleDocsModel.PROP_EDITORURL, documentListEntry.getDocumentLink().getHref());
+        aspectProperties.put(GoogleDocsModel.PROP_EDITORURL, documentListEntry.getDocumentLink()
+                    .getHref());
         nodeService.addAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS, aspectProperties);
     }
-    
+
     private void unDecorateNode(NodeRef nodeRef)
     {
         if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS))
@@ -809,79 +875,87 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
             nodeService.removeAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS);
         }
     }
-    
+
     private void lockNode(NodeRef nodeRef)
     {
         lockservice.lock(nodeRef, LockType.READ_ONLY_LOCK);
         nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_LOCKED, true);
     }
-    
-    private void unlockNode(NodeRef nodeRef){
+
+    private void unlockNode(NodeRef nodeRef)
+    {
         lockservice.unlock(nodeRef);
         nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_LOCKED, false);
     }
-    
+
     /**
-     * Is the node locked by Googledocs?
-     * 
-     * If the document is marked locked in the model, but not locked in the repository, the locked
-     * property is set to false
+     * Is the node locked by Googledocs? If the document is marked locked in the
+     * model, but not locked in the repository, the locked property is set to
+     * false
      * 
      * @param nodeRef
      * @return
      */
-    private boolean isLockedByGoogleDocs(NodeRef nodeRef){
-        
+    private boolean isLockedByGoogleDocs(NodeRef nodeRef)
+    {
+
         boolean locked = false;
-        
-        if ((Boolean)nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_LOCKED)) {
+
+        if ((Boolean) nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_LOCKED))
+        {
             LockStatus lockStatus = lockservice.getLockStatus(nodeRef);
-            if(lockStatus.equals(LockStatus.NO_LOCK)){
-                //fix broken lock
+            if (lockStatus.equals(LockStatus.NO_LOCK))
+            {
+                // fix broken lock
                 nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_LOCKED, false);
-            } else {
+            }
+            else
+            {
                 locked = true;
             }
         }
-        
+
         return locked;
     }
-    
+
     /**
-     * 
      * @param nodeRef
      * @return Will return false is the document is not locked
      */
     private boolean isGoolgeDocsLockOwner(NodeRef nodeRef)
     {
         boolean isOwner = false;
-        
-        if (isLockedByGoogleDocs(nodeRef)){
-            try {
+
+        if (isLockedByGoogleDocs(nodeRef))
+        {
+            try
+            {
                 lockservice.checkForLock(nodeRef);
                 isOwner = true;
-            } catch (NodeLockedException nle)
+            }
+            catch (NodeLockedException nle)
             {
-                //Locked by another user
+                // Locked by another user
             }
         }
-        
+
         return isOwner;
     }
-    
+
     private void renameNode(NodeRef nodeRef, String name)
     {
         nodeService.setProperty(nodeRef, ContentModel.PROP_NAME, name);
     }
-    
+
     private String filenameHandler(String contentType, NodeRef nodeRef, String filename)
     {
         List<Pair<QName, Boolean>> sortProps = new ArrayList<Pair<QName, Boolean>>(1);
         sortProps.add(new Pair<QName, Boolean>(ContentModel.PROP_NAME, false));
-        
+
         // TODO what kind of Patterns can we use?
-        PagingResults<FileInfo> results = fileFolderService.list(nodeService.getPrimaryParent(nodeRef).getParentRef(), true, false,
-                    filename + "*", null, sortProps, new PagingRequest(
+        PagingResults<FileInfo> results = fileFolderService.list(
+                    nodeService.getPrimaryParent(nodeRef).getParentRef(), true, false, filename
+                                + "*", null, sortProps, new PagingRequest(
                                 CannedQueryPageDetails.DEFAULT_PAGE_SIZE));
 
         List<FileInfo> page = results.getPage();
@@ -894,12 +968,155 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         if (fileInfo != null)
         {
             filename = FileNameUtil.IncrementFileName(contentType, fileInfo.getName(), false);
-        } 
+        }
 
         return filename;
 
     }
-    
+
+    public boolean hasContentChanged(NodeRef nodeRef)
+    {
+        DocsService docsService = getDocsService(getConnection());
+
+        String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID)
+                    .toString();
+
+        boolean concurrentChange = false;
+
+        try
+        {
+            RevisionFeed revisionFeed = docsService.getFeed(
+                        new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA + "/"
+                                    + resourceID.substring(resourceID.lastIndexOf(':') + 1)
+                                    + "/revisions"), RevisionFeed.class);
+
+            List<RevisionEntry> revisionList = revisionFeed.getEntries();
+
+            if (revisionList.size() > 1)
+            {
+                Collections.sort(revisionList, new RevisionEntryComparator());
+
+                // Find any revisions occuring within the last 'changeBuffer' seconds
+                List<RevisionEntry> workingList = new ArrayList<RevisionEntry>();
+
+                Calendar bufferTime = Calendar.getInstance();
+                bufferTime.add(Calendar.SECOND, -changeBuffer);
+
+                for (RevisionEntry entry : revisionList)
+                {
+                    if (new Date(entry.getUpdated().getValue()).after(new Date(bufferTime
+                                .getTimeInMillis())))
+                    {
+                        workingList.add(entry);
+                    }
+                    else
+                    {
+                        // once we past 'changeBuffer' seconds get out of here
+                        break;
+                    }
+                }
+
+                // If there any revisions that occured within the last
+                // 'changeBuffer' seconds of time....
+                if (workingList.size() > 0)
+                {
+
+                    // Filter the current user from the list
+                    for (int i = workingList.size() - 1; i >= 0; i--)
+                    {
+                        RevisionEntry revisionEntry = workingList.get(i);
+                        String username = getUserMetadata().getAuthors().get(0).getName();
+
+                        //if there is no author -- the entry is the initial creation
+                        if (revisionEntry.getAuthors().size() > 0)
+                        {
+                            if (revisionEntry.getAuthors().get(0).getName().equals(username))
+                            {
+                                workingList.remove(i);
+                            }
+                        } else {
+                            workingList.remove(i);
+                        }
+                    }
+                }
+
+                // Are there are changes by other users within the last
+                // 'changeBuffer' seconds
+                if (workingList.size() > 0)
+                {
+                    concurrentChange = true;
+                }
+
+            }
+            else
+            {
+                String username = getUserMetadata().getAuthors().get(0).getName();
+
+                // if the authors list is empty -- the author was the original
+                // creator and it is the initial copy
+                if (!revisionList.get(0).getAuthors().isEmpty())
+                {
+
+                    if (!revisionList.get(0).getAuthors().get(0).getName().equals(username))
+                    {
+                        Calendar bufferTime = Calendar.getInstance();
+                        bufferTime.add(Calendar.SECOND, -changeBuffer);
+
+                        if (new Date(revisionList.get(0).getUpdated().getValue()).before(new Date(
+                                    bufferTime.getTimeInMillis())))
+                        {
+                            concurrentChange = true;
+                        }
+                    }
+                }
+            }
+
+        }
+        catch (IOException error)
+        {
+            new GoogleDocsServiceException(error.getMessage());
+        }
+        catch (ServiceException error)
+        {
+            new GoogleDocsServiceException(error.getMessage());
+        }
+
+        return concurrentChange;
+    }
+
+    private DocumentListEntry getDocumentListEntry(String resourceID) throws IOException,
+                ServiceException
+    {
+        DocsService docsService = getDocsService(getConnection());
+
+        return docsService.getEntry(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA + "/"
+                    + resourceID.substring(resourceID.lastIndexOf(':') + 1)),
+                    DocumentListEntry.class);
+
+    }
+
+    public MetadataEntry getUserMetadata()
+    {
+        DocsService docsService = getDocsService(getConnection());
+
+        MetadataEntry metadataEntry = null;
+
+        try
+        {
+            metadataEntry = docsService.getEntry(new URL(GoogleDocsConstants.METADATA_URL),
+                        MetadataEntry.class);
+        }
+        catch (IOException error)
+        {
+            new GoogleDocsServiceException(error.getMessage());
+        }
+        catch (ServiceException error)
+        {
+            new GoogleDocsServiceException(error.getMessage());
+        }
+
+        return metadataEntry;
+    }
 
     @Override
     public void removeApp(boolean removeContent)
@@ -907,5 +1124,4 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
         // TODO Auto-generated method stub
 
     }
-
 }

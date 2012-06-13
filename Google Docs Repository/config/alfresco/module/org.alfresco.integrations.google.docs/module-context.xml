@@ -59,6 +59,7 @@
             org.alfresco.integrations.google.docs.service.GoogleDocsService.isAuthenticated=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.getAuthenticateUrl=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.completeAuthentication=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getUserMetadata=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.createDocument=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.createSpreadSheet=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.createPresentation=ACL_ALLOW
@@ -71,6 +72,7 @@
             org.alfresco.integrations.google.docs.service.GoogleDocsService.getSpreadSheet=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.getPresentation=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.uploadFile=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.hasContentChanged=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.*=ACL_DENY
          </value>
       </property>
@@ -83,7 +85,9 @@
       <property name="mappedNames">
          <list>
             <value>isAuthenticated</value>
+            <value>getUserMetadata</value>
             <value>getContentType</value>
+            <value>hasContentChanged</value>
          </list>
       </property>
    </bean>
@@ -251,6 +255,9 @@
       <property name="newPresentation">
          <value>classpath:alfresco/module/org.alfresco.integrations.google.docs/resources/UntitledPresentation</value>
       </property>
+      <property name="changeBuffer">
+         <value>600</value>
+      </property>
    </bean>
 
    <!-- Property Decorator -->
@@ -305,7 +312,7 @@
       </property>
    </bean>
    
-   <bean  id="webscript.org.alfresco.integrations.google.docs.CreateContent.get" class="org.alfresco.integrations.google.docs.webscripts.CreateContent" parent="webscript">
+   <bean id="webscript.org.alfresco.integrations.google.docs.CreateContent.get" class="org.alfresco.integrations.google.docs.webscripts.CreateContent" parent="webscript">
       <property name="googledocsService">
          <ref bean="googledocsService" />
       </property>
@@ -314,15 +321,21 @@
       </property>
    </bean>
    
-   <bean  id="webscript.org.alfresco.integrations.google.docs.UploadContent.get" class="org.alfresco.integrations.google.docs.webscripts.UploadContent" parent="webscript">
+   <bean id="webscript.org.alfresco.integrations.google.docs.UploadContent.get" class="org.alfresco.integrations.google.docs.webscripts.UploadContent" parent="webscript">
       <property name="googledocsService">
          <ref bean="googledocsService" />
       </property>
    </bean>
    
-   <bean  id="webscript.org.alfresco.integrations.google.docs.SaveContent.get" class="org.alfresco.integrations.google.docs.webscripts.SaveContent" parent="webscript">
+   <bean id="webscript.org.alfresco.integrations.google.docs.SaveContent.get" class="org.alfresco.integrations.google.docs.webscripts.SaveContent" parent="webscript">
       <property name="googledocsService">
          <ref bean="googledocsService" />
+      </property>
+   </bean>
+   
+   <bean id="webscript.org.alfresco.integrations.google.docs.HasChanged.get" class="org.alfresco.integrations.google.docs.webscripts.HasChanged">
+      <property name="googledocsService">
+         <ref bean="googledocsService"/>
       </property>
    </bean>
 

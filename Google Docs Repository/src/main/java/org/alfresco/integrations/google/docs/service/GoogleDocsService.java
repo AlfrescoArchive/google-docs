@@ -8,6 +8,7 @@ import org.alfresco.service.Auditable;
 import org.alfresco.service.cmr.repository.NodeRef;
 
 import com.google.gdata.data.docs.DocumentListEntry;
+import com.google.gdata.data.docs.MetadataEntry;
 
 public interface GoogleDocsService
 {
@@ -36,6 +37,9 @@ public interface GoogleDocsService
      */
     @Auditable
     public boolean completeAuthentication(String access_token);
+    
+    @Auditable
+    public MetadataEntry getUserMetadata();
     
     /**
      * Create new Google Docs Document
@@ -140,4 +144,13 @@ public interface GoogleDocsService
      */
     @Auditable(parameters = {"nodeRef"})
     public DocumentListEntry uploadFile(NodeRef nodeRef);
+    
+    /**
+     * Have other Users Modified the Content in Google Docs
+     * 
+     * @param nodeRef
+     * @return
+     */
+    @Auditable(parameters = {"nodeRef"})
+    public boolean hasContentChanged(NodeRef nodeRef);
 }

@@ -1,0 +1,10 @@
+<webscript>
+   <shortname>Google Docs Content Has Changed</shortname>
+   <description>Has the Google Docs Content been changed by another user</description>
+   <url>/googledocs/haschanged?nodeRef={nodeRef}</url>
+   <lifecycle>internal</lifecycle>
+   <authentication>user</authentication>
+   <format default="json" />
+   <transaction>requiresnew</transaction>
+   <family>googledocs</family>
+</webscript>
