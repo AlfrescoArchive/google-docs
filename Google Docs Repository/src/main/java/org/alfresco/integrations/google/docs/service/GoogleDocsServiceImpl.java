@@ -15,6 +15,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.alfresco.integrations.AbstractIntegration;
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
@@ -961,6 +963,90 @@ public class GoogleDocsServiceImpl extends AbstractIntegration implements Google
 
     private void renameNode(NodeRef nodeRef, String name)
     {
+        // not all file types can be round tripped. This should Correct
+        // extensions on files where the format is modifed or Add an extension
+        // to file types where there is no extension
+        FileInfo fileInfo = fileFolderService.getFileInfo(nodeRef);
+        String mimetype = fileInfo.getContentData().getMimetype();
+
+        if (mimetype.equals("application/msword"))
+        {
+            Pattern docx_pattern = Pattern.compile("\\.docx$");
+            Matcher docx_matcher = docx_pattern.matcher(name);
+
+            if (docx_matcher.find())
+            {
+                name = name.substring(0, name.length() - 1);
+            }
+            else
+            {
+                Pattern doc_pattern = Pattern.compile("\\.doc$");
+                Matcher doc_matcher = doc_pattern.matcher(name);
+
+                if (!doc_matcher.find())
+                {
+                    name = name.concat(".doc");
+                }
+            }
+        }
+        else if (mimetype.equals("application/vnd.ms-excel"))
+        {
+            Pattern xlsx_pattern = Pattern.compile("\\.xlsx$");
+            Matcher xlsx_matcher = xlsx_pattern.matcher(name);
+
+            if (xlsx_matcher.find())
+            {
+                name = name.substring(0, name.length() - 1);
+            }
+            else
+            {
+                Pattern xls_pattern = Pattern.compile("\\.xls$");
+                Matcher xls_matcher = xls_pattern.matcher(name);
+
+                if (!xls_matcher.find())
+                {
+                    name = name.concat(".xls");
+                }
+            }
+        }
+        else if (mimetype.equals("application/vnd.ms-powerpoint"))
+        {
+            Pattern pptx_pattern = Pattern.compile("\\.pptx$");
+            Matcher pptx_matcher = pptx_pattern.matcher(name);
+
+            if (pptx_matcher.find())
+            {
+                name = name.substring(0, name.length() - 1);
+            }
+            else
+            {
+                Pattern ppt_pattern = Pattern.compile("\\.ppt$");
+                Matcher ppt_matcher = ppt_pattern.matcher(name);
+
+                if (!ppt_matcher.find())
+                {
+                    name = name.concat(".ppt");
+                }
+            }
+        }
+        else if (mimetype.equals("application/vnd.oasis.opendocument.text"))
+        {
+            Pattern odt_pattern = Pattern.compile("\\.odt$");
+            Matcher odt_matcher = odt_pattern.matcher(name);
+
+            if (!odt_matcher.find())
+            {
+                Pattern sxw_pattern = Pattern.compile("\\.sxw$");
+                Matcher sxw_matcher = sxw_pattern.matcher(name);
+
+                if (sxw_matcher.find())
+                {
+                    name = name.substring(0, name.length() - 4);
+                    name = name.concat(".odt");
+                }
+            }
+        }
+
         nodeService.setProperty(nodeRef, ContentModel.PROP_NAME, name);
     }
 
