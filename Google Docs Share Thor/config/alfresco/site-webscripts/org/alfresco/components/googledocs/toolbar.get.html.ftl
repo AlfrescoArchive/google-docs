@@ -5,7 +5,10 @@
 <div class="gd-container gdsave"><button id="${el}-googledocs-save-button" class="gd-button gdsave-button" name="save"><img src="${url.context}/res/modules/googledocs/images/bg_alf.gif" class="gd-button-image" align="absmiddle"/>Save to Alfresco</button></div>
 </div>
 <script type="text/javascript">//<![CDATA[
-new Alfresco.GoogleDocs.Toolbar("${el}").setMessages(
+new Alfresco.GoogleDocs.Toolbar("${el}").setOptions({
+   nodeRef: "${page.url.args.nodeRef?js_string}",
+   isVersioned: ${isVersioned?string}
+}).setMessages(
    ${messages}
 );
 //]]></script>

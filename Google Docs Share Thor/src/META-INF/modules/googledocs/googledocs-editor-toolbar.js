@@ -55,6 +55,23 @@
        */
       options:
       {
+         /**
+          * Repository nodeRef of the document being edited
+          * 
+          * @property nodeRef
+          * @type string
+          * @default ""
+          */
+         nodeRef: "",
+         
+         /**
+          * Whether the repository content item is versioned or not
+          * 
+          * @property isVersioned
+          * @type boolean
+          * @default true
+          */
+         isVersioned: true
       },
 
       /**
@@ -66,7 +83,7 @@
       {
          YAHOO.util.Event.addListener(this.id + "-googledocs-back-button", "click", this.back);
          YAHOO.util.Event.addListener(this.id + "-googledocs-discard-button", "click", this.discard);
-         YAHOO.util.Event.addListener(this.id + "-googledocs-save-button", "click", this.save);
+         YAHOO.util.Event.addListener(this.id + "-googledocs-save-button", "click", this.save, this, true);
       },
       
       back: function GDT_back(e)
@@ -105,6 +122,48 @@
                }); */
          
          alert("Clicking the Discard button, will revert the content back to the original state in Alfresco.  ie. delete content from google docs.  New content place holders will be removed from the repository.");
+      },
+      
+      saveVersion: function GDT_saveVersion()
+      {
+         var actionUrl = Alfresco.constants.PROXY_URI + "googledocs/saveContent";
+         
+         //Event.stopEvent(e);
+         
+         if (!this.configDialog)
+         {
+            this.configDialog = new Alfresco.module.SimpleDialog(this.id + "-configDialog").setOptions(
+            {
+               width: "30em",
+               templateUrl: Alfresco.constants.URL_SERVICECONTEXT + "modules/googledocs/create-new-version", actionUrl: actionUrl,
+               onSuccess:
+               {
+                  fn: function GDT_onConfigFeed_callback(response)
+                  {
+                     // Forward the user to the document details page
+                     window.location = window.location.href.replace('googledocsEditor', 'document-details');
+                  },
+                  scope: this
+               },
+               doSetupFormsValidation:
+               {
+                  fn: function GDT_doSetupForm_callback(form)
+                  {
+                     // Set the nodeRef form field value from the local setting
+                     Dom.get(this.configDialog.id + "-nodeRef").value = this.options.nodeRef;
+                  },
+                  scope: this
+               }
+            });
+         }
+         else
+         {
+            this.configDialog.setOptions(
+            {
+               actionUrl: actionUrl
+            })
+         }
+         this.configDialog.show();
       },
       
       save: function GDT_save(e)
@@ -154,9 +213,6 @@
             }
          };
          
-         destroyLoaderMessage();
-         timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage);
-         
          //See http://stackoverflow.com/a/979995
          var QueryString = function () {
             // This function is anonymous, is executed immediately and 
@@ -205,12 +261,22 @@
                scope : this
          };
          
-         Alfresco.util.Ajax.jsonGet( {
-            url : Alfresco.constants.PROXY_URI + 'googledocs/saveContent?nodeRef='+QueryString.nodeRef,
-            dataObj : {},
-            successCallback : success,
-            failureCallback : failure
-         });
+         if (this.options.isVersioned)
+         {
+            this.saveVersion();
+         }
+         else
+         {
+            destroyLoaderMessage();
+            timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage);
+            
+            Alfresco.util.Ajax.jsonGet( {
+               url : Alfresco.constants.PROXY_URI + 'googledocs/saveContent?nodeRef='+QueryString.nodeRef,
+               dataObj : {},
+               successCallback : success,
+               failureCallback : failure
+            });
+         }
       },
       
       back: function GDT_back(e)
