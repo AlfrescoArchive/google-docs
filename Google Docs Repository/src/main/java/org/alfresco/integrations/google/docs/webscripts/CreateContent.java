@@ -1,12 +1,14 @@
 
 package org.alfresco.integrations.google.docs.webscripts;
 
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.integrations.google.docs.utils.FileNameUtil;
 import org.alfresco.model.ContentModel;
@@ -26,25 +28,38 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
 
 import com.google.gdata.data.docs.DocumentListEntry;
 
-public class CreateContent extends DeclarativeWebScript
-{
-    private GoogleDocsService googledocsService;
-    private FileFolderService fileFolderService;
 
-    private final static String PARAM_TYPE = "contenttype";
-    private final static String PARAM_PARENT = "parent";
+public class CreateContent
+    extends DeclarativeWebScript
+{
+    private GoogleDocsService   googledocsService;
+    private FileFolderService   fileFolderService;
+
+    private FileNameUtil        fileNameUtil;
+
+    private final static String PARAM_TYPE    = "contenttype";
+    private final static String PARAM_PARENT  = "parent";
 
     private final static String MODEL_NODEREF = "nodeRef";
+
 
     public void setGoogledocsService(GoogleDocsService googledocsService)
     {
         this.googledocsService = googledocsService;
     }
 
+
     public void setFileFolderService(FileFolderService fileFolderService)
     {
         this.fileFolderService = fileFolderService;
     }
+
+
+    public void setFileNameUtil(FileNameUtil fileNameUtil)
+    {
+        this.fileNameUtil = fileNameUtil;
+    }
+
 
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
@@ -63,10 +78,10 @@ public class CreateContent extends DeclarativeWebScript
             String name = filenameHandler(contentType, parentNodeRef);
 
             FileInfo fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
-            
+
             documentEntry = googledocsService.createDocument(fileInfo.getNodeRef());
 
-            //TODO this should be wrapped in the get document
+            // TODO this should be wrapped in the get document
             googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
 
             nodeRef = fileInfo.getNodeRef().toString();
@@ -77,10 +92,10 @@ public class CreateContent extends DeclarativeWebScript
             String name = filenameHandler(contentType, parentNodeRef);
 
             FileInfo fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
-            
+
             documentEntry = googledocsService.createSpreadSheet(fileInfo.getNodeRef());
 
-            //TODO this should be wrapped in the get document
+            // TODO this should be wrapped in the get document
             googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
 
             nodeRef = fileInfo.getNodeRef().toString();
@@ -91,10 +106,10 @@ public class CreateContent extends DeclarativeWebScript
             String name = filenameHandler(contentType, parentNodeRef);
 
             FileInfo fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
-            
+
             documentEntry = googledocsService.createPresentation(fileInfo.getNodeRef());
 
-            //TODO this should be wrapped in the get document
+            // TODO this should be wrapped in the get document
             googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
 
             nodeRef = fileInfo.getNodeRef().toString();
@@ -109,28 +124,27 @@ public class CreateContent extends DeclarativeWebScript
         return model;
     }
 
+
     private String filenameHandler(String contentType, NodeRef parentNodeRef)
     {
-       
-        
         List<Pair<QName, Boolean>> sortProps = new ArrayList<Pair<QName, Boolean>>(1);
         sortProps.add(new Pair<QName, Boolean>(ContentModel.PROP_NAME, false));
-        // TODO what kind of Patterns can we use?
-        
+
         PagingResults<FileInfo> results = null;
-        if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE)){
-            results = fileFolderService.list(parentNodeRef, true, false,
-                    GoogleDocsConstants.NEW_DOCUMENT_NAME + "*", null, sortProps, new PagingRequest(
-                                CannedQueryPageDetails.DEFAULT_PAGE_SIZE));
-        } else if(contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE)){
-            results = fileFolderService.list(parentNodeRef, true, false,
-                        GoogleDocsConstants.NEW_SPREADSHEET_NAME + "*", null, sortProps, new PagingRequest(
-                                    CannedQueryPageDetails.DEFAULT_PAGE_SIZE));
-        } else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE)) {
-            results = fileFolderService.list(parentNodeRef, true, false,
-                        GoogleDocsConstants.NEW_PRESENTATION_NAME + "*", null, sortProps, new PagingRequest(
-                                    CannedQueryPageDetails.DEFAULT_PAGE_SIZE));
-        } else {
+        if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
+        {
+            results = fileFolderService.list(parentNodeRef, true, false, GoogleDocsConstants.NEW_DOCUMENT_NAME + "*", null, sortProps, new PagingRequest(CannedQueryPageDetails.DEFAULT_PAGE_SIZE));
+        }
+        else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
+        {
+            results = fileFolderService.list(parentNodeRef, true, false, GoogleDocsConstants.NEW_SPREADSHEET_NAME + "*", null, sortProps, new PagingRequest(CannedQueryPageDetails.DEFAULT_PAGE_SIZE));
+        }
+        else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
+        {
+            results = fileFolderService.list(parentNodeRef, true, false, GoogleDocsConstants.NEW_PRESENTATION_NAME + "*", null, sortProps, new PagingRequest(CannedQueryPageDetails.DEFAULT_PAGE_SIZE));
+        }
+        else
+        {
             throw new WebScriptException(500, "Content type: " + contentType + " unknown.");
         }
 
@@ -144,12 +158,38 @@ public class CreateContent extends DeclarativeWebScript
         String name = null;
         if (fileInfo != null)
         {
-            name = FileNameUtil.IncrementFileName(contentType, fileInfo.getName(), false);
-        } else {
-            name  = FileNameUtil.getNewFileName(contentType);
+            name = fileNameUtil.incrementFileName(fileInfo.getNodeRef());
+        }
+        else
+        {
+            name = getNewFileName(contentType);
         }
 
         return name;
 
+    }
+
+
+    private static String getNewFileName(String type)
+    {
+        String name = null;
+        if (type.equals(GoogleDocsConstants.DOCUMENT_TYPE))
+        {
+            name = GoogleDocsConstants.NEW_DOCUMENT_NAME;
+        }
+        else if (type.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
+        {
+            name = GoogleDocsConstants.NEW_SPREADSHEET_NAME;
+        }
+        else if (type.equals(GoogleDocsConstants.PRESENTATION_TYPE))
+        {
+            name = GoogleDocsConstants.NEW_PRESENTATION_NAME;
+        }
+        else
+        {
+            throw new GoogleDocsServiceException("Content type: " + type + " unknown");
+        }
+
+        return name;
     }
 }

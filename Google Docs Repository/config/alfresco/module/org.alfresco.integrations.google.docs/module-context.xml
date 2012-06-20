@@ -125,6 +125,15 @@
       <property name="nodeService">
          <ref bean="nodeService"/>
       </property>
+      <property name="lockService">
+         <ref bean="lockService"/>
+      </property>
+      <property name="fileNameUtil">
+         <ref bean="fileNameUtil"/>
+      </property>
+      <property name="mimetypeService">
+         <ref bean="mimetypeService"/>
+      </property>
       <property name="importFormats">
          <map>
             <entry
@@ -259,6 +268,15 @@
          <value>${integration.googleDocs.idleThresholdSeconds}</value>
       </property>
    </bean>
+   
+   <bean id="fileNameUtil" class="org.alfresco.integrations.google.docs.utils.FileNameUtil">
+      <property name="mimetypeService">
+         <ref bean="mimetypeService"/>
+      </property>
+      <property name="fileFolderService">
+         <ref bean="fileFolderService"/>
+      </property>
+   </bean>
 
    <!-- Property Decorator -->
    <!-- bean id="googleDocsImportable" class="org.alfresco.integrations.google.docs.repo.jscript.app.Importable"> 
@@ -318,6 +336,9 @@
       </property>
       <property name="fileFolderService">
          <ref bean="fileFolderService"/>
+      </property>
+      <property name="fileNameUtil">
+         <ref bean="fileNameUtil"/>
       </property>
    </bean>
    
