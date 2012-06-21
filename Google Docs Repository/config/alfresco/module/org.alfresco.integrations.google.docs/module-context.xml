@@ -134,6 +134,9 @@
       <property name="mimetypeService">
          <ref bean="mimetypeService"/>
       </property>
+      <property name="behaviourFilter">
+         <ref bean="policyBehaviourFilter" />
+      </property>
       <property name="importFormats">
          <map>
             <entry
@@ -348,9 +351,15 @@
       </property>
    </bean>
    
-   <bean id="webscript.org.alfresco.integrations.google.docs.SaveContent.get" class="org.alfresco.integrations.google.docs.webscripts.SaveContent" parent="webscript">
+   <bean id="webscript.org.alfresco.integrations.google.docs.SaveContent.post" class="org.alfresco.integrations.google.docs.webscripts.SaveContent" parent="webscript">
       <property name="googledocsService">
          <ref bean="googledocsService" />
+      </property>
+      <property name="nodeService">
+         <ref bean="nodeService"/>
+      </property>
+      <property name="versionService">
+         <ref bean="versionService" />
       </property>
    </bean>
    

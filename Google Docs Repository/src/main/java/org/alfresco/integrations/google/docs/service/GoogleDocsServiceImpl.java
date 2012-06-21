@@ -34,6 +34,7 @@ import org.alfresco.module.org_alfresco_module_cloud.analytics.Analytics;
 import org.alfresco.query.CannedQueryPageDetails;
 import org.alfresco.query.PagingRequest;
 import org.alfresco.query.PagingResults;
+import org.alfresco.repo.policy.BehaviourFilter;
 import org.alfresco.service.cmr.lock.LockService;
 import org.alfresco.service.cmr.lock.LockStatus;
 import org.alfresco.service.cmr.lock.LockType;
@@ -90,6 +91,7 @@ public class GoogleDocsServiceImpl
     private NodeService                      nodeService;
     private LockService                      lockservice;
     private MimetypeService                  mimetypeService;
+    private BehaviourFilter                  behaviourFilter;
 
     private FileNameUtil                     filenameUtil;
 
@@ -166,6 +168,12 @@ public class GoogleDocsServiceImpl
     public void setMimetypeService(MimetypeService mimetypeService)
     {
         this.mimetypeService = mimetypeService;
+    }
+
+
+    public void setBehaviourFilter(BehaviourFilter behaviourFilter)
+    {
+        this.behaviourFilter = behaviourFilter;
     }
 
 
@@ -757,16 +765,16 @@ public class GoogleDocsServiceImpl
             writer.setMimetype(mimeType);
             writer.putContent(ms.getInputStream());
 
-            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
-            {
-                nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
-            }
-
             DocumentListEntry documentListEntry = getDocumentListEntry(resourceID);
 
             renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
 
             deleteContent(nodeRef, documentListEntry);
+
+            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+            {
+                nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
+            }
 
         }
         catch (IOException error)
@@ -897,18 +905,26 @@ public class GoogleDocsServiceImpl
 
     public void decorateNode(NodeRef nodeRef, DocumentListEntry documentListEntry, boolean newcontent)
     {
-        if (newcontent)
+        behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
+        try
         {
-            // Mark temporary until first save
-            nodeService.addAspect(nodeRef, ContentModel.ASPECT_TEMPORARY, null);
-        }
+            if (newcontent)
+            {
+                // Mark temporary until first save
+                nodeService.addAspect(nodeRef, ContentModel.ASPECT_TEMPORARY, null);
+            }
 
-        // Get the googleMetadata to reference the Node
-        // TODO Do we need to add eTag for discard/revision
-        Map<QName, Serializable> aspectProperties = new HashMap<QName, Serializable>();
-        aspectProperties.put(GoogleDocsModel.PROP_RESOURCE_ID, documentListEntry.getResourceId());
-        aspectProperties.put(GoogleDocsModel.PROP_EDITORURL, documentListEntry.getDocumentLink().getHref());
-        nodeService.addAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS, aspectProperties);
+            // Get the googleMetadata to reference the Node
+            // TODO Do we need to add eTag for discard/revision
+            Map<QName, Serializable> aspectProperties = new HashMap<QName, Serializable>();
+            aspectProperties.put(GoogleDocsModel.PROP_RESOURCE_ID, documentListEntry.getResourceId());
+            aspectProperties.put(GoogleDocsModel.PROP_EDITORURL, documentListEntry.getDocumentLink().getHref());
+            nodeService.addAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS, aspectProperties);
+        }
+        finally
+        {
+            behaviourFilter.enableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
+        }
     }
 
 
