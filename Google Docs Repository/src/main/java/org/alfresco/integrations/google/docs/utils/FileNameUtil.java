@@ -10,6 +10,9 @@ import org.alfresco.service.cmr.repository.MimetypeService;
 import org.alfresco.service.cmr.repository.NodeRef;
 
 
+/**
+ * @author Jared Ottley <jared.ottley@alfresco.com>
+ */
 public class FileNameUtil
 {
     private final static String FULL_PATTERN = "\\-\\d++\\.";

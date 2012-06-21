@@ -80,6 +80,9 @@ import com.google.gdata.data.media.MediaSource;
 import com.google.gdata.util.ServiceException;
 
 
+/**
+ * @author Jared Ottley <jared.ottley@alfresco.com>
+ */
 public class GoogleDocsServiceImpl
     extends AbstractIntegration
     implements GoogleDocsService

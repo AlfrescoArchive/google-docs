@@ -1,6 +1,7 @@
 
 package org.alfresco.integrations.google.docs.webscripts;
 
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,18 +12,24 @@ import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 
-public class HasConcurrentEditors extends DeclarativeWebScript
+
+/**
+ * @author Jared Ottley <jared.ottley@alfresco.com>
+ */
+public class HasConcurrentEditors
+    extends DeclarativeWebScript
 {
-    private GoogleDocsService googledocsService;
+    private GoogleDocsService   googledocsService;
 
     private final static String MODEL_CONCURRENT_EDITORS = "concurrentEditors";
+    private final static String PARAM_NODEREF            = "nodeRef";
 
-    private final static String PARAM_NODEREF = "nodeRef";
 
     public void setGoogledocsService(GoogleDocsService googledocsService)
     {
         this.googledocsService = googledocsService;
     }
+
 
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)

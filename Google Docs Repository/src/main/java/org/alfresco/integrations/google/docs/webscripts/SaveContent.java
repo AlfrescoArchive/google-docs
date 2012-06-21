@@ -26,6 +26,9 @@ import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 
 
+/**
+ * @author Jared Ottley <jared.ottley@alfresco.com>
+ */
 public class SaveContent
     extends DeclarativeWebScript
 {

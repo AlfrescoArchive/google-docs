@@ -1,6 +1,7 @@
 
 package org.alfresco.integrations.google.docs.webscripts;
 
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,21 +15,28 @@ import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 
-public class Exportable extends DeclarativeWebScript
-{
-    private GoogleDocsService googledocsService;
 
-    private final static String PARAM_MIMETYPE = "mimetype";
+/**
+ * @author Jared Ottley <jared.ottley@alfresco.com>
+ */
+public class Exportable
+    extends DeclarativeWebScript
+{
+    private GoogleDocsService   googledocsService;
+
+    private final static String PARAM_MIMETYPE     = "mimetype";
     private final static String MODEL_EXPORT_ACION = "export_action";
 
-    private final static String ACTION_UPGRADE = "upgrade";
-    private final static String ACTION_DOWNGRADE = "downgrade";
-    private final static String ACTION_DEFAULT = "default";
+    private final static String ACTION_UPGRADE     = "upgrade";
+    private final static String ACTION_DOWNGRADE   = "downgrade";
+    private final static String ACTION_DEFAULT     = "default";
+
 
     public void setGoogledocsService(GoogleDocsService googledocsService)
     {
         this.googledocsService = googledocsService;
     }
+
 
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
@@ -43,8 +51,7 @@ public class Exportable extends DeclarativeWebScript
             }
             else
             {
-                throw new WebScriptException(HttpStatus.SC_BAD_REQUEST,
-                            "Content not exportable");
+                throw new WebScriptException(HttpStatus.SC_BAD_REQUEST, "Content not exportable");
             }
         }
         catch (MustUpgradeFormatException mufe)

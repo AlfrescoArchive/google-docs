@@ -1,6 +1,7 @@
 
 package org.alfresco.integrations.google.docs.webscripts;
 
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,17 +11,24 @@ import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 
-public class AuthURL extends DeclarativeWebScript
+
+/**
+ * @author Jared Ottley <jared.ottley@alfresco.com>
+ */
+public class AuthURL
+    extends DeclarativeWebScript
 {
-    private final static String AUTHURL = "authURL";
+    private final static String AUTHURL       = "authURL";
     private final static String AUTHENTICATED = "authenticated";
 
-    private GoogleDocsService googledocsService;
+    private GoogleDocsService   googledocsService;
+
 
     public void setGoogledocsService(GoogleDocsService googledocsService)
     {
         this.googledocsService = googledocsService;
     }
+
 
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)

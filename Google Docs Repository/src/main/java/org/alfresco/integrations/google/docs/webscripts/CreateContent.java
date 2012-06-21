@@ -29,6 +29,9 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
 import com.google.gdata.data.docs.DocumentListEntry;
 
 
+/**
+ * @author Jared Ottley <jared.ottley@alfresco.com>
+ */
 public class CreateContent
     extends DeclarativeWebScript
 {

@@ -1,13 +1,20 @@
 
 package org.alfresco.integrations.google.docs.utils;
 
+
 import java.util.Comparator;
 
 import com.google.gdata.data.docs.RevisionEntry;
 
-public class RevisionEntryComparator implements Comparator<RevisionEntry>
+
+/**
+ * @author Jared Ottley <jared.ottley@alfresco.com>
+ */
+public class RevisionEntryComparator
+    implements Comparator<RevisionEntry>
 {
     private static final String PREFIX_TITLE = "Revision ";
+
 
     @Override
     public int compare(RevisionEntry entry1, RevisionEntry entry2)
