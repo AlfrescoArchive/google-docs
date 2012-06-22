@@ -69,65 +69,59 @@ public class CreateContent
     {
         Map<String, Object> model = new HashMap<String, Object>();
 
-        DocumentListEntry documentEntry = null;
-
         String contentType = req.getParameter(PARAM_TYPE);
         NodeRef parentNodeRef = new NodeRef(req.getParameter(PARAM_PARENT));
 
-        String nodeRef = null;
+        FileInfo fileInfo = null;
+        DocumentListEntry documentEntry = null;
 
         if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
         {
             String name = filenameHandler(contentType, parentNodeRef);
-
-            FileInfo fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
+            fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
 
             documentEntry = googledocsService.createDocument(fileInfo.getNodeRef());
 
-            // TODO this should be wrapped in the get document
             googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
-
-            nodeRef = fileInfo.getNodeRef().toString();
-
         }
         else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
         {
             String name = filenameHandler(contentType, parentNodeRef);
-
-            FileInfo fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
+            fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
 
             documentEntry = googledocsService.createSpreadSheet(fileInfo.getNodeRef());
 
-            // TODO this should be wrapped in the get document
             googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
-
-            nodeRef = fileInfo.getNodeRef().toString();
-
         }
         else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
         {
             String name = filenameHandler(contentType, parentNodeRef);
-
-            FileInfo fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
+            fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
 
             documentEntry = googledocsService.createPresentation(fileInfo.getNodeRef());
 
-            // TODO this should be wrapped in the get document
             googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
-
-            nodeRef = fileInfo.getNodeRef().toString();
         }
         else
         {
             throw new WebScriptException("Content Type Unknown.");
         }
 
-        model.put(MODEL_NODEREF, nodeRef);
+        googledocsService.lockNode(fileInfo.getNodeRef());
+
+        model.put(MODEL_NODEREF, fileInfo.getNodeRef().toString());
 
         return model;
     }
 
 
+    /**
+     * Look for duplicate file names for the type in the folder/space
+     * 
+     * @param contentType
+     * @param parentNodeRef
+     * @return
+     */
     private String filenameHandler(String contentType, NodeRef parentNodeRef)
     {
         List<Pair<QName, Boolean>> sortProps = new ArrayList<Pair<QName, Boolean>>(1);
@@ -173,6 +167,12 @@ public class CreateContent
     }
 
 
+    /**
+     * Get the default new content name
+     * 
+     * @param type
+     * @return
+     */
     private static String getNewFileName(String type)
     {
         String name = null;

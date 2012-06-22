@@ -38,7 +38,6 @@ import org.alfresco.repo.policy.BehaviourFilter;
 import org.alfresco.service.cmr.lock.LockService;
 import org.alfresco.service.cmr.lock.LockStatus;
 import org.alfresco.service.cmr.lock.LockType;
-import org.alfresco.service.cmr.lock.NodeLockedException;
 import org.alfresco.service.cmr.model.FileFolderService;
 import org.alfresco.service.cmr.model.FileInfo;
 import org.alfresco.service.cmr.oauth2.OAuth2StoreService;
@@ -940,14 +939,14 @@ public class GoogleDocsServiceImpl
     }
 
 
-    private void lockNode(NodeRef nodeRef)
+    public void lockNode(NodeRef nodeRef)
     {
-        lockservice.lock(nodeRef, LockType.READ_ONLY_LOCK);
         nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_LOCKED, true);
+        lockservice.lock(nodeRef, LockType.READ_ONLY_LOCK);
     }
 
 
-    private void unlockNode(NodeRef nodeRef)
+    public void unlockNode(NodeRef nodeRef)
     {
         lockservice.unlock(nodeRef);
         nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_LOCKED, false);
@@ -962,7 +961,7 @@ public class GoogleDocsServiceImpl
      * @param nodeRef
      * @return
      */
-    private boolean isLockedByGoogleDocs(NodeRef nodeRef)
+    public boolean isLockedByGoogleDocs(NodeRef nodeRef)
     {
 
         boolean locked = false;
@@ -989,20 +988,16 @@ public class GoogleDocsServiceImpl
      * @param nodeRef
      * @return Will return false is the document is not locked
      */
-    private boolean isGoolgeDocsLockOwner(NodeRef nodeRef)
+    public boolean isGoogleDocsLockOwner(NodeRef nodeRef)
     {
         boolean isOwner = false;
 
         if (isLockedByGoogleDocs(nodeRef))
         {
-            try
+            LockStatus lockStatus = lockservice.getLockStatus(nodeRef);
+            if (lockStatus.equals(LockStatus.LOCK_OWNER))
             {
-                lockservice.checkForLock(nodeRef);
                 isOwner = true;
-            }
-            catch (NodeLockedException nle)
-            {
-                // Locked by another user
             }
         }
 

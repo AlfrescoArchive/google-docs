@@ -45,6 +45,7 @@ public class UploadContent
         DocumentListEntry entry = googledocsService.uploadFile(nodeRef);
 
         googledocsService.decorateNode(nodeRef, entry, false);
+        googledocsService.lockNode(nodeRef);
 
         model.put(MODEL_NODEREF, nodeRef.toString());
 

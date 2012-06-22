@@ -75,18 +75,42 @@ public class SaveContent
 
         if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
         {
-            googledocsService.getDocument(nodeRef);
-            success = true; // TODO Make getDocument return boolean
+            if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+            {
+                googledocsService.unlockNode(nodeRef);
+                googledocsService.getDocument(nodeRef);
+                success = true; // TODO Make getDocument return boolean
+            }
+            else
+            {
+                throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+            }
         }
         else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
         {
-            googledocsService.getSpreadSheet(nodeRef);
-            success = true; // TODO Make getSpreadsheet return boolean
+            if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+            {
+                googledocsService.unlockNode(nodeRef);
+                googledocsService.getSpreadSheet(nodeRef);
+                success = true; // TODO Make getSpreadsheet return boolean
+            }
+            else
+            {
+                throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+            }
         }
         else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
         {
-            googledocsService.getPresentation(nodeRef);
-            success = true; // TODO Make getPresentation return boolean
+            if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+            {
+                googledocsService.unlockNode(nodeRef);
+                googledocsService.getPresentation(nodeRef);
+                success = true; // TODO Make getPresentation return boolean
+            }
+            else
+            {
+                throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+            }
         }
         else
         {

@@ -73,6 +73,10 @@
             org.alfresco.integrations.google.docs.service.GoogleDocsService.getPresentation=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.uploadFile=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.hasConcurrentEditors=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.lockNode=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.unlockNode=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isGoogleDocsLockOwner=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isLockedByGoogleDocs=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.*=ACL_DENY
          </value>
       </property>
@@ -88,6 +92,8 @@
             <value>getUserMetadata</value>
             <value>getContentType</value>
             <value>hasConcurrentEditors</value>
+            <value>isGoogleDocsLockOwner</value>
+            <value>isLockedByGoogleDocs</value>
          </list>
       </property>
    </bean>
@@ -107,6 +113,8 @@
             <value>getSpreadSheet</value>
             <value>getPresentation</value>
             <value>uploadFile</value>
+            <value>lockNode</value>
+            <value>unlockNode</value>
          </list>
       </property>
    </bean>

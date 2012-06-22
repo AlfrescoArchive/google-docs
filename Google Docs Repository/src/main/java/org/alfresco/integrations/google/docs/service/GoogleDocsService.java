@@ -12,9 +12,8 @@ import org.alfresco.service.cmr.repository.NodeRef;
 import com.google.gdata.data.docs.DocumentListEntry;
 import com.google.gdata.data.docs.MetadataEntry;
 
+
 /**
- * 
- *
  * @author Jared Ottley <jared.ottley@alfresco.com>
  */
 public interface GoogleDocsService
@@ -184,4 +183,33 @@ public interface GoogleDocsService
      */
     @Auditable(parameters = { "nodeRef" })
     public boolean hasConcurrentEditors(NodeRef nodeRef);
+
+
+    /**
+     * @param noderef
+     */
+    @Auditable(parameters = { "nodeRef" })
+    public void lockNode(NodeRef nodeRef);
+    
+    /**
+     * @param noderef
+     */
+    @Auditable(parameters = { "nodeRef" })
+    public void unlockNode(NodeRef nodeRef);
+
+
+    /**
+     * @param nodeRef
+     * @return
+     */
+    @Auditable(parameters = { "nodeRef" })
+    public boolean isLockedByGoogleDocs(NodeRef nodeRef);
+
+
+    /**
+     * @param nodeRef
+     * @return
+     */
+    @Auditable(parameters = { "nodeRef" })
+    public boolean isGoogleDocsLockOwner(NodeRef nodeRef);
 }
