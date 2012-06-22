@@ -14,22 +14,27 @@
 					<permission allow="true">Write</permission>
 				</permissions>
 			</action>
+         <action id="google-docs-resume-action-link" type="javascript" icon="googledocs" label="googledocs.actions.resume">
+            <param name="function">onGoogledocsActionResume</param>
+            <evaluator>evaluator.doclib.google.docs.resume</evaluator>
+         </action>
 		</actions>
 		
 		<actionGroups>
 			<actionGroup id="document-browse">
 				<action index="250" id="google-docs-edit-action-link" />
+            <action index="250" id="google-docs-resume-action-link" />
 			</actionGroup>
 			
 			<actionGroup id="document-details">
 				<action index="250" id="google-docs-edit-action-link" />
+            <action index="250" id="google-docs-resume-action-link" />
 			</actionGroup>
 		</actionGroups>	
 	</config>
 	
 <config evaluator="string-compare" condition="DocumentLibrary" replace="true">
       <create-content>
-
          <content id="google-docs" label="create-content.googledocs.document" icon="document" index="50" type="javascript">
             <param name="function">onGoogledocsActionCreateDocument</param>
          </content>
@@ -39,7 +44,6 @@
          <content id="google-docs" label="create-content.googledocs.presentation" icon="presentation" index="52" type="javascript">
             <param name="function">onGoogledocsActionCreatePresentation</param>
          </content>
-
       </create-content>
 </config>
 	
