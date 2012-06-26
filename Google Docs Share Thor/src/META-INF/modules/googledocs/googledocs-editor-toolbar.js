@@ -82,7 +82,7 @@
       onReady: function GDT_onReady()
       {
          YAHOO.util.Event.addListener(this.id + "-googledocs-back-button", "click", this.back);
-         YAHOO.util.Event.addListener(this.id + "-googledocs-discard-button", "click", this.discard);
+         YAHOO.util.Event.addListener(this.id + "-googledocs-discard-button", "click", this.discard, this, true);
          YAHOO.util.Event.addListener(this.id + "-googledocs-save-button", "click", this.save, this, true);
       },
       
@@ -96,32 +96,28 @@
       {
          //YAHOO.util.Event.preventDefault(e);
          
-         /*Alfresco.util.PopupManager.displayPrompt(
+         Alfresco.util.PopupManager.displayPrompt(
+         {
+            title: this.msg("title.discard"),
+            text: this.msg("warning.discard"),
+            noEscape: false,
+            buttons: [
+            {
+               text: this.msg("button.ok"),
+               handler: function discardChanges()
                {
-                  title: 'Discard Changes',
-                  text: 'Clicking the Discard button, will revert the content back to the original state in Alfresco.  ie. delete content from google docs.  New content place holders will be removed from the repository.',
-                  noEscape: false,
-                  buttons: [
-                  {
-                     text: Alfresco.util.message("button.yes", this.name),
-                     handler: function discardChanges()
-                     {
-                        me.promptActive = false;
-                        this.destroy();
-                     }
-                  },
-                  {
-                     text: Alfresco.util.message("button.no", this.name),
-                     handler: function cancelDiscard()
-                     {
-                        me.promptActive = false;
-                        this.destroy();  
-                     },
-                     isDefault: true
-                  }]
-               }); */
-         
-         alert("Clicking the Discard button, will revert the content back to the original state in Alfresco.  ie. delete content from google docs.  New content place holders will be removed from the repository.");
+                  this.destroy();
+               }
+            },
+            {
+               text: this.msg("button.cancel"),
+               handler: function cancelDiscard()
+               {
+                  this.destroy();  
+               },
+               isDefault: true
+            }]
+         });
       },
       
       saveVersion: function GDT_saveVersion()
