@@ -152,7 +152,7 @@
             {
                loadingMessage = Alfresco.util.PopupManager.displayMessage( {
                   displayTime : 0,
-                  text : '<span class="wait">' + Alfresco.util.encodeHTML(Alfresco.util.message("googledocs.actions.saving")) + '</span>',
+                  text : '<span class="wait">' + Alfresco.util.encodeHTML(this.msg("googledocs.actions.saving")) + '</span>',
                   noEscape : true
                });
 
@@ -214,7 +214,7 @@
 
                destroyLoaderMessage();
                Alfresco.util.PopupManager.displayMessage({
-                  text : Alfresco.util.message("googledocs.actions.saving.failure")
+                  text : this.msg("googledocs.actions.saving.failure")
                });
             },
             scope : this
