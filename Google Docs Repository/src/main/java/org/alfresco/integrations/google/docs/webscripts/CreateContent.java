@@ -2,13 +2,17 @@
 package org.alfresco.integrations.google.docs.webscripts;
 
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsTypeException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.integrations.google.docs.utils.FileNameUtil;
 import org.alfresco.model.ContentModel;
@@ -20,6 +24,7 @@ import org.alfresco.service.cmr.model.FileInfo;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.Pair;
+import org.apache.commons.httpclient.HttpStatus;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -74,37 +79,67 @@ public class CreateContent
 
         FileInfo fileInfo = null;
         DocumentListEntry documentEntry = null;
-
-        if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
+        try
         {
-            String name = filenameHandler(contentType, parentNodeRef);
-            fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
+            if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
+            {
+                String name = filenameHandler(contentType, parentNodeRef);
+                fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
 
-            documentEntry = googledocsService.createDocument(fileInfo.getNodeRef());
+                documentEntry = googledocsService.createDocument(fileInfo.getNodeRef());
 
-            googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+                googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+            }
+            else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
+            {
+                String name = filenameHandler(contentType, parentNodeRef);
+                fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
+
+                documentEntry = googledocsService.createSpreadSheet(fileInfo.getNodeRef());
+
+                googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+            }
+            else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
+            {
+                String name = filenameHandler(contentType, parentNodeRef);
+                fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
+
+                documentEntry = googledocsService.createPresentation(fileInfo.getNodeRef());
+
+                googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+            }
+            else
+            {
+                throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, "Content Type Not Found.");
+            }
+
         }
-        else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
+        catch (GoogleDocsServiceException gdse)
         {
-            String name = filenameHandler(contentType, parentNodeRef);
-            fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
-
-            documentEntry = googledocsService.createSpreadSheet(fileInfo.getNodeRef());
-
-            googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+            if (gdse.getPassedStatusCode() > -1)
+            {
+                throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage());
+            }
+            else
+            {
+                throw new WebScriptException(gdse.getMessage());
+            }
         }
-        else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
+        catch (GoogleDocsTypeException gdte)
         {
-            String name = filenameHandler(contentType, parentNodeRef);
-            fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
-
-            documentEntry = googledocsService.createPresentation(fileInfo.getNodeRef());
-
-            googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+            throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, gdte.getMessage());
         }
-        else
+        catch (GoogleDocsAuthenticationException gdae)
         {
-            throw new WebScriptException("Content Type Unknown.");
+            throw new WebScriptException(HttpStatus.SC_UNAUTHORIZED, gdae.getMessage());
+        }
+        catch (GoogleDocsRefreshTokenException gdrte)
+        {
+            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage());
+        }
+        catch (IOException ioe)
+        {
+            throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
         }
 
         googledocsService.lockNode(fileInfo.getNodeRef());
@@ -142,7 +177,7 @@ public class CreateContent
         }
         else
         {
-            throw new WebScriptException(500, "Content type: " + contentType + " unknown.");
+            throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, "Content type: " + contentType + " unknown.");
         }
 
         List<FileInfo> page = results.getPage();
@@ -187,10 +222,6 @@ public class CreateContent
         else if (type.equals(GoogleDocsConstants.PRESENTATION_TYPE))
         {
             name = GoogleDocsConstants.NEW_PRESENTATION_NAME;
-        }
-        else
-        {
-            throw new GoogleDocsServiceException("Content type: " + type + " unknown");
         }
 
         return name;

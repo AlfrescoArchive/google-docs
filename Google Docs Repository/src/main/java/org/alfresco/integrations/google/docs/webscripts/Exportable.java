@@ -51,7 +51,7 @@ public class Exportable
             }
             else
             {
-                throw new WebScriptException(HttpStatus.SC_BAD_REQUEST, "Content not exportable");
+                throw new WebScriptException(HttpStatus.SC_NOT_ACCEPTABLE, "Content not exportable");
             }
         }
         catch (MustUpgradeFormatException mufe)

@@ -2,8 +2,13 @@
 package org.alfresco.integrations.google.docs.service;
 
 
+import java.io.IOException;
 import java.util.ArrayList;
 
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsTypeException;
 import org.alfresco.integrations.google.docs.exceptions.MustDowngradeFormatException;
 import org.alfresco.integrations.google.docs.exceptions.MustUpgradeFormatException;
 import org.alfresco.service.Auditable;
@@ -46,11 +51,15 @@ public interface GoogleDocsService
      * @return
      */
     @Auditable
-    public boolean completeAuthentication(String access_token);
+    public boolean completeAuthentication(String access_token)
+        throws GoogleDocsServiceException;
 
 
     @Auditable
-    public MetadataEntry getUserMetadata();
+    public MetadataEntry getUserMetadata()
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            IOException;
 
 
     /**
@@ -60,7 +69,12 @@ public interface GoogleDocsService
      * @return
      */
     @Auditable(parameters = { "nodeRef" })
-    public DocumentListEntry createDocument(NodeRef nodeRef);
+    public DocumentListEntry createDocument(NodeRef nodeRef)
+        throws GoogleDocsServiceException,
+            GoogleDocsTypeException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            IOException;
 
 
     /**
@@ -70,7 +84,12 @@ public interface GoogleDocsService
      * @return
      */
     @Auditable(parameters = { "nodeRef" })
-    public DocumentListEntry createPresentation(NodeRef nodeRef);
+    public DocumentListEntry createPresentation(NodeRef nodeRef)
+        throws GoogleDocsServiceException,
+            GoogleDocsTypeException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            IOException;
 
 
     /**
@@ -80,7 +99,12 @@ public interface GoogleDocsService
      * @return
      */
     @Auditable(parameters = { "nodeRef" })
-    public DocumentListEntry createSpreadSheet(NodeRef nodeRef);
+    public DocumentListEntry createSpreadSheet(NodeRef nodeRef)
+        throws GoogleDocsServiceException,
+            GoogleDocsTypeException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            IOException;
 
 
     /**
@@ -142,7 +166,11 @@ public interface GoogleDocsService
      * @param nodeRef
      */
     @Auditable(parameters = { "nodeRef" })
-    public void getDocument(NodeRef nodeRef);
+    public void getDocument(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException;
 
 
     /**
@@ -152,7 +180,11 @@ public interface GoogleDocsService
      * @param nodeRef
      */
     @Auditable(parameters = { "nodeRef" })
-    public void getSpreadSheet(NodeRef nodeRef);
+    public void getSpreadSheet(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException;
 
 
     /**
@@ -162,7 +194,11 @@ public interface GoogleDocsService
      * @param nodeRef
      */
     @Auditable(parameters = { "nodeRef" })
-    public void getPresentation(NodeRef nodeRef);
+    public void getPresentation(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException;
 
 
     /**
@@ -172,7 +208,11 @@ public interface GoogleDocsService
      * @return
      */
     @Auditable(parameters = { "nodeRef" })
-    public DocumentListEntry uploadFile(NodeRef nodeRef);
+    public DocumentListEntry uploadFile(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException;
 
 
     /**
@@ -182,7 +222,10 @@ public interface GoogleDocsService
      * @return
      */
     @Auditable(parameters = { "nodeRef" })
-    public boolean hasConcurrentEditors(NodeRef nodeRef);
+    public boolean hasConcurrentEditors(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            IOException;
 
 
     /**
@@ -190,7 +233,8 @@ public interface GoogleDocsService
      */
     @Auditable(parameters = { "nodeRef" })
     public void lockNode(NodeRef nodeRef);
-    
+
+
     /**
      * @param noderef
      */

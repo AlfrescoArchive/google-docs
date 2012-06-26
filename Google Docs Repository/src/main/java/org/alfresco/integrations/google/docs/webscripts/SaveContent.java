@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.version.Version2Model;
@@ -72,49 +75,74 @@ public class SaveContent
         NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
 
         String contentType = googledocsService.getContentType(nodeRef);
-
-        if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
+        try
         {
-            if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+            if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
             {
-                googledocsService.unlockNode(nodeRef);
-                googledocsService.getDocument(nodeRef);
-                success = true; // TODO Make getDocument return boolean
+                if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+                {
+                    googledocsService.unlockNode(nodeRef);
+                    googledocsService.getDocument(nodeRef);
+                    success = true; // TODO Make getDocument return boolean
+                }
+                else
+                {
+                    throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+                }
+            }
+            else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
+            {
+                if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+                {
+                    googledocsService.unlockNode(nodeRef);
+                    googledocsService.getSpreadSheet(nodeRef);
+                    success = true; // TODO Make getSpreadsheet return boolean
+                }
+                else
+                {
+                    throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+                }
+            }
+            else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
+            {
+                if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+                {
+                    googledocsService.unlockNode(nodeRef);
+                    googledocsService.getPresentation(nodeRef);
+                    success = true; // TODO Make getPresentation return boolean
+                }
+                else
+                {
+                    throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+                }
             }
             else
             {
-                throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+                throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, "Content Type: " + contentType + " unknown.");
             }
         }
-        else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
+        catch (GoogleDocsAuthenticationException gdae)
         {
-            if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+            throw new WebScriptException(HttpStatus.SC_UNAUTHORIZED, gdae.getMessage());
+        }
+        catch (GoogleDocsServiceException gdse)
+        {
+            if (gdse.getPassedStatusCode() > -1)
             {
-                googledocsService.unlockNode(nodeRef);
-                googledocsService.getSpreadSheet(nodeRef);
-                success = true; // TODO Make getSpreadsheet return boolean
+                throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage());
             }
             else
             {
-                throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+                throw new WebScriptException(gdse.getMessage());
             }
         }
-        else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
+        catch (GoogleDocsRefreshTokenException gdrte)
         {
-            if (googledocsService.isGoogleDocsLockOwner(nodeRef))
-            {
-                googledocsService.unlockNode(nodeRef);
-                googledocsService.getPresentation(nodeRef);
-                success = true; // TODO Make getPresentation return boolean
-            }
-            else
-            {
-                throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
-            }
+            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage());
         }
-        else
+        catch (IOException ioe)
         {
-            throw new WebScriptException(500, "Content Type: " + contentType + " unknown.");
+            new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
         }
 
         // Finish this off with a version create or update

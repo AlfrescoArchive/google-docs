@@ -5,7 +5,6 @@ package org.alfresco.integrations.google.docs.service;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -23,6 +22,7 @@ import org.alfresco.integrations.AbstractIntegration;
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
 import org.alfresco.integrations.google.docs.GoogleDocsModel;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsTypeException;
 import org.alfresco.integrations.google.docs.exceptions.MustDowngradeFormatException;
@@ -316,7 +316,8 @@ public class GoogleDocsServiceImpl
 
 
     private Connection<GoogleDocs> getConnection()
-        throws GoogleDocsAuthenticationException
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException
     {
         Connection<GoogleDocs> connection = null;
 
@@ -331,15 +332,22 @@ public class GoogleDocsServiceImpl
             {
                 connection = connectionFactory.createConnection(accessGrant);
             }
-            catch (ApiException ae)
+            catch (ApiException apie)
             {
-                if (ae.getCause() instanceof ServiceException)
+                if (apie.getCause() instanceof ServiceException)
                 {
-                    ServiceException se = (ServiceException)ae.getCause();
+                    ServiceException se = (ServiceException)apie.getCause();
                     if (se.getHttpErrorCodeOverride() == HttpStatus.SC_UNAUTHORIZED)
                     {
-                        accessGrant = refreshAccessToken();
-                        connection = connectionFactory.createConnection(accessGrant);
+                        try
+                        {
+                            accessGrant = refreshAccessToken();
+                            connection = connectionFactory.createConnection(accessGrant);
+                        }
+                        catch (GoogleDocsRefreshTokenException gdrte)
+                        {
+                            throw gdrte;
+                        }
                     }
                 }
             }
@@ -394,6 +402,7 @@ public class GoogleDocsServiceImpl
 
 
     public boolean completeAuthentication(String access_token)
+        throws GoogleDocsServiceException
     {
         boolean authenticationComplete = false;
 
@@ -417,7 +426,7 @@ public class GoogleDocsServiceImpl
         }
         catch (NoSuchSystemException nsse)
         {
-            throw new GoogleDocsAuthenticationException(nsse.getMessage());
+            throw new GoogleDocsServiceException(nsse.getMessage());
         }
 
         return authenticationComplete;
@@ -425,6 +434,8 @@ public class GoogleDocsServiceImpl
 
 
     private AccessGrant refreshAccessToken()
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException
     {
         OAuth2CredentialsInfo credentialInfo = oauth2StoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
 
@@ -437,11 +448,11 @@ public class GoogleDocsServiceImpl
 
                 accessGrant = connectionFactory.getOAuthOperations().refreshAccess(credentialInfo.getOAuthRefreshToken(), null, null);
             }
-            catch (ApiException ae)
+            catch (ApiException apie)
             {
-                if (ae.getCause() instanceof ServiceException)
+                if (apie.getCause() instanceof ServiceException)
                 {
-                    ServiceException se = (ServiceException)ae.getCause();
+                    ServiceException se = (ServiceException)apie.getCause();
                     if (se.getHttpErrorCodeOverride() == HttpStatus.SC_UNAUTHORIZED)
                     {
                         throw new GoogleDocsAuthenticationException("Token Refresh Failed.");
@@ -467,7 +478,7 @@ public class GoogleDocsServiceImpl
                 }
                 catch (NoSuchSystemException nsse)
                 {
-                    throw new GoogleDocsAuthenticationException(nsse.getMessage());
+                    throw nsse;
                 }
             }
             else
@@ -480,7 +491,7 @@ public class GoogleDocsServiceImpl
         }
         else
         {
-            throw new GoogleDocsAuthenticationException("No Refresh Token Provided");
+            throw new GoogleDocsRefreshTokenException("No Refresh Token Provided");
         }
     }
 
@@ -493,9 +504,9 @@ public class GoogleDocsServiceImpl
         {
             docsService = connection.getApi().setAuthentication(new DocsService(GoogleDocsConstants.APPLICATION_NAME));
         }
-        catch (ApiException error)
+        catch (ApiException apie)
         {
-            // TODO Add logging
+            throw apie;
         }
 
         return docsService;
@@ -505,7 +516,10 @@ public class GoogleDocsServiceImpl
 
     private DocumentListEntry createContent(String type, String name)
         throws GoogleDocsServiceException,
-            GoogleDocsTypeException
+            GoogleDocsTypeException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
         DocsService docsService = getDocsService(getConnection());
 
@@ -545,17 +559,13 @@ public class GoogleDocsServiceImpl
             {
                 return docsService.insert(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA), entry);
             }
-            catch (MalformedURLException error)
+            catch (IOException ioe)
             {
-                throw new GoogleDocsServiceException(error.getMessage());
+                throw ioe;
             }
-            catch (IOException error)
+            catch (ServiceException se)
             {
-                throw new GoogleDocsServiceException(error.getMessage());
-            }
-            catch (ServiceException error)
-            {
-                throw new GoogleDocsServiceException(error.getMessage());
+                throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
             }
         }
         else
@@ -566,6 +576,11 @@ public class GoogleDocsServiceImpl
 
 
     public DocumentListEntry createDocument(NodeRef nodeRef)
+        throws GoogleDocsServiceException,
+            GoogleDocsTypeException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
         DocumentListEntry documentListEntry = createContent(GoogleDocsConstants.DOCUMENT_TYPE, fileFolderService.getFileInfo(nodeRef).getName());
 
@@ -578,9 +593,9 @@ public class GoogleDocsServiceImpl
             // Cloud Analytics Service
             Analytics.record_UploadDocument("application/msword", newDocument.contentLength(), false);
         }
-        catch (IOException io)
+        catch (IOException ioe)
         {
-            throw new GoogleDocsServiceException(io.getMessage());
+            throw ioe;
         }
 
         return documentListEntry;
@@ -588,6 +603,11 @@ public class GoogleDocsServiceImpl
 
 
     public DocumentListEntry createSpreadSheet(NodeRef nodeRef)
+        throws GoogleDocsServiceException,
+            GoogleDocsTypeException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
         DocumentListEntry documentListEntry = createContent(GoogleDocsConstants.SPREADSHEET_TYPE, fileFolderService.getFileInfo(nodeRef).getName());
 
@@ -600,9 +620,9 @@ public class GoogleDocsServiceImpl
             // Cloud Analtics Service
             Analytics.record_UploadDocument("application/vnd.ms-excel", newSpreadsheet.contentLength(), false);
         }
-        catch (IOException io)
+        catch (IOException ioe)
         {
-            throw new GoogleDocsServiceException(io.getMessage());
+            throw ioe;
         }
 
         return documentListEntry;
@@ -610,6 +630,11 @@ public class GoogleDocsServiceImpl
 
 
     public DocumentListEntry createPresentation(NodeRef nodeRef)
+        throws GoogleDocsServiceException,
+            GoogleDocsTypeException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
         DocumentListEntry documentListEntry = createContent(GoogleDocsConstants.PRESENTATION_TYPE, fileFolderService.getFileInfo(nodeRef).getName());
 
@@ -622,9 +647,9 @@ public class GoogleDocsServiceImpl
             // Cloud Analytics Service
             Analytics.record_UploadDocument("application/vnd.ms-powerpoint", newPresentation.contentLength(), false);
         }
-        catch (IOException io)
+        catch (IOException ioe)
         {
-            throw new GoogleDocsServiceException(io.getMessage());
+            throw ioe;
         }
 
         return documentListEntry;
@@ -632,6 +657,10 @@ public class GoogleDocsServiceImpl
 
 
     private void getDocument(NodeRef nodeRef, String resourceID)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
 
         DocsService docsService = getDocsService(getConnection());
@@ -667,18 +696,22 @@ public class GoogleDocsServiceImpl
             }
 
         }
-        catch (IOException error)
+        catch (IOException ioe)
         {
-            throw new GoogleDocsServiceException(error.getMessage());
+            throw ioe;
         }
-        catch (ServiceException error)
+        catch (ServiceException se)
         {
-            throw new GoogleDocsServiceException(error.getMessage());
+            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
         }
     }
 
 
     public void getDocument(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
         // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
@@ -688,6 +721,10 @@ public class GoogleDocsServiceImpl
 
 
     private void getSpreadSheet(NodeRef nodeRef, String resourceID)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
 
         DocsService docsService = getDocsService(getConnection());
@@ -723,18 +760,22 @@ public class GoogleDocsServiceImpl
             deleteContent(nodeRef, documentListEntry);
 
         }
-        catch (IOException error)
+        catch (IOException ioe)
         {
-            throw new GoogleDocsServiceException(error.getMessage());
+            throw ioe;
         }
-        catch (ServiceException error)
+        catch (ServiceException se)
         {
-            throw new GoogleDocsServiceException(error.getMessage());
+            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
         }
     }
 
 
     public void getSpreadSheet(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
         // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
@@ -744,6 +785,10 @@ public class GoogleDocsServiceImpl
 
 
     private void getPresentation(NodeRef nodeRef, String resourceID)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
 
         DocsService docsService = getDocsService(getConnection());
@@ -779,18 +824,22 @@ public class GoogleDocsServiceImpl
             }
 
         }
-        catch (IOException error)
+        catch (IOException ioe)
         {
-            throw new GoogleDocsServiceException(error.getMessage());
+            throw ioe;
         }
-        catch (ServiceException error)
+        catch (ServiceException se)
         {
-            throw new GoogleDocsServiceException(error.getMessage());
+            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
         }
     }
 
 
     public void getPresentation(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
         // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
@@ -800,6 +849,10 @@ public class GoogleDocsServiceImpl
 
 
     public DocumentListEntry uploadFile(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
         DocsService docsService = getDocsService(getConnection());
 
@@ -848,13 +901,13 @@ public class GoogleDocsServiceImpl
             Analytics.record_UploadDocument(fileInfo.getContentData().getMimetype(), fileInfo.getContentData().getSize(), true);
 
         }
-        catch (IOException io)
+        catch (IOException ioe)
         {
-            throw new GoogleDocsServiceException(io.getMessage());
+            throw ioe;
         }
         catch (ServiceException se)
         {
-            throw new GoogleDocsServiceException(se.getHttpErrorCodeOverride() + ": " + se.getMessage());
+            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
         }
         finally
         {
@@ -872,8 +925,15 @@ public class GoogleDocsServiceImpl
      * @param nodeRef
      * @param documentListEntry Must be the most current DocumentListEntry
      * @return
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsServiceException
+     * @throws IOException
      */
     private boolean deleteContent(NodeRef nodeRef, DocumentListEntry documentListEntry)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
         boolean deleted = false;
 
@@ -888,17 +948,13 @@ public class GoogleDocsServiceImpl
 
             unDecorateNode(nodeRef);
         }
-        catch (MalformedURLException error)
+        catch (IOException ioe)
         {
-            throw new GoogleDocsServiceException(error.getMessage());
+            throw ioe;
         }
-        catch (IOException error)
+        catch (ServiceException se)
         {
-            throw new GoogleDocsServiceException(error.getMessage());
-        }
-        catch (ServiceException error)
-        {
-            throw new GoogleDocsServiceException(error.getHttpErrorCodeOverride() + ": " + error.getMessage());
+            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
         }
 
         return deleted;
@@ -1157,6 +1213,9 @@ public class GoogleDocsServiceImpl
 
 
     public boolean hasConcurrentEditors(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
         DocsService docsService = getDocsService(getConnection());
 
@@ -1254,13 +1313,13 @@ public class GoogleDocsServiceImpl
             }
 
         }
-        catch (IOException error)
+        catch (IOException ioe)
         {
-            new GoogleDocsServiceException(error.getMessage());
+            throw ioe;
         }
-        catch (ServiceException error)
+        catch (ServiceException se)
         {
-            new GoogleDocsServiceException(error.getMessage());
+            new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
         }
 
         return concurrentChange;
@@ -1269,7 +1328,9 @@ public class GoogleDocsServiceImpl
 
     private DocumentListEntry getDocumentListEntry(String resourceID)
         throws IOException,
-            ServiceException
+            ServiceException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException
     {
         DocsService docsService = getDocsService(getConnection());
 
@@ -1280,6 +1341,9 @@ public class GoogleDocsServiceImpl
 
 
     public MetadataEntry getUserMetadata()
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            IOException
     {
         DocsService docsService = getDocsService(getConnection());
 
@@ -1289,13 +1353,13 @@ public class GoogleDocsServiceImpl
         {
             metadataEntry = docsService.getEntry(new URL(GoogleDocsConstants.METADATA_URL), MetadataEntry.class);
         }
-        catch (IOException error)
+        catch (IOException ioe)
         {
-            new GoogleDocsServiceException(error.getMessage());
+            throw ioe;
         }
-        catch (ServiceException error)
+        catch (ServiceException se)
         {
-            new GoogleDocsServiceException(error.getMessage());
+            new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
         }
 
         return metadataEntry;

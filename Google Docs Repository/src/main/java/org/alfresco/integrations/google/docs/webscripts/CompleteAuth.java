@@ -5,10 +5,13 @@ package org.alfresco.integrations.google.docs.webscripts;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
+import org.apache.commons.httpclient.HttpStatus;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
+import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 
 
@@ -40,7 +43,14 @@ public class CompleteAuth
 
         if (req.getParameter(PARAM_ACCESS_TOKEN) != null)
         {
-            authenticated = googledocsService.completeAuthentication(req.getParameter(PARAM_ACCESS_TOKEN));
+            try
+            {
+                authenticated = googledocsService.completeAuthentication(req.getParameter(PARAM_ACCESS_TOKEN));
+            }
+            catch (GoogleDocsServiceException gdse)
+            {
+                throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, gdse.getMessage());
+            }
         }
 
         model.put(MODEL_AUTHENTICATED, authenticated);

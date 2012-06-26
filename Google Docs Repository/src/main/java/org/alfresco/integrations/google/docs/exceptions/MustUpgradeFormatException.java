@@ -3,7 +3,7 @@ package org.alfresco.integrations.google.docs.exceptions;
 
 
 public class MustUpgradeFormatException
-    extends RuntimeException
+    extends Exception
 {
 
     /**
