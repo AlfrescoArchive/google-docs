@@ -81,18 +81,31 @@
        */
       onReady: function GDT_onReady()
       {
-         YAHOO.util.Event.addListener(this.id + "-googledocs-back-button", "click", this.back);
-         YAHOO.util.Event.addListener(this.id + "-googledocs-discard-button", "click", this.discard, this, true);
-         YAHOO.util.Event.addListener(this.id + "-googledocs-save-button", "click", this.save, this, true);
+         YAHOO.util.Event.addListener(this.id + "-googledocs-back-button", "click", this.onReturnClick);
+         YAHOO.util.Event.addListener(this.id + "-googledocs-discard-button", "click", this.onDiscardClick, this, true);
+         YAHOO.util.Event.addListener(this.id + "-googledocs-save-button", "click", this.onSaveClick, this, true);
       },
       
-      back: function GDT_back(e)
+      /**
+       * Return to the previous page. The current content is not saved back and will remain in Google Docs.
+       * 
+       * @method onReturnClick
+       * @param e {object} Click event object
+       */
+      onReturnClick: function GDT_onReturnClick(e)
       {
          YAHOO.util.Event.preventDefault(e);
          window.history.back();
       },
-      
-      discard: function GDT_discard(e)
+
+      /**
+       * Discard the current content item. It will be removed from Google docs and the user will be returned
+       * to the content item in Share.
+       * 
+       * @method onDiscardClick
+       * @param e {object} Click event object
+       */
+      onDiscardClick: function GDT_onDiscardClick(e)
       {
          //YAHOO.util.Event.preventDefault(e);
          
@@ -119,89 +132,62 @@
             }]
          });
       },
-      
-      saveVersion: function GDT_saveVersion()
+
+      /**
+       * Save the current content in Google Docs back the repository and return the user to the content
+       * item in Share
+       * 
+       * @method onSaveClick
+       * @param e {object} Click event object
+       */
+      onSaveClick: function GDT_onSaveClick(e)
       {
-         var actionUrl = Alfresco.constants.PROXY_URI + "googledocs/saveContent";
-         
-         //Event.stopEvent(e);
-         
-         if (!this.configDialog)
-         {
-            this.configDialog = new Alfresco.module.SimpleDialog(this.id + "-configDialog").setOptions(
-            {
-               width: "30em",
-               templateUrl: Alfresco.constants.URL_SERVICECONTEXT + "modules/googledocs/create-new-version", actionUrl: actionUrl,
-               onSuccess:
-               {
-                  fn: function GDT_onConfigFeed_callback(response)
-                  {
-                     // Forward the user to the document details page
-                     window.location = window.location.href.replace('googledocsEditor', 'document-details');
-                  },
-                  scope: this
-               },
-               doSetupFormsValidation:
-               {
-                  fn: function GDT_doSetupForm_callback(form)
-                  {
-                     // Set the nodeRef form field value from the local setting
-                     Dom.get(this.configDialog.id + "-nodeRef").value = this.options.nodeRef;
-                  },
-                  scope: this
-               }
-            });
-         }
-         else
-         {
-            this.configDialog.setOptions(
-            {
-               actionUrl: actionUrl
-            })
-         }
-         this.configDialog.show();
-      },
-      
-      save: function GDT_save(e)
-      {
-         //YAHOO.util.Event.preventDefault(e);
-         
          var loadingMessage = null, timerShowLoadingMessage = null, loadingMessageShowing = false, me = this;
          
-         var fnShowLoadingMessage = function Googledocs_fnShowLoadingMessage() {
+         var fnShowLoadingMessage = function GDT_fnShowLoadingMessage()
+         {
             // Check the timer still exists. This is to prevent IE firing the
             // event after we cancelled it. Which is "useful".
-            if (timerShowLoadingMessage) {
+            if (timerShowLoadingMessage)
+            {
                loadingMessage = Alfresco.util.PopupManager.displayMessage( {
-                        displayTime : 0,
-                        text : '<span class="wait">' + Alfresco.util.encodeHTML(Alfresco.util.message("googledocs.actions.saving")) + '</span>',
-                        noEscape : true
-                     });
+                  displayTime : 0,
+                  text : '<span class="wait">' + Alfresco.util.encodeHTML(Alfresco.util.message("googledocs.actions.saving")) + '</span>',
+                  noEscape : true
+               });
 
-               if (YAHOO.env.ua.ie > 0) {
+               if (YAHOO.env.ua.ie > 0)
+               {
                   this.loadingMessageShowing = true;
-               } else {
-                  loadingMessage.showEvent.subscribe(
-                              function() {
-                                 this.loadingMessageShowing = true;
-                              }, this, true);
+               }
+               else
+               {
+                  loadingMessage.showEvent.subscribe(function() {
+                        this.loadingMessageShowing = true;
+                     }, this, true);
                }
             }
          };
          
-         var destroyLoaderMessage = function Googledocs_destroyLoaderMessage() {
-            if (timerShowLoadingMessage) {
+         var destroyLoaderMessage = function GDT_destroyLoaderMessage()
+         {
+            if (timerShowLoadingMessage)
+            {
                // Stop the "slow loading" timed function
                timerShowLoadingMessage.cancel();
                timerShowLoadingMessage = null;
             }
 
-            if (loadingMessage) {
-               if (loadingMessageShowing) {
+            if (loadingMessage)
+            {
+               if (loadingMessageShowing)
+               {
                   // Safe to destroy
                   loadingMessage.destroy();
                   loadingMessage = null;
-               } else {
+               }
+               else
+               {
                   // Wait and try again later. Scope doesn't get set correctly
                   // with "this"
                   YAHOO.lang.later(100, me, destroyLoaderMessage);
@@ -209,76 +195,88 @@
             }
          };
          
-         //See http://stackoverflow.com/a/979995
-         var QueryString = function () {
-            // This function is anonymous, is executed immediately and 
-            // the return value is assigned to QueryString!
-            var query_string = {};
-            var query = window.location.search.substring(1);
-            var vars = query.split("&");
-            for (var i=0;i<vars.length;i++) {
-              var pair = vars[i].split("=");
-                  // If first entry with this name
-              if (typeof query_string[pair[0]] === "undefined") {
-                query_string[pair[0]] = pair[1];
-                  // If second entry with this name
-              } else if (typeof query_string[pair[0]] === "string") {
-                var arr = [ query_string[pair[0]], pair[1] ];
-                query_string[pair[0]] = arr;
-                  // If third or later entry with this name
-              } else {
-                query_string[pair[0]].push(pair[1]);
-              }
-            } 
-              return query_string;
-          } ();
-         
-         var success = {
-               fn : function(response){
-                  
-                  loadingMessageShowing = true;
-                  destroyLoaderMessage();
-                  
-                  window.history.back();
-                  
-               },
-               scope : this
+         var success =
+         {
+            fn: function GDT_saveSuccess(response) {
+               loadingMessageShowing = true;
+               destroyLoaderMessage();
+               window.history.back();
+
+               // TODO WA Better to set window.location? window.history.back() seems to used cached page
+               //window.location = window.location.href.replace('googledocsEditor', 'document-details');
+            },
+            scope : this
          };
          
-         var failure = {
-               fn : function(response) {
+         var failure =
+         {
+            fn: function GDT_saveFailure(response) {
 
-                  destroyLoaderMessage();
-                  Alfresco.util.PopupManager.displayMessage( {
-                           text : Alfresco.util.message("googledocs.actions.saving.failure")
-                        });
-
-               },
-               scope : this
+               destroyLoaderMessage();
+               Alfresco.util.PopupManager.displayMessage({
+                  text : Alfresco.util.message("googledocs.actions.saving.failure")
+               });
+            },
+            scope : this
          };
+         
+         var actionUrl = Alfresco.constants.PROXY_URI + "googledocs/saveContent";
+
+         destroyLoaderMessage();
          
          if (this.options.isVersioned)
          {
-            this.saveVersion();
+            if (!this.configDialog)
+            {
+               this.configDialog = new Alfresco.module.SimpleDialog(this.id + "-configDialog").setOptions(
+               {
+                  width: "30em",
+                  templateUrl: Alfresco.constants.URL_SERVICECONTEXT + "modules/googledocs/create-new-version",
+                  actionUrl: actionUrl,
+                  onSuccess: success,
+                  onFailure: failure,
+                  doSetupFormsValidation:
+                  {
+                     fn: function GDT_doSetupForm_callback(form)
+                     {
+                        // Set the nodeRef form field value from the local setting
+                        Dom.get(this.configDialog.id + "-nodeRef").value = this.options.nodeRef;
+                     },
+                     scope: this
+                  },
+                  doBeforeFormSubmit:
+                  {
+                     fn: function GDT_doBeforeVersionFormSubmit()
+                     {
+                        this.configDialog.widgets.okButton.set("disabled", true);
+                        this.configDialog.widgets.cancelButton.set("disabled", true);
+                        timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage);
+                     },
+                     scope: this
+                  }
+               });
+            }
+            else
+            {
+               this.configDialog.setOptions(
+               {
+                  actionUrl: actionUrl
+               });
+            }
+            this.configDialog.show();
          }
          else
          {
-            destroyLoaderMessage();
             timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage);
-            
-            Alfresco.util.Ajax.jsonGet( {
-               url : Alfresco.constants.PROXY_URI + 'googledocs/saveContent?nodeRef='+QueryString.nodeRef,
-               dataObj : {},
-               successCallback : success,
-               failureCallback : failure
+            Alfresco.util.Ajax.jsonPost({
+               url: actionUrl,
+               dataObj: {
+                  nodeRef: this.options.nodeRef
+               },
+               successCallback: success,
+               failureCallback: failure
             });
          }
-      },
-      
-      back: function GDT_back(e)
-      {
-         YAHOO.util.Event.preventDefault(e);
-         window.history.back();
       }
       
    });
