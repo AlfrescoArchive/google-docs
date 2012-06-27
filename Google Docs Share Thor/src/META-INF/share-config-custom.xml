@@ -1,7 +1,7 @@
 <alfresco-config>
 	<config evaluator="string-compare" condition="DocLibCustom">
 	   <dependencies>
-	      <js src="/googledocs/components/documentlibrary/actions-min.js" />
+	      <js src="/googledocs/components/documentlibrary/actions.js" />
 	   </dependencies>
 	</config>
 	
