@@ -206,6 +206,96 @@
       }
    }),
    
+   YAHOO.Bubbling.fire("registerAction", {
+      actionName : "onGoogledocsActionResume",
+      fn : function dlA_onGoogledocsActionResume(record) {
+
+         var loadingMessage = null, timerShowLoadingMessage = null, loadingMessageShowing = false, me = this;
+         
+         var fnShowLoadingMessage = function Googledocs_fnShowLoadingMessage() {
+            // Check the timer still exists. This is to prevent IE firing the
+            // event after we cancelled it. Which is "useful".
+            if (timerShowLoadingMessage) {
+               loadingMessage = Alfresco.util.PopupManager.displayMessage( {
+                        displayTime : 0,
+                        text : '<span class="wait">' + $html(this.msg("googledocs.actions.resume")) + '</span>',
+                        noEscape : true
+                     });
+
+               if (YAHOO.env.ua.ie > 0) {
+                  this.loadingMessageShowing = true;
+               } else {
+                  loadingMessage.showEvent.subscribe(
+                              function() {
+                                 this.loadingMessageShowing = true;
+                              }, this, true);
+               }
+            }
+         };
+         
+         var destroyLoaderMessage = function Googledocs_destroyLoaderMessage() {
+            if (timerShowLoadingMessage) {
+               // Stop the "slow loading" timed function
+               timerShowLoadingMessage.cancel();
+               timerShowLoadingMessage = null;
+            }
+
+            if (loadingMessage) {
+               if (loadingMessageShowing) {
+                  // Safe to destroy
+                  loadingMessage.destroy();
+                  loadingMessage = null;
+               } else {
+                  // Wait and try again later. Scope doesn't get set correctly
+                  // with "this"
+                  YAHOO.lang.later(100, me, destroyLoaderMessage);
+               }
+            }
+         };
+         
+         destroyLoaderMessage();
+         timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage);       
+         
+         var success = {
+               fn : function(response){
+                  if (!response.json.authenticated){
+
+                     loadingMessageShowing = true;
+                     destroyLoaderMessage();
+                     
+                     // basic and ugly
+                    window.showModalDialog(response.json.authURL);   
+                  }
+                  
+                  window.location = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT+"site/"+Alfresco.constants.SITE + "/googledocsEditor?nodeRef=" + record.nodeRef; 
+                  
+               },
+               scope : this
+         };
+         
+         var failure = {
+               fn : function(response) {
+
+                  destroyLoaderMessage();
+                  Alfresco.util.PopupManager.displayMessage( {
+                           text : this.msg("googledocs.actions.authentication.failure")
+                        });
+
+               },
+               scope : this
+         };
+         
+         Alfresco.util.Ajax.jsonGet( {
+            url : Alfresco.constants.PROXY_URI + 'googledocs/authurl?state='+Alfresco.constants.PROXY_URI,
+            dataObj : {},
+            successCallback : success,
+            failureCallback : failure
+         });
+         
+         
+      }
+   }),   
+   
    //Start Create Content Actions
    
    YAHOO.Bubbling.fire("registerAction", {
