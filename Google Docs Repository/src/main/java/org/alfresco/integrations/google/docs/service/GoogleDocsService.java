@@ -216,6 +216,39 @@ public interface GoogleDocsService
 
 
     /**
+     * @param resourceID
+     * @return
+     * @throws IOException
+     * @throws ServiceException
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     */
+    @Auditable(parameters = { "resourceId" })
+    public DocumentListEntry getDocumentListEntry(String resourceID)
+        throws IOException,
+            GoogleDocsServiceException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException;
+
+
+    /**
+     * @param nodeRef
+     * @param documentListEntry
+     * @return
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsServiceException
+     * @throws GoogleDocsRefreshTokenException
+     * @throws IOException
+     */
+    @Auditable(parameters = { "nodeRef", "documentListEntry" })
+    public boolean deleteContent(NodeRef nodeRef, DocumentListEntry documentListEntry)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException;
+
+
+    /**
      * Google Doc has Concurrent Editors
      * 
      * @param nodeRef

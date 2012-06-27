@@ -921,15 +921,7 @@ public class GoogleDocsServiceImpl
     }
 
 
-    /**
-     * @param nodeRef
-     * @param documentListEntry Must be the most current DocumentListEntry
-     * @return
-     * @throws GoogleDocsAuthenticationException
-     * @throws GoogleDocsServiceException
-     * @throws IOException
-     */
-    private boolean deleteContent(NodeRef nodeRef, DocumentListEntry documentListEntry)
+    public boolean deleteContent(NodeRef nodeRef, DocumentListEntry documentListEntry)
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
@@ -947,6 +939,7 @@ public class GoogleDocsServiceImpl
                                        + "?delete=true"), documentListEntry.getEtag());
 
             unDecorateNode(nodeRef);
+            deleted = true;
         }
         catch (IOException ioe)
         {
@@ -1326,17 +1319,30 @@ public class GoogleDocsServiceImpl
     }
 
 
-    private DocumentListEntry getDocumentListEntry(String resourceID)
+    public DocumentListEntry getDocumentListEntry(String resourceID)
         throws IOException,
-            ServiceException,
+            GoogleDocsServiceException,
             GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException
     {
         DocsService docsService = getDocsService(getConnection());
 
-        return docsService.getEntry(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA + "/"
-                                            + resourceID.substring(resourceID.lastIndexOf(':') + 1)), DocumentListEntry.class);
+        DocumentListEntry documentListEntry = null;
 
+        try
+        {
+            documentListEntry = docsService.getEntry(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA + "/"
+                                                             + resourceID.substring(resourceID.lastIndexOf(':') + 1)), DocumentListEntry.class);
+        }
+        catch (IOException ioe)
+        {
+            throw ioe;
+        }
+        catch (ServiceException se)
+        {
+            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
+        }
+        return documentListEntry;
     }
 
 

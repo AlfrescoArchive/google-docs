@@ -77,6 +77,8 @@
             org.alfresco.integrations.google.docs.service.GoogleDocsService.unlockNode=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.isGoogleDocsLockOwner=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.isLockedByGoogleDocs=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getDocumentListEntry=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.deleteContent=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.*=ACL_DENY
          </value>
       </property>
@@ -94,6 +96,7 @@
             <value>hasConcurrentEditors</value>
             <value>isGoogleDocsLockOwner</value>
             <value>isLockedByGoogleDocs</value>
+            <value>getDocumentListEntry</value>
          </list>
       </property>
    </bean>
@@ -115,6 +118,7 @@
             <value>uploadFile</value>
             <value>lockNode</value>
             <value>unlockNode</value>
+            <value>deleteContent</value>
          </list>
       </property>
    </bean>
@@ -374,6 +378,15 @@
    <bean id="webscript.org.alfresco.integrations.google.docs.HasConcurrentEditors.get" class="org.alfresco.integrations.google.docs.webscripts.HasConcurrentEditors">
       <property name="googledocsService">
          <ref bean="googledocsService"/>
+      </property>
+   </bean>
+   
+   <bean id="webscript.org.alfresco.integrations.google.docs.DiscardContent.post" class="org.alfresco.integrations.google.docs.webscripts.DiscardContent">
+      <property name="googledocsService">
+         <ref bean="googledocsService"/>
+      </property>
+      <property name="nodeService">
+         <ref bean="nodeService"/>
       </property>
    </bean>
 
