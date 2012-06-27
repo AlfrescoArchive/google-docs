@@ -115,7 +115,7 @@
                         handler: function continueToEdit()
                         {
                            this.destroy();
-                           editDocument();
+                           editDocument.call(this);
                         }
                      },
                      {
@@ -138,9 +138,9 @@
             var success = {
                   fn : function(response){
                      if (response.json.export_action != "default"){
-                        conversionWarning(response.json.export_action);
+                        conversionWarning.call(this, response.json.export_action);
                      } else {
-                        editDocument();
+                        editDocument.call(this);
                      }
                   },
                   scope : this
@@ -177,7 +177,7 @@
                     window.showModalDialog(response.json.authURL);   
                   }
                   
-                  checkConversion();
+                  checkConversion.call(this);
                   
                },
                scope : this
@@ -393,7 +393,8 @@
                     window.showModalDialog(response.json.authURL);   
                   }
                   
-                  createDocument();
+                  // Scope is not correct in FF unless we explicitly provide this
+                  createDocument.call(this);
                   
                },
                scope : this
@@ -516,7 +517,7 @@
                     window.showModalDialog(response.json.authURL);   
                   }
                   
-                  createSpreadsheet();
+                  createSpreadsheet.call(this);
                   
                },
                scope : this
@@ -637,7 +638,7 @@
                     window.showModalDialog(response.json.authURL);   
                   }
                   
-                  createPresentation();
+                  createPresentation.call(this);
                   
                },
                scope : this
