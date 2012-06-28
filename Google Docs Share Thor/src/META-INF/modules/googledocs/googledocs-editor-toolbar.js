@@ -95,7 +95,12 @@
       onReturnClick: function GDT_onReturnClick(e)
       {
          YAHOO.util.Event.preventDefault(e);
-         window.history.back();
+         /*
+          * Send the user back to the last page - this could be either the document list or document details page
+          * 
+          * We could use window.history.back(), but that does not trigger the document actions and metadata to be reloaded
+          */
+         window.location = document.referrer;
       },
 
       /**
@@ -200,10 +205,7 @@
             fn: function GDT_saveSuccess(response) {
                loadingMessageShowing = true;
                destroyLoaderMessage();
-               window.history.back();
-
-               // TODO WA Better to set window.location? window.history.back() seems to used cached page
-               //window.location = window.location.href.replace('googledocsEditor', 'document-details');
+               window.location = document.referrer;
             },
             scope : this
          };
