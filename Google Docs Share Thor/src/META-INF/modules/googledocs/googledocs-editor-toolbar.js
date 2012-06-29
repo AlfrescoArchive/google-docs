@@ -112,20 +112,148 @@
        */
       onDiscardClick: function GDT_onDiscardClick(e)
       {
-         //YAHOO.util.Event.preventDefault(e);
+         YAHOO.util.Event.preventDefault(e);         
+        var loadingMessage = null, timerShowLoadingMessage = null, loadingMessageShowing = false, me = this;
+         
+         var fnShowLoadingMessage = function GDT_fnShowLoadingMessage()
+         {
+            // Check the timer still exists. This is to prevent IE firing the
+            // event after we cancelled it. Which is "useful".
+            if (timerShowLoadingMessage)
+            {
+               loadingMessage = Alfresco.util.PopupManager.displayMessage( {
+                  displayTime : 0,
+                  text : '<span class="wait">' + Alfresco.util.encodeHTML(me.msg("googledocs.actions.discard")) + '</span>',
+                  noEscape : true
+               });
+
+               if (YAHOO.env.ua.ie > 0)
+               {
+                  this.loadingMessageShowing = true;
+               }
+               else
+               {
+                  loadingMessage.showEvent.subscribe(function() {
+                        this.loadingMessageShowing = true;
+                     }, this, true);
+               }
+            }
+         };
+         
+         var destroyLoaderMessage = function GDT_destroyLoaderMessage()
+         {
+            if (timerShowLoadingMessage)
+            {
+               // Stop the "slow loading" timed function
+               timerShowLoadingMessage.cancel();
+               timerShowLoadingMessage = null;
+            }
+
+            if (loadingMessage)
+            {
+               if (loadingMessageShowing)
+               {
+                  // Safe to destroy
+                  loadingMessage.destroy();
+                  loadingMessage = null;
+               }
+               else
+               {
+                  // Wait and try again later. Scope doesn't get set correctly
+                  // with "this"
+                  YAHOO.lang.later(100, me, destroyLoaderMessage);
+               }
+            }
+         };
+
+         var discardContent = function GDT_discardContent()
+         {
+            this.destroy();
+            
+            var success =
+            {
+               fn: function GDT_discardSuccess(response) {
+                  destroyLoaderMessage();
+                  window.location = document.referrer;
+               },
+               scope : this
+            };
+            
+            var failure = 
+            {
+               fn: function GDT_discardSuccess(response) {
+                  if (response.serverResponse.status == 409)
+                  {   
+                     destroyLoaderMessage();
+                     Alfresco.util.PopupManager.displayPrompt(
+                           {
+                              title: me.msg("googledocs.concurrentEditors.title"),
+                              text: me.msg("googledocs.concurrentEditors.text"),
+                              noEscape: true,
+                              buttons: [
+                              {
+                                 text: me.msg("button.ok"),
+                                 handler: function submitDiscard()
+                                 {
+                                    this.destroy();
+                                    timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage);
+                                    
+                                    Alfresco.util.Ajax.jsonPost({
+                                       url: actionUrl,
+                                       dataObj: {
+                                          nodeRef: me.options.nodeRef,
+                                          override: true
+                                       },
+                                       successCallback: success,
+                                       failureCallback: failure
+                                    });
+                                 }
+                              },
+                              {
+                                 text: me.msg("button.cancel"),
+                                 handler: function cancelDiscard()
+                                 {
+                                    this.destroy();
+                                 },
+                                 isDefault: true 
+                              }]  
+                           });
+                  }
+                  else
+                  {
+                     destroyLoaderMessage();
+                     Alfresco.util.PopupManager.displayMessage({
+                        text : me.msg("googledocs.actions.discard.failure")
+                     });
+                  }
+               },
+               scope : this
+            };
+            
+            destroyLoaderMessage();
+            
+            var actionUrl = Alfresco.constants.PROXY_URI + "googledocs/discardContent";
+            timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage);
+
+            Alfresco.util.Ajax.jsonPost({
+               url: actionUrl,
+               dataObj: {
+                  nodeRef: me.options.nodeRef
+               },
+               successCallback: success,
+               failureCallback: failure
+            });
+         };
          
          Alfresco.util.PopupManager.displayPrompt(
          {
-            title: this.msg("title.discard"),
-            text: this.msg("warning.discard"),
+            title: this.msg("googledocs.actions.discard.warning.title"),
+            text: this.msg("googledocs.actions.discard.warning.text"),
             noEscape: false,
             buttons: [
             {
                text: this.msg("button.ok"),
-               handler: function discardChanges()
-               {
-                  this.destroy();
-               }
+               handler: discardContent   
             },
             {
                text: this.msg("button.cancel"),

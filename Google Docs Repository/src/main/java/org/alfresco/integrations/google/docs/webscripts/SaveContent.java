@@ -42,6 +42,7 @@ public class SaveContent
     private static final String JSON_KEY_NODEREF      = "nodeRef";
     private static final String JSON_KEY_MAJORVERSION = "majorVersion";
     private static final String JSON_KEY_DESCRIPTION  = "description";
+    private static final String JSON_KEY_OVERRIDE     = "override";
 
     private static final String MODEL_SUCCESS         = "success";
 
@@ -74,9 +75,17 @@ public class SaveContent
         Map<String, Serializable> map = parseContent(req);
         NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
 
-        String contentType = googledocsService.getContentType(nodeRef);
         try
         {
+            if (!(Boolean)map.get(JSON_KEY_OVERRIDE))
+            {
+                if (googledocsService.hasConcurrentEditors(nodeRef))
+                {
+                    throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString() + " has concurrent editors.");
+                }
+            }
+
+            String contentType = googledocsService.getContentType(nodeRef);
             if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
             {
                 if (googledocsService.isGoogleDocsLockOwner(nodeRef))
@@ -96,7 +105,8 @@ public class SaveContent
                 {
                     googledocsService.unlockNode(nodeRef);
                     googledocsService.getSpreadSheet(nodeRef);
-                    success = true; // TODO Make getSpreadsheet return boolean
+                    success = true; // TODO Make getSpreadsheet return
+                                    // boolean
                 }
                 else
                 {
@@ -109,7 +119,8 @@ public class SaveContent
                 {
                     googledocsService.unlockNode(nodeRef);
                     googledocsService.getPresentation(nodeRef);
-                    success = true; // TODO Make getPresentation return boolean
+                    success = true; // TODO Make getPresentation return
+                                    // boolean
                 }
                 else
                 {
@@ -200,6 +211,15 @@ public class SaveContent
             {
                 NodeRef nodeRef = new NodeRef(json.getString(JSON_KEY_NODEREF));
                 result.put(JSON_KEY_NODEREF, nodeRef);
+
+                if (json.has(JSON_KEY_OVERRIDE))
+                {
+                    result.put(JSON_KEY_OVERRIDE, json.getBoolean(JSON_KEY_OVERRIDE));
+                }
+                else
+                {
+                    result.put(JSON_KEY_OVERRIDE, false);
+                }
 
                 if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_VERSIONABLE))
                 {

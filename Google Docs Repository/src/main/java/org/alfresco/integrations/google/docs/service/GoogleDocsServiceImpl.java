@@ -981,24 +981,48 @@ public class GoogleDocsServiceImpl
 
     private void unDecorateNode(NodeRef nodeRef)
     {
-        if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS))
+        behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
+        try
         {
-            nodeService.removeAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS);
+            if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS))
+            {
+                nodeService.removeAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS);
+            }
+        }
+        finally
+        {
+            behaviourFilter.enableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
         }
     }
 
 
     public void lockNode(NodeRef nodeRef)
     {
-        nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_LOCKED, true);
-        lockservice.lock(nodeRef, LockType.READ_ONLY_LOCK);
+        behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
+        try
+        {
+            nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_LOCKED, true);
+            lockservice.lock(nodeRef, LockType.READ_ONLY_LOCK);
+        }
+        finally
+        {
+            behaviourFilter.enableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
+        }
     }
 
 
     public void unlockNode(NodeRef nodeRef)
     {
-        lockservice.unlock(nodeRef);
-        nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_LOCKED, false);
+        behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
+        try
+        {
+            lockservice.unlock(nodeRef);
+            nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_LOCKED, false);
+        }
+        finally
+        {
+            behaviourFilter.enableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
+        }
     }
 
 

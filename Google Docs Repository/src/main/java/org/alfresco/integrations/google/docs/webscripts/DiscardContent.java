@@ -35,9 +35,10 @@ public class DiscardContent
     private GoogleDocsService   googledocsService;
     private NodeService         nodeService;
 
-    private static final String JSON_KEY_NODEREF = "nodeRef";
+    private static final String JSON_KEY_NODEREF  = "nodeRef";
+    private static final String JSON_KEY_OVERRIDE = "override";
 
-    private static final String MODEL_SUCCESS    = "success";
+    private static final String MODEL_SUCCESS     = "success";
 
 
     public void setGoogledocsService(GoogleDocsService googledocsService)
@@ -57,8 +58,8 @@ public class DiscardContent
     {
         Map<String, Object> model = new HashMap<String, Object>();
 
-        Map<String, Serializable> nodeRefs = parseContent(req);
-        NodeRef nodeRef = (NodeRef)nodeRefs.get(JSON_KEY_NODEREF);
+        Map<String, Serializable> map = parseContent(req);
+        NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
 
         if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS))
         {
@@ -66,7 +67,16 @@ public class DiscardContent
             try
             {
                 boolean deleted = false;
-                
+
+                if (!Boolean.valueOf(map.get(JSON_KEY_OVERRIDE).toString()))
+                {
+                    if (googledocsService.hasConcurrentEditors(nodeRef))
+                    {
+                        throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString()
+                                                                             + " has concurrent editors.");
+                    }
+                }
+
                 documentListEntry = googledocsService.getDocumentListEntry(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString());
                 googledocsService.unlockNode(nodeRef);
                 deleted = googledocsService.deleteContent(nodeRef, documentListEntry);
@@ -82,7 +92,7 @@ public class DiscardContent
                 {
                     throw new WebScriptException(HttpStatus.SC_METHOD_FAILURE, "Unable to Delete Document from Google Docs.");
                 }
-                
+
                 model.put(MODEL_SUCCESS, deleted);
 
             }
@@ -113,8 +123,6 @@ public class DiscardContent
                     throw new WebScriptException(gdse.getMessage());
                 }
             }
-
-
         }
         else
         {
@@ -157,6 +165,15 @@ public class DiscardContent
             {
                 NodeRef nodeRef = new NodeRef(json.getString(JSON_KEY_NODEREF));
                 result.put(JSON_KEY_NODEREF, nodeRef);
+
+                if (json.has(JSON_KEY_OVERRIDE))
+                {
+                    result.put(JSON_KEY_OVERRIDE, json.getBoolean(JSON_KEY_OVERRIDE));
+                }
+                else
+                {
+                    result.put(JSON_KEY_OVERRIDE, false);
+                }
             }
         }
         catch (final IOException ioe)
