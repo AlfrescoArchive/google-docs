@@ -52,7 +52,9 @@
    </property>
    <property name="mappedNames">
       <list>
-         <value>getOAuth2Credentials</value>
+         <value>getPersonalOAuth2Credentials</value>
+         <value>listSharedOAuth2Credentials</value>
+         <value>updateCredentialsAuthenticationSucceeded</value>
       </list>
    </property>
 </bean>
@@ -63,8 +65,11 @@
    </property>
    <property name="mappedNames">
       <list>
-         <value>storeOAuth2Credentials</value>
-         <value>deleteOAuth2Credentials</value>
+         <value>storePersonalOAuth2Credentials</value>
+         <value>storeSharedOAuth2Credentials</value>
+         <value>updateSharedOAuth2Credentials</value>
+         <value>deletePersonalOAuth2Credentials</value>
+         <value>deleteSharedOAuth2Credentials</value>
       </list>
    </property>
 </bean>
