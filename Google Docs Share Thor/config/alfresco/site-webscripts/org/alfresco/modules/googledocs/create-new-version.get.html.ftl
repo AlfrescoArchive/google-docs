@@ -32,6 +32,7 @@
          </div>
          <div class="bdft">
             <input id="${el}-nodeRef" type="hidden" name="nodeRef" value="" />
+            <input id="${el}-override" type="hidden" name="override" value="false" />
             <input id="${el}-ok" type="submit" value="${msg("button.ok")}" tabindex="0"/>
             <input id="${el}-cancel" type="button" value="${msg("button.cancel")}" tabindex="0"/>
          </div>
