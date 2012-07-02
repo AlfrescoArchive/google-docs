@@ -18,8 +18,11 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
 public class AuthURL
     extends DeclarativeWebScript
 {
-    private final static String AUTHURL       = "authURL";
-    private final static String AUTHENTICATED = "authenticated";
+    private final static String MODEL_AUTHURL       = "authURL";
+    private final static String MODEL_AUTHENTICATED = "authenticated";
+
+    private final static String PARAM_STATE         = "state";
+    private final static String PARAM_OVERRIDE      = "override";
 
     private GoogleDocsService   googledocsService;
 
@@ -37,19 +40,26 @@ public class AuthURL
 
         boolean authenticated = false;
 
-        if (googledocsService.isAuthenticated())
+        if (!Boolean.valueOf(req.getParameter(PARAM_OVERRIDE)))
         {
-            authenticated = true;
+
+            if (googledocsService.isAuthenticated())
+            {
+                authenticated = true;
+            }
+            else
+            {
+                model.put(MODEL_AUTHURL, googledocsService.getAuthenticateUrl(req.getParameter(PARAM_STATE)));
+            }
         }
         else
         {
-            model.put(AUTHURL, googledocsService.getAuthenticateUrl(req.getParameter("state")));
-            authenticated = false;
+            model.put(MODEL_AUTHURL, googledocsService.getAuthenticateUrl(req.getParameter(PARAM_STATE)));
+            authenticated = googledocsService.isAuthenticated();
         }
 
-        model.put(AUTHENTICATED, authenticated);
+        model.put(MODEL_AUTHENTICATED, authenticated);
 
         return model;
     }
-
 }
