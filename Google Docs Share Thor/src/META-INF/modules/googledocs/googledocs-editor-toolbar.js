@@ -184,7 +184,7 @@
             {
                fn: function GDT_discardSuccess(response) {
                   if (response.serverResponse.status == 409)
-                  {   
+                  {
                      destroyLoaderMessage();
                      Alfresco.util.PopupManager.displayPrompt(
                            {
@@ -214,6 +214,7 @@
                                  text: me.msg("button.cancel"),
                                  handler: function cancelDiscard()
                                  {
+                                    destroyLoaderMessage();
                                     this.destroy();
                                  },
                                  isDefault: true 
@@ -277,6 +278,8 @@
       onSaveClick: function GDT_onSaveClick(e)
       {
          var loadingMessage = null, timerShowLoadingMessage = null, loadingMessageShowing = false, me = this;
+         
+         this.saveDiscardConfirmed = false;
          
          var fnShowLoadingMessage = function GDT_fnShowLoadingMessage()
          {
@@ -344,9 +347,55 @@
             fn: function GDT_saveFailure(response) {
 
                destroyLoaderMessage();
-               Alfresco.util.PopupManager.displayMessage({
-                  text : this.msg("googledocs.actions.saving.failure")
-               });
+
+               if (response.serverResponse.status == 409)
+               {
+                  Alfresco.util.PopupManager.displayPrompt(
+                  {
+                     title: me.msg("googledocs.concurrentEditors.title"),
+                     text: me.msg("googledocs.concurrentEditors.text"),
+                     noEscape: true,
+                     buttons: [
+                     {
+                        text: me.msg("button.ok"),
+                        handler: function submitDiscard()
+                        {
+                           this.destroy();
+                           if (me.configDialog)
+                           {
+                              // Set the override form field value
+                              Dom.get(me.configDialog.id + "-override").value = "true";
+                              // Close the confirmation pop-up
+                              this.destroy();
+                              // TODO Re-submit the form
+                              //me.configDialog.widgets.okButton.fire("submit");
+                           }
+                           else
+                           {
+                              // Assume POST needed without form (node not versioned)
+                              this.saveDiscardConfirmed = true;
+                              // Close the confirmation pop-up
+                              this.destroy();
+                              // TODO redo the POST
+                           }
+                        }
+                     },
+                     {
+                        text: me.msg("button.cancel"),
+                        handler: function cancelSave()
+                        {
+                           this.destroy();
+                        },
+                        isDefault: true 
+                     }]  
+                  });
+               }
+               else
+               {
+                  Alfresco.util.PopupManager.displayMessage({
+                     text : me.msg("googledocs.actions.saving.failure")
+                  });
+               }
             },
             scope : this
          };
@@ -402,7 +451,8 @@
             Alfresco.util.Ajax.jsonPost({
                url: actionUrl,
                dataObj: {
-                  nodeRef: this.options.nodeRef
+                  nodeRef: this.options.nodeRef,
+                  override: this.saveDiscardConfirmed
                },
                successCallback: success,
                failureCallback: failure
