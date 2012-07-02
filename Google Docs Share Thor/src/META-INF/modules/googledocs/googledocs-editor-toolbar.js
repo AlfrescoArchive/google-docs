@@ -277,7 +277,8 @@
        */
       onSaveClick: function GDT_onSaveClick(e)
       {
-         var loadingMessage = null, timerShowLoadingMessage = null, loadingMessageShowing = false, me = this;
+         var loadingMessage = null, timerShowLoadingMessage = null, loadingMessageShowing = false, me = this,
+            actionUrl = Alfresco.constants.PROXY_URI + "googledocs/saveContent";
          
          this.saveDiscardConfirmed = false;
          
@@ -345,7 +346,7 @@
          var failure =
          {
             fn: function GDT_saveFailure(response) {
-
+               loadingMessageShowing = true;
                destroyLoaderMessage();
 
                if (response.serverResponse.status == 409)
@@ -360,23 +361,29 @@
                         text: me.msg("button.ok"),
                         handler: function submitDiscard()
                         {
+                           // Close the confirmation pop-up
                            this.destroy();
                            if (me.configDialog)
                            {
                               // Set the override form field value
                               Dom.get(me.configDialog.id + "-override").value = "true";
-                              // Close the confirmation pop-up
-                              this.destroy();
-                              // TODO Re-submit the form
-                              //me.configDialog.widgets.okButton.fire("submit");
+                              // Re-submit the form
+                              me.configDialog.widgets.okButton.fireEvent("click", {});
                            }
                            else
                            {
                               // Assume POST needed without form (node not versioned)
-                              this.saveDiscardConfirmed = true;
-                              // Close the confirmation pop-up
-                              this.destroy();
-                              // TODO redo the POST
+                              me.saveDiscardConfirmed = true;
+                              // Redo the POST
+                              Alfresco.util.Ajax.jsonPost({
+                                 url: actionUrl,
+                                 dataObj: {
+                                    nodeRef: me.options.nodeRef,
+                                    override: me.saveDiscardConfirmed
+                                 },
+                                 successCallback: success,
+                                 failureCallback: failure
+                              });
                            }
                         }
                      },
@@ -399,8 +406,6 @@
             },
             scope : this
          };
-         
-         var actionUrl = Alfresco.constants.PROXY_URI + "googledocs/saveContent";
 
          destroyLoaderMessage();
          
