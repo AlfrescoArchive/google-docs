@@ -6,8 +6,6 @@
 function isVersioned()
 {
    AlfrescoUtil.param('nodeRef');
-   // TODO: Data webscript call to return whether the item is versioned or not
-   //var aspectsResp = remote.call("slingshot/doclib/aspects/node/" + model.nodeRef.replace(":/", ""));
    var documentDetails = AlfrescoUtil.getNodeDetails(model.nodeRef, null);
    var aspects = documentDetails.item.node.aspects;
    for (var i = 0; i < aspects.length; i++)
