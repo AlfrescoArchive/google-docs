@@ -4,7 +4,7 @@
    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
    <!-- OAuth2 Store Bean Definitions -->
-   <import resource="classpath:alfresco/oauth2-services-context.xml" />
+   <!-- <import resource="classpath:alfresco/oauth2-services-context.xml" /> -->
 
    <!-- Load the Model -->
    <bean id="googledocsModel.dictionaryBootstrap" parent="dictionaryModelBootstrap"
@@ -128,8 +128,8 @@
       <property name="connectionFactory">
          <ref bean="googledocsConnectionFactory" />
       </property>
-      <property name="oauth2StoreService">
-         <ref bean="OAuth2StoreService" />
+      <property name="oauth2CredentialsStoreService">
+         <ref bean="OAuth2CredentialsStoreService" />
       </property>
       <property name="fileFolderService">
          <ref bean="fileFolderService"/>

@@ -40,7 +40,7 @@ import org.alfresco.service.cmr.lock.LockStatus;
 import org.alfresco.service.cmr.lock.LockType;
 import org.alfresco.service.cmr.model.FileFolderService;
 import org.alfresco.service.cmr.model.FileInfo;
-import org.alfresco.service.cmr.oauth2.OAuth2StoreService;
+import org.alfresco.service.cmr.oauth2.OAuth2CredentialsStoreService;
 import org.alfresco.service.cmr.remotecredentials.OAuth2CredentialsInfo;
 import org.alfresco.service.cmr.remoteticket.NoSuchSystemException;
 import org.alfresco.service.cmr.repository.ContentReader;
@@ -87,7 +87,7 @@ public class GoogleDocsServiceImpl
     implements GoogleDocsService
 {
     // Services
-    private OAuth2StoreService               oauth2StoreService;
+    private OAuth2CredentialsStoreService    oauth2CredentialsStoreService;
     private GoogleDocsConnectionFactory      connectionFactory;
     private FileFolderService                fileFolderService;
     private NodeService                      nodeService;
@@ -137,9 +137,9 @@ public class GoogleDocsServiceImpl
     }
 
 
-    public void setOauth2StoreService(OAuth2StoreService oauth2StoreService)
+    public void setOauth2CredentialsStoreService(OAuth2CredentialsStoreService oauth2CredentialsStoreService)
     {
-        this.oauth2StoreService = oauth2StoreService;
+        this.oauth2CredentialsStoreService = oauth2CredentialsStoreService;
     }
 
 
@@ -321,7 +321,7 @@ public class GoogleDocsServiceImpl
     {
         Connection<GoogleDocs> connection = null;
 
-        OAuth2CredentialsInfo credentialInfo = oauth2StoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
+        OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
 
         if (credentialInfo != null)
         {
@@ -361,7 +361,7 @@ public class GoogleDocsServiceImpl
     {
         boolean authenticated = false;
 
-        OAuth2CredentialsInfo credentialInfo = oauth2StoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
+        OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
 
         if (credentialInfo != null)
         {
@@ -420,7 +420,7 @@ public class GoogleDocsServiceImpl
 
         try
         {
-            oauth2StoreService.storePersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM, accessGrant.getAccessToken(), accessGrant.getRefreshToken(), expiresIn, new Date());
+            oauth2CredentialsStoreService.storePersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM, accessGrant.getAccessToken(), accessGrant.getRefreshToken(), expiresIn, new Date());
 
             authenticationComplete = true;
         }
@@ -437,7 +437,7 @@ public class GoogleDocsServiceImpl
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException
     {
-        OAuth2CredentialsInfo credentialInfo = oauth2StoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
+        OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
 
         if (credentialInfo.getOAuthRefreshToken() != null)
         {
@@ -474,7 +474,7 @@ public class GoogleDocsServiceImpl
 
                 try
                 {
-                    oauth2StoreService.storePersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM, accessGrant.getAccessToken(), credentialInfo.getOAuthRefreshToken(), expiresIn, new Date());
+                    oauth2CredentialsStoreService.storePersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM, accessGrant.getAccessToken(), credentialInfo.getOAuthRefreshToken(), expiresIn, new Date());
                 }
                 catch (NoSuchSystemException nsse)
                 {
