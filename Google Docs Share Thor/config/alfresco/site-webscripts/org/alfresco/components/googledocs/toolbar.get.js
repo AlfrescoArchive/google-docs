@@ -7,15 +7,19 @@ function isVersioned()
 {
    AlfrescoUtil.param('nodeRef');
    var documentDetails = AlfrescoUtil.getNodeDetails(model.nodeRef, null);
-   var aspects = documentDetails.item.node.aspects;
-   for (var i = 0; i < aspects.length; i++)
+   // documentDetails may be null if user not logged in
+   if (documentDetails)
    {
-      if (aspects[i] == "cm:versionable")
+      var aspects = documentDetails.item.node.aspects;
+      for (var i = 0; i < aspects.length; i++)
       {
-         return true;
+         if (aspects[i] == "cm:versionable")
+         {
+            return true;
+         }
       }
+      return false;
    }
-   return false;
 }
 
 function main()
