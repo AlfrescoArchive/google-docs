@@ -552,8 +552,7 @@ public class GoogleDocsServiceImpl
         if (entry != null)
         {
             entry.setTitle(new PlainTextConstruct(name));
-            // TODO In production this should be set to true;
-            entry.setHidden(false);
+            entry.setHidden(true);
 
             try
             {
@@ -858,7 +857,7 @@ public class GoogleDocsServiceImpl
 
         DocumentListEntry uploaded = null;
 
-        // It makes me want to cry that the don't support inputStreams.
+        // It makes me want to cry that they don't support inputStreams.
         File file = null;
 
         try
@@ -877,8 +876,7 @@ public class GoogleDocsServiceImpl
 
             DocumentListEntry entry = new DocumentListEntry();
             entry.setTitle(new PlainTextConstruct(fileInfo.getName()));
-            // In prodcution this should always be true
-            entry.setHidden(false);
+            entry.setHidden(true);
 
             // Will this be Sync?
             ResumableGDataFileUploader uploader = new ResumableGDataFileUploader.Builder(docsService, new URL(GoogleDocsConstants.URL_CREATE_MEDIA), mediaFile, entry).chunkSize(10485760L).build();
