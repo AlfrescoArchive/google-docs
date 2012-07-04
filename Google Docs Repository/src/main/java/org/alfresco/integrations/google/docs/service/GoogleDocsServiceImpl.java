@@ -420,6 +420,17 @@ public class GoogleDocsServiceImpl
 
         try
         {
+            // If this is a reauth....we may not get back the refresh token. We
+            // need to make sure it is persisted across the "refresh".
+            if (accessGrant.getRefreshToken() == null)
+            {
+                OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
+                if (credentialInfo.getOAuthRefreshToken() != null)
+                {
+                    accessGrant = new AccessGrant(accessGrant.getAccessToken(), accessGrant.getScope(), credentialInfo.getOAuthRefreshToken(), accessGrant.getExpireTime().intValue());
+                }
+            }
+
             oauth2CredentialsStoreService.storePersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM, accessGrant.getAccessToken(), accessGrant.getRefreshToken(), expiresIn, new Date());
 
             authenticationComplete = true;
