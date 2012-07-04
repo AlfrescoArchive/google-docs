@@ -214,6 +214,7 @@
                                  text: me.msg("button.cancel"),
                                  handler: function cancelDiscard()
                                  {
+                                    loadingMessageShowing = true;
                                     destroyLoaderMessage();
                                     this.destroy();
                                  },
@@ -221,9 +222,46 @@
                               }]  
                            });
                   }
+                  else if (response.serverResponse.status == 502)
+                  {
+                     var success = {
+                        fn : function(response){
+                           loadingMessageShowing = true;
+                           destroyLoaderMessage();
+                                 
+                           // basic and ugly
+                           window.showModalDialog(response.json.authURL);   
+   
+                           discardContent.call(this);    
+                        },
+                        scope : this
+                     };
+                     
+                     var failure = {
+                        fn : function(response) {
+                           loadingMessageShowing = true;
+                           destroyLoaderMessage();
+                           
+                           Alfresco.util.PopupManager.displayMessage( {
+                              text : this.msg("googledocs.actions.authentication.failure")
+                           });
+   
+                        },
+                        scope : this
+                     };
+                     
+                     Alfresco.util.Ajax.jsonGet( {
+                        url : Alfresco.constants.PROXY_URI + 'googledocs/authurl?state='+Alfresco.constants.PROXY_URI+"&override=true",
+                        dataObj : {},
+                        successCallback : success,
+                        failureCallback : failure
+                     });
+                  }
                   else
                   {
+                     loadingMessageShowing = true;
                      destroyLoaderMessage();
+                     
                      Alfresco.util.PopupManager.displayMessage({
                         text : me.msg("googledocs.actions.discard.failure")
                      });
@@ -396,6 +434,61 @@
                         isDefault: true 
                      }]  
                   });
+               }
+               else if (response.serverResponse.status == 502)
+               {
+                  var success = {
+                        fn : function(response){
+                           loadingMessageShowing = true;
+                           destroyLoaderMessage();
+                                 
+                           // basic and ugly
+                           window.showModalDialog(response.json.authURL);   
+                           
+                           if (me.configDialog)
+                           {
+                              // Re-submit the form
+                              me.configDialog.widgets.okButton.fireEvent("click", {});
+                           }
+                           else
+                           {
+                              // Assume POST needed without form (node not versioned)
+                              me.saveDiscardConfirmed = true;
+                              // Redo the POST
+                              Alfresco.util.Ajax.jsonPost({
+                                 url: actionUrl,
+                                 dataObj: {
+                                    nodeRef: me.options.nodeRef,
+                                    override: me.saveDiscardConfirmed
+                                 },
+                                 successCallback: success,
+                                 failureCallback: failure
+                              });
+                           }
+                               
+                        },
+                        scope : this
+                     };
+                     
+                     var failure = {
+                        fn : function(response) {
+                           loadingMessageShowing = true;
+                           destroyLoaderMessage();
+                           
+                           Alfresco.util.PopupManager.displayMessage( {
+                              text : this.msg("googledocs.actions.authentication.failure")
+                           });
+   
+                        },
+                        scope : this
+                     };
+                     
+                     Alfresco.util.Ajax.jsonGet( {
+                        url : Alfresco.constants.PROXY_URI + 'googledocs/authurl?state='+Alfresco.constants.PROXY_URI+"&override=true",
+                        dataObj : {},
+                        successCallback : success,
+                        failureCallback : failure
+                     });
                }
                else
                {
