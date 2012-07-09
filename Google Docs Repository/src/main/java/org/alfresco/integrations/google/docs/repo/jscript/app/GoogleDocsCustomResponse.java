@@ -9,7 +9,9 @@ import java.util.Map;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.repo.jscript.app.CustomResponse;
 
-
+/**
+ * @author Jared Ottley <jared.ottley@alfresco.com>
+ */
 public class GoogleDocsCustomResponse
     implements CustomResponse
 {

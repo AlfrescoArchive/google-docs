@@ -1,109 +1,96 @@
+
 package org.alfresco.integrations.google.docs.utils;
+
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.alfresco.integrations.google.docs.GoogleDocsConstants;
-import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
+import org.alfresco.service.cmr.model.FileFolderService;
+import org.alfresco.service.cmr.repository.MimetypeService;
+import org.alfresco.service.cmr.repository.NodeRef;
 
+
+/**
+ * @author Jared Ottley <jared.ottley@alfresco.com>
+ */
 public class FileNameUtil
 {
-    private final static String FULL_PATTERN = "\\(\\d++\\)";
-    private final static String FIRST_DUP = " (1)";
-    private final static String DOC_EXT = ".doc";
-    private final static String XLS_EXT = ".xls";
-    private final static String PPT_EXT = ".ppt";
-    private final static String DUP_NUMBER = "\\d++";
-    
-    
-    //TODO this needs to be able to work.
-    public static String IncrementFileName(String type, String filename, boolean usefileextension){
+    private final static String FULL_PATTERN = "\\-\\d++\\.";
+    private final static String FIRST_DUP    = "-1.";
+    private final static String DUP_NUMBER   = "\\d++";
+
+    private MimetypeService     mimetypeService;
+    private FileFolderService   filefolderService;
+
+
+    public void setMimetypeService(MimetypeService mimetypeService)
+    {
+        this.mimetypeService = mimetypeService;
+    }
+
+
+    public void setFileFolderService(FileFolderService filefolderService)
+    {
+        this.filefolderService = filefolderService;
+    }
+
+
+    public String incrementFileName(NodeRef nodeRef)
+    {
+        String name = filefolderService.getFileInfo(nodeRef).getName();
+        String mimetype = filefolderService.getFileInfo(nodeRef).getContentData().getMimetype();
+
+        return incrementFileName(name, mimetype);
+    }
+
+
+    public String incrementFileName(String name, String mimetype)
+    {
         String newname = null;
-        
-        Pattern p = Pattern.compile(FULL_PATTERN);
-        Matcher m = p.matcher(filename);
-        
-        if (type.equals(GoogleDocsConstants.DOCUMENT_TYPE)){
-            if (m.find()){
-                Pattern pattern = Pattern.compile(DUP_NUMBER);
-                Matcher matcher = pattern.matcher(m.group());
-                matcher.find();
+        String extension = mimetypeService.getExtension(mimetype);
 
-                newname = m.replaceFirst("(" + (Integer.parseInt(matcher.group()) + 1) + ")"); 
-                
-            } else {
-                String start = filename.substring(0, GoogleDocsConstants.NEW_DOCUMENT_NAME.length());
-                newname = start.concat(FIRST_DUP);
-                
-                if (usefileextension){
-                    newname = newname.concat(DOC_EXT);
-                }
-                
-            }       
-        } 
-        else if(type.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
+        Pattern p = Pattern.compile(FULL_PATTERN + extension + "$");
+        Matcher m = p.matcher(name);
+
+        if (m.find())
         {
-            if (m.find()){
-                Pattern pattern = Pattern.compile(DUP_NUMBER);
-                Matcher matcher = pattern.matcher(m.group());
-                matcher.find();
+            Pattern pattern = Pattern.compile(DUP_NUMBER);
+            Matcher matcher = pattern.matcher(m.group());
+            matcher.find();
 
-                newname = m.replaceFirst("(" + (Integer.parseInt(matcher.group()) + 1) + ")"); 
-                
-            } else {
-                String start = filename.substring(0, GoogleDocsConstants.NEW_SPREADSHEET_NAME.length());
-                newname = start.concat(FIRST_DUP);
-                
-                if (usefileextension){
-                    newname = newname.concat(XLS_EXT);
-                }
-                
-            } 
+            newname = m.replaceFirst("-" + (Integer.parseInt(matcher.group()) + 1) + ".") + extension;
         }
-        else if(type.equals(GoogleDocsConstants.PRESENTATION_TYPE))
+        else
         {
-            if (m.find()){
+            Pattern p_ = Pattern.compile(FULL_PATTERN.substring(0, 2) + "$");
+            Matcher m_ = p_.matcher(name);
+
+            if (m_.find())
+            {
                 Pattern pattern = Pattern.compile(DUP_NUMBER);
-                Matcher matcher = pattern.matcher(m.group());
+                Matcher matcher = pattern.matcher(m_.group());
                 matcher.find();
 
-                newname = m.replaceFirst("(" + (Integer.parseInt(matcher.group()) + 1) + ")"); 
-                
-            } else {
-                String start = filename.substring(0, GoogleDocsConstants.NEW_PRESENTATION_NAME.length());
-                newname = start.concat(FIRST_DUP);
-                
-                if (usefileextension){
-                    newname = newname.concat(PPT_EXT);
+                newname = m_.replaceFirst("-" + (Integer.parseInt(matcher.group()) + 1));
+            }
+            else
+            {
+                Pattern p_ext = Pattern.compile("\\." + extension + "$");
+                Matcher m_ext = p_ext.matcher(name);
+
+                if (m_ext.find())
+                {
+                    String sansExtention = name.substring(0, name.length() - (extension.length() + 1));
+                    newname = sansExtention.concat(FIRST_DUP).concat(extension);
                 }
-                
-            } 
+                else
+                {
+                    newname = name.concat(FIRST_DUP.substring(0, 2));
+                }
+            }
         }
-        else {
-            throw new GoogleDocsServiceException("Content Type: " + type + " unknown.");
-        }
-        
+
         return newname;
     }
-    
-    public static String getNewFileName(String type)
-    {
-        String name = null;
-        if (type.equals(GoogleDocsConstants.DOCUMENT_TYPE))
-        {
-            name = GoogleDocsConstants.NEW_DOCUMENT_NAME;
-        } else if (type.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
-        {
-            name = GoogleDocsConstants.NEW_SPREADSHEET_NAME;
-        } else if (type.equals(GoogleDocsConstants.PRESENTATION_TYPE))
-        {
-            name = GoogleDocsConstants.NEW_PRESENTATION_NAME;
-        } else {
-            throw new GoogleDocsServiceException("Content type: " + type + " unknown");
-        }
-        
-        return name;
-    }
-    
-    
+
 }

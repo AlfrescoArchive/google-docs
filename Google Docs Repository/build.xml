@@ -45,7 +45,7 @@
 		<zip destfile="${amp.file}" >
 			<fileset dir="${project.dir}/build" includes="lib/*.jar" />
 			<zipfileset dir="${project.dir}/lib" prefix="lib" />
-			<fileset dir="${project.dir}" includes="config/**/*.*" excludes="**/module.properties" />
+			<fileset dir="${project.dir}" includes="config/**/*" excludes="**/module.properties" />
 			<zipfileset dir="${project.dir}/templates"  prefix="config/alfresco/templates" />
 			<fileset dir="${project.dir}/config/" includes="module.properties" />
 		</zip>

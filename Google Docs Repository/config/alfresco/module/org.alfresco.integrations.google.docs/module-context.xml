@@ -4,7 +4,7 @@
    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
    <!-- OAuth2 Store Bean Definitions -->
-   <import resource="classpath:alfresco/oauth2-services-context.xml" />
+   <!-- <import resource="classpath:alfresco/oauth2-services-context.xml" /> -->
 
    <!-- Load the Model -->
    <bean id="googledocsModel.dictionaryBootstrap" parent="dictionaryModelBootstrap"
@@ -26,20 +26,128 @@
 
 
    <!-- Googledocs Service -->
+   <bean id="GoogleDocsService" class="org.springframework.aop.framework.ProxyFactoryBean">
+      <property name="proxyInterfaces">
+         <value>org.alfresco.integrations.google.docs.service.GoogleDocsService</value>
+      </property>
+      <property name="target">
+         <ref bean="googledocsService"/>
+      </property>
+      <property name="interceptorNames">
+         <list>
+            <idref bean="googledocsServiceReadTxnAdvisor"/>
+            <idref bean="googledocsServiceWriteTxnAdvisor"/>
+            <idref bean="AuditMethodInterceptor"/>
+            <idref bean="exceptionTranslator"/>
+            <idref bean="googledocsService_security"/>
+         </list>
+      </property>
+   </bean>
+   
+   <bean id="googledocsService_security" class="org.alfresco.repo.security.permissions.impl.acegi.MethodSecurityInterceptor">
+      <property name="authenticationManager">
+         <ref bean="authenticationManager"/>
+      </property>
+      <property name="accessDecisionManager">
+         <ref bean="accessDecisionManager"/>
+      </property>
+      <property name="afterInvocationManager">
+         <ref bean="afterInvocationManager"/>
+      </property>
+      <property name="objectDefinitionSource">
+         <value>
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isAuthenticated=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getAuthenticateUrl=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.completeAuthentication=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getUserMetadata=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.createDocument=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.createSpreadSheet=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.createPresentation=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.decorateNode=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isExportable=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isImportable=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getImportFormatsList=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getContentType=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getDocument=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getSpreadSheet=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getPresentation=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.uploadFile=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.hasConcurrentEditors=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.lockNode=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.unlockNode=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isGoogleDocsLockOwner=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isLockedByGoogleDocs=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getDocumentListEntry=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.deleteContent=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.*=ACL_DENY
+         </value>
+      </property>
+   </bean>
+   
+   <bean id="googledocsServiceReadTxnAdvisor" class="org.springframework.aop.support.NameMatchMethodPointcutAdvisor">
+      <property name="advice">
+         <ref bean="retryingReadTxnAdvice"/>
+      </property>
+      <property name="mappedNames">
+         <list>
+            <value>isAuthenticated</value>
+            <value>getUserMetadata</value>
+            <value>getContentType</value>
+            <value>hasConcurrentEditors</value>
+            <value>isGoogleDocsLockOwner</value>
+            <value>isLockedByGoogleDocs</value>
+            <value>getDocumentListEntry</value>
+         </list>
+      </property>
+   </bean>
+   
+   <bean id="googledocsServiceWriteTxnAdvisor" class="org.springframework.aop.support.NameMatchMethodPointcutAdvisor">
+      <property name="advice">
+         <ref bean="retryingWriteTxnAdvice"/>
+      </property>
+      <property name="mappedNames">
+         <list>
+            <value>completeAuthentication</value>
+            <value>createDocument</value>
+            <value>createSpreadSheet</value>
+            <value>createPresentation</value>
+            <value>decorateNode</value>
+            <value>getDocument</value>
+            <value>getSpreadSheet</value>
+            <value>getPresentation</value>
+            <value>uploadFile</value>
+            <value>lockNode</value>
+            <value>unlockNode</value>
+            <value>deleteContent</value>
+         </list>
+      </property>
+   </bean>
 
    <bean id="googledocsService"
-      class="org.alfresco.integrations.google.docs.service.GoogleDocsService">
+      class="org.alfresco.integrations.google.docs.service.GoogleDocsServiceImpl">
       <property name="connectionFactory">
          <ref bean="googledocsConnectionFactory" />
       </property>
-      <property name="oauth2StoreService">
-         <ref bean="OAuth2StoreService" />
+      <property name="oauth2CredentialsStoreService">
+         <ref bean="OAuth2CredentialsStoreService" />
       </property>
       <property name="fileFolderService">
          <ref bean="fileFolderService"/>
       </property>
       <property name="nodeService">
          <ref bean="nodeService"/>
+      </property>
+      <property name="lockService">
+         <ref bean="lockService"/>
+      </property>
+      <property name="fileNameUtil">
+         <ref bean="fileNameUtil"/>
+      </property>
+      <property name="mimetypeService">
+         <ref bean="mimetypeService"/>
+      </property>
+      <property name="behaviourFilter">
+         <ref bean="policyBehaviourFilter" />
       </property>
       <property name="importFormats">
          <map>
@@ -171,6 +279,18 @@
       <property name="newPresentation">
          <value>classpath:alfresco/module/org.alfresco.integrations.google.docs/resources/UntitledPresentation</value>
       </property>
+      <property name="idleThreshold">
+         <value>${integration.googleDocs.idleThresholdSeconds}</value>
+      </property>
+   </bean>
+   
+   <bean id="fileNameUtil" class="org.alfresco.integrations.google.docs.utils.FileNameUtil">
+      <property name="mimetypeService">
+         <ref bean="mimetypeService"/>
+      </property>
+      <property name="fileFolderService">
+         <ref bean="fileFolderService"/>
+      </property>
    </bean>
 
    <!-- Property Decorator -->
@@ -225,24 +345,48 @@
       </property>
    </bean>
    
-   <bean  id="webscript.org.alfresco.integrations.google.docs.CreateContent.get" class="org.alfresco.integrations.google.docs.webscripts.CreateContent" parent="webscript">
+   <bean id="webscript.org.alfresco.integrations.google.docs.CreateContent.get" class="org.alfresco.integrations.google.docs.webscripts.CreateContent" parent="webscript">
       <property name="googledocsService">
          <ref bean="googledocsService" />
       </property>
       <property name="fileFolderService">
          <ref bean="fileFolderService"/>
       </property>
+      <property name="fileNameUtil">
+         <ref bean="fileNameUtil"/>
+      </property>
    </bean>
    
-   <bean  id="webscript.org.alfresco.integrations.google.docs.UploadContent.get" class="org.alfresco.integrations.google.docs.webscripts.UploadContent" parent="webscript">
+   <bean id="webscript.org.alfresco.integrations.google.docs.UploadContent.get" class="org.alfresco.integrations.google.docs.webscripts.UploadContent" parent="webscript">
       <property name="googledocsService">
          <ref bean="googledocsService" />
       </property>
    </bean>
    
-   <bean  id="webscript.org.alfresco.integrations.google.docs.SaveContent.get" class="org.alfresco.integrations.google.docs.webscripts.SaveContent" parent="webscript">
+   <bean id="webscript.org.alfresco.integrations.google.docs.SaveContent.post" class="org.alfresco.integrations.google.docs.webscripts.SaveContent" parent="webscript">
       <property name="googledocsService">
          <ref bean="googledocsService" />
+      </property>
+      <property name="nodeService">
+         <ref bean="nodeService"/>
+      </property>
+      <property name="versionService">
+         <ref bean="versionService" />
+      </property>
+   </bean>
+   
+   <bean id="webscript.org.alfresco.integrations.google.docs.HasConcurrentEditors.get" class="org.alfresco.integrations.google.docs.webscripts.HasConcurrentEditors">
+      <property name="googledocsService">
+         <ref bean="googledocsService"/>
+      </property>
+   </bean>
+   
+   <bean id="webscript.org.alfresco.integrations.google.docs.DiscardContent.post" class="org.alfresco.integrations.google.docs.webscripts.DiscardContent">
+      <property name="googledocsService">
+         <ref bean="googledocsService"/>
+      </property>
+      <property name="nodeService">
+         <ref bean="nodeService"/>
       </property>
    </bean>
 

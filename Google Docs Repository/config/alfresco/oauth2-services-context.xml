@@ -33,9 +33,14 @@
    </property>
    <property name="objectDefinitionSource">
       <value>
-         org.alfresco.service.cmr.oauth2.OAuth2StoreService.storeOAuth2Credentials=ACL_ALLOW
-         org.alfresco.service.cmr.oauth2.OAuth2StoreService.getOAuth2Credentials=ACL_ALLOW
-         org.alfresco.service.cmr.oauth2.OAuth2StoreService.deleteOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.storePersonalOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.storeSharedOAuth2Credentials=ACL_ALLOW 
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.getPersonalOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.updateSharedOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.listSharedOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.deletePersonalOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.deleteSharedOAuth2Credentials=ACL_ALLOW
+         org.alfresco.service.cmr.oauth2.OAuth2StoreService.updateCredentialsAuthenticationSucceeded=ACL_ALLOW
          org.alfresco.service.cmr.oauth2.OAuth2StoreService.*=ACL_DENY
       </value>
    </property>
@@ -47,7 +52,9 @@
    </property>
    <property name="mappedNames">
       <list>
-         <value>getOAuth2Credentials</value>
+         <value>getPersonalOAuth2Credentials</value>
+         <value>listSharedOAuth2Credentials</value>
+         <value>updateCredentialsAuthenticationSucceeded</value>
       </list>
    </property>
 </bean>
@@ -58,8 +65,11 @@
    </property>
    <property name="mappedNames">
       <list>
-         <value>storeOAuth2Credentials</value>
-         <value>deleteOAuth2Credentials</value>
+         <value>storePersonalOAuth2Credentials</value>
+         <value>storeSharedOAuth2Credentials</value>
+         <value>updateSharedOAuth2Credentials</value>
+         <value>deletePersonalOAuth2Credentials</value>
+         <value>deleteSharedOAuth2Credentials</value>
       </list>
    </property>
 </bean>

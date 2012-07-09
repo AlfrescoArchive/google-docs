@@ -22,8 +22,7 @@
 		<delete dir="${build.dir}" includeemptydirs="true" />
 		<delete>
 			<fileset dir="${project.dir}/src/META-INF/${component.name}/components/documentlibrary" includes="**/*" excludes="actions.js, actions.css"/>
-	      <fileset dir="${project.dir}/src/META-INF/modules/${component.name}/" includes="**/*" excludes="${component.name}-editor-toolbar.js, ${component.name}-editor-toolbar.css, ${component.name}-editor-embed.css, images/bg_alf.gif, images/bg_back.png"/>
-
+	      <fileset dir="${project.dir}/src/META-INF/modules/${component.name}/" includes="**/*-min.js"/>
 		</delete>
 	</target>
 

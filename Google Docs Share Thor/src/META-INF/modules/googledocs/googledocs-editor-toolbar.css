@@ -1,68 +1,51 @@
 .gdtoolbar {
    display: block;
    background-color: #000000;
-   border-bottom: 1px solid #DFDFDF;
-   border-top: 1px solid #DFDFDF;
-   padding-top: 8px;
-   padding-bottom: 10px;
-   height: 30px;
-   margin: 0px -10px
+   height: 42px;
+   margin: 0px -10px;
+   background-image: url("images/main-bg.png");
 }
 
-.gd-button-image {
-    height: 20px;
-    width: 20px;
-    padding: 1px;
-}
-
-.gd-back-image {
-   position: absolute;
-   background-color: #999999;
-   width: 20px;
-   border-left-width: 2px;
-   border-left-color: #FFFFFF;
-   z-index: 250;
-}
-
-.gd-button{
+.gd-button {
    text-align: center;
    white-space: nowrap;
-   width: 130px;
+   height: 42px;
    color: #FFFFFF;
-   border: 0px;
+   background-image: url("images/btn-bg.png");
+   padding: 12px 20px;
+   border: 1px solid black;
+	border-image: url("images/btn-border.png") 1 stretch;
+	-moz-border-image: url("images/btn-border.png") 1 stretch; /* Firefox */
+	-webkit-border-image: url("images/btn-border.png") 1 stretch; /* Safari and Chrome */
+	-o-border-image: url("images/btn-border.png") 1 stretch; /* Opera */
 }
 
-.gd-container{
-   position: absolute;
+.gd-button-default {
+   background-image: url("images/btn-default-bg.png");
+   border-image: url("images/btn-default-border.png") 1 stretch;
+   -moz-border-image: url("images/btn-default-border.png") 1 stretch; /* Firefox */
+   -webkit-border-image: url("images/btn-default-border.png") 1 stretch; /* Safari and Chrome */
+   -o-border-image: url("images/btn-default-border.png") 1 stretch; /* Opera */
 }
 
-.gdback {
-   left: 0px;
-   top: 1px;
+.gd-logo {
+	width: 140px;
+   height: 30px;
+   margin-top: 7px;
+   margin-left: 10px;
+   background-image: url("images/logo.png");
+   background-repeat: no-repeat;
 }
 
-.gdback-button {
-   background-color: #000000;
-   padding: 11px;
-   font-size: 14px;
-   font-weight: bold;
-   
+.gdback, .gd-logo {
+	float: left;
 }
 
-.gddiscard {
-   right: 150px;
-}
-.gddiscard-button {
-   background-color: #FF6600;
-   padding:  7px;
-   
+.gddiscard, .gdsave {
+   float: right;
 }
 
-.gdsave {
-   right: 10px;
-}
-
-.gdsave-button {
-   background-color: #6DAB61;
-   padding: 4px;
+.alfresco-share .sticky-wrapper .gdtoolbar button {
+	font-weight: bold;
+	text-shadow: 0 -1px 1px #000000;
 }

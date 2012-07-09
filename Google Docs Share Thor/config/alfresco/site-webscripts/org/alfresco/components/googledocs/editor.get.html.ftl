@@ -1,3 +1,1 @@
-<div class="gdocs-wrapper">
-   <iframe class="gdocs-embed" src="${editorURL!""}"></iframe>
-</div>
+<div id="gdocs-wrapper" class="gdocs-wrapper"></div>

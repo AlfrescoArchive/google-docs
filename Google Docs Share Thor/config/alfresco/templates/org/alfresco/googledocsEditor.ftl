@@ -1,4 +1,5 @@
 <#include "include/alfresco-template.ftl">
+<@link rel="stylesheet" type="text/css" href="${url.context}/res/modules/googledocs/googledocs.css" />
 <@templateHeader />
 
 <@templateBody>
