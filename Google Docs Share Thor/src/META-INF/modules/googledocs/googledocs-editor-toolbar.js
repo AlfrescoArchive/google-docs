@@ -124,7 +124,7 @@
             {
                loadingMessage = Alfresco.util.PopupManager.displayMessage( {
                   displayTime : 0,
-                  text : '<span class="wait">' + Alfresco.util.encodeHTML(me.msg("googledocs.actions.discard")) + '</span>',
+                  text : '<span class="wait">' + me.msg("googledocs.actions.discard") + '</span>',
                   noEscape : true
                });
 
@@ -328,7 +328,7 @@
             {
                loadingMessage = Alfresco.util.PopupManager.displayMessage( {
                   displayTime : 0,
-                  text : '<span class="wait">' + Alfresco.util.encodeHTML(this.msg("googledocs.actions.saving")) + '</span>',
+                  text : '<span class="wait">' + this.msg("googledocs.actions.saving") + '</span>',
                   noEscape : true
                });
 
@@ -576,7 +576,7 @@
             if (timerShowLoadingMessage) {
                loadingMessage = Alfresco.util.PopupManager.displayMessage( {
                         displayTime : 0,
-                        text : '<span class="wait">' + $html(this.msg("googledocs.actions.editing")) + '</span>',
+                        text : '<span class="wait">' + this.msg("googledocs.actions.editing") + '</span>',
                         noEscape : true
                      });
 

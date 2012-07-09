@@ -18,8 +18,6 @@
  */
 
 (function() {
-   
-   var $html = Alfresco.util.encodeHTML;
 
    YAHOO.Bubbling.fire("registerAction", {
       actionName : "onGoogledocsActionEdit",
@@ -33,7 +31,7 @@
             if (timerShowLoadingMessage) {
                loadingMessage = Alfresco.util.PopupManager.displayMessage( {
                         displayTime : 0,
-                        text : '<span class="wait">' + $html(this.msg("googledocs.actions.editing")) + '</span>',
+                        text : '<span class="wait">' + this.msg("googledocs.actions.editing") + '</span>',
                         noEscape : true
                      });
 
@@ -256,7 +254,7 @@
             if (timerShowLoadingMessage) {
                loadingMessage = Alfresco.util.PopupManager.displayMessage( {
                         displayTime : 0,
-                        text : '<span class="wait">' + $html(this.msg("googledocs.actions.resume")) + '</span>',
+                        text : '<span class="wait">' + this.msg("googledocs.actions.resume") + '</span>',
                         noEscape : true
                      });
 
@@ -313,11 +311,49 @@
          
          var failure = {
                fn : function(response) {
+                  if (response.serverResponse.status == 502)
+                  {
+                     var success = {
+                        fn : function(response){
+                           loadingMessageShowing = true;
+                           destroyLoaderMessage();
+                                 
+                           // basic and ugly
+                           window.showModalDialog(response.json.authURL);   
 
-                  destroyLoaderMessage();
-                  Alfresco.util.PopupManager.displayMessage( {
-                           text : this.msg("googledocs.actions.authentication.failure")
-                        });
+                           window.location = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT+"site/"+Alfresco.constants.SITE + "/googledocsEditor?nodeRef=" + record.nodeRef;
+                              
+                        },
+                        scope : this
+                     };
+                     
+                     var failure = {
+                        fn : function(response) {
+
+                           destroyLoaderMessage();
+                           Alfresco.util.PopupManager.displayMessage( {
+                              text : this.msg("googledocs.actions.authentication.failure")
+                           });
+
+                        },
+                        scope : this
+                     };
+                     
+                     Alfresco.util.Ajax.jsonGet( {
+                        url : Alfresco.constants.PROXY_URI + 'googledocs/authurl?state='+Alfresco.constants.PROXY_URI+"&override=true",
+                        dataObj : {},
+                        successCallback : success,
+                        failureCallback : failure
+                     });
+                  }
+                  else
+                  {
+                     loadingMessageShowing = true;
+                     destroyLoaderMessage();
+                     Alfresco.util.PopupManager.displayMessage( {
+                        text : this.msg("googledocs.actions.authentication.failure")
+                     });
+                  }
 
                },
                scope : this
@@ -348,7 +384,7 @@
             if (timerShowLoadingMessage) {
                loadingMessage = Alfresco.util.PopupManager.displayMessage( {
                         displayTime : 0,
-                        text : '<span class="wait">' + $html(this.msg("create-content.googledocs.document.creating")) + '</span>',
+                        text : '<span class="wait">' + this.msg("create-content.googledocs.document.creating") + '</span>',
                         noEscape : true
                      });
 
@@ -509,7 +545,7 @@
             if (timerShowLoadingMessage) {
                loadingMessage = Alfresco.util.PopupManager.displayMessage( {
                         displayTime : 0,
-                        text : '<span class="wait">' + $html(this.msg("create-content.googledocs.spreadsheet.creating")) + '</span>',
+                        text : '<span class="wait">' + this.msg("create-content.googledocs.spreadsheet.creating") + '</span>',
                         noEscape : true
                      });
 
@@ -670,7 +706,7 @@
             if (timerShowLoadingMessage) {
                loadingMessage = Alfresco.util.PopupManager.displayMessage( {
                         displayTime : 0,
-                        text : '<span class="wait">' + $html(this.msg("create-content.googledocs.presentation.creating")) + '</span>',
+                        text : '<span class="wait">' + this.msg("create-content.googledocs.presentation.creating") + '</span>',
                         noEscape : true
                      });
 
