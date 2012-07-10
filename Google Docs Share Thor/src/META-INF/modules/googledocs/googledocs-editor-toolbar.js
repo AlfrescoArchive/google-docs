@@ -28,6 +28,17 @@
 {
    // Ensure the namespace exists
    Alfresco.GoogleDocs = Alfresco.GoogleDocs || {};
+   
+   /**
+    * YUI Library aliases
+    */
+   var Dom = YAHOO.util.Dom;
+
+   /**
+    * Alfresco Slingshot aliases
+    */
+   var $html = Alfresco.util.encodeHTML,
+      $siteURL = Alfresco.util.siteURL;
 
    /**
     * Toolbar constructor.
@@ -81,7 +92,7 @@
        */
       onReady: function GDT_onReady()
       {
-         YAHOO.util.Event.addListener(this.id + "-googledocs-back-button", "click", this.onReturnClick);
+         YAHOO.util.Event.addListener(this.id + "-googledocs-back-button", "click", this.onReturnClick, this, true);
          YAHOO.util.Event.addListener(this.id + "-googledocs-discard-button", "click", this.onDiscardClick, this, true);
          YAHOO.util.Event.addListener(this.id + "-googledocs-save-button", "click", this.onSaveClick, this, true);
          YAHOO.util.Event.addListener(this.id + "-googledocs-auth-link", "click", this.onLoginClick);
@@ -101,7 +112,7 @@
           * 
           * We could use window.history.back(), but that does not trigger the document actions and metadata to be reloaded
           */
-         window.location = document.referrer;
+         this._navigateForward();
       },
 
       /**
@@ -175,7 +186,7 @@
             {
                fn: function GDT_discardSuccess(response) {
                   destroyLoaderMessage();
-                  window.location = document.referrer;
+                  me._navigateForward();
                },
                scope : this
             };
@@ -376,7 +387,7 @@
             fn: function GDT_saveSuccess(response) {
                loadingMessageShowing = true;
                destroyLoaderMessage();
-               window.location = document.referrer;
+               me._navigateForward();
             },
             scope : this
          };
@@ -646,6 +657,27 @@
             successCallback : success,
             failureCallback : failure
          });
+      },
+      
+      /**
+       * Displays the corresponding details page for the current node
+       *
+       * @method _navigateForward
+       * @private
+       */
+      _navigateForward: function GDT__navigateForward()
+      {
+         /* Did we come from the document library? If so, then direct the user back there */
+         if (document.referrer.match(/documentlibrary([?]|$)/) || document.referrer.match(/repository([?]|$)/))
+         {
+            // go back to the referrer page
+            window.location.href = document.referrer;
+         }
+         else
+         {
+            // go forward to the appropriate details page for the node
+            window.location.href = $siteURL("document-details?nodeRef=" + this.options.nodeRef);
+         }
       }
       
       
