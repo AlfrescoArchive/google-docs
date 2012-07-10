@@ -18,6 +18,23 @@
  */
 
 (function() {
+   
+   /*
+    * YUI aliases
+    */
+   var Dom = YAHOO.util.Dom,
+      Event = YAHOO.util.Event;
+   
+   function checkGoogleLogin(p_obj)
+   {
+      // create the profile image element
+      var imgEl = document.createElement("IMG");
+      Dom.setAttribute(imgEl, "src", "https://accounts.google.com/CheckCookie?continue=https%3A%2F%2Fwww.google.com%2Fintl%2Fen%2Fimages%2Flogos%2Faccounts_logo.png&followup=https%3A%2F%2Fwww.google.com%2Fintl%2Fen%2Fimages%2Flogos%2Faccounts_logo.png&chtml=LoginDoneHtml&checkedDomains=youtube&checkConnection=youtube%3A291%3A1");
+      Dom.setStyle(imgEl, "display", "none");
+      Event.addListener(imgEl, "load", p_obj.onLoad.fn, p_obj.onLoad.scope, true);
+      Event.addListener(imgEl, "error", p_obj.onError.fn, p_obj.onError.scope, true);
+      document.body.appendChild(imgEl);
+   }
 
    YAHOO.Bubbling.fire("registerAction", {
       actionName : "onGoogledocsActionEdit",
@@ -231,14 +248,58 @@
                scope : this
          };
          
-         Alfresco.util.Ajax.jsonGet( {
-            url : Alfresco.constants.PROXY_URI + 'googledocs/authurl?state='+Alfresco.constants.PROXY_URI,
-            dataObj : {},
-            successCallback : success,
-            failureCallback : failure
+         var loggedIn = function GDE_loggedIn() {
+            Alfresco.util.Ajax.jsonGet({
+               url : Alfresco.constants.PROXY_URI + 'googledocs/authurl?state='+Alfresco.constants.PROXY_URI,
+               dataObj : {},
+               successCallback : success,
+               failureCallback : failure
+            });
+         }
+         
+         checkGoogleLogin({
+            onLoad: { 
+               fn: loggedIn,
+               scope: this
+            },
+            onError: {
+               fn: function GDE_onLoad() {
+                  var success = {
+                        fn : function(response){
+                              loadingMessageShowing = true;
+                              destroyLoaderMessage();
+                              
+                              // basic and ugly
+                             window.showModalDialog(response.json.authURL);   
+
+                             loggedIn.call(this);
+                           
+                        },
+                        scope : this
+                  };
+                  
+                  var failure = {
+                        fn : function(response) {
+
+                           destroyLoaderMessage();
+                           Alfresco.util.PopupManager.displayMessage( {
+                                    text : this.msg("googledocs.actions.authentication.failure")
+                                 });
+
+                        },
+                        scope : this
+                  };
+                  
+                  Alfresco.util.Ajax.jsonGet( {
+                     url : Alfresco.constants.PROXY_URI + 'googledocs/authurl?state='+Alfresco.constants.PROXY_URI+"&override=true",
+                     dataObj : {},
+                     successCallback : success,
+                     failureCallback : failure
+                  });
+               },
+               scope: this
+            }
          });
-         
-         
       }
    }),
    
