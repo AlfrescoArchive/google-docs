@@ -142,8 +142,11 @@
    var requestOAuthURL = function GDA_requestOAuthURL(config)
    {
       Alfresco.util.Ajax.jsonGet({
-         url: Alfresco.constants.PROXY_URI + 'googledocs/authurl?state=' + Alfresco.constants.PROXY_URI + "&override=true",
-         dataObj : {},
+         url: Alfresco.constants.PROXY_URI + "googledocs/authurl",
+         dataObj : {
+            state: Alfresco.constants.PROXY_URI,
+            override: "true"
+         },
          successCallback: {
             fn: function(response) {
                doOAuth(response.json.authURL, {
@@ -156,7 +159,7 @@
             scope: this
          },
          failureCallback: {
-            fn: onLoadAuthenticationFailure,
+            fn: onGetAuthenticationFailure,
             scope: this
          }
       });
@@ -245,8 +248,8 @@
       Alfresco.util.Ajax.jsonGet({
          url: Alfresco.constants.PROXY_URI + "googledocs/authurl",
          dataObj: {
-            "state": Alfresco.constants.PROXY_URI,
-            "override": "true"
+            state: Alfresco.constants.PROXY_URI,
+            override: "true"
          },
          successCallback:
          {
