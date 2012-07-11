@@ -95,7 +95,6 @@
          YAHOO.util.Event.addListener(this.id + "-googledocs-back-button", "click", this.onReturnClick, this, true);
          YAHOO.util.Event.addListener(this.id + "-googledocs-discard-button", "click", this.onDiscardClick, this, true);
          YAHOO.util.Event.addListener(this.id + "-googledocs-save-button", "click", this.onSaveClick, this, true);
-         YAHOO.util.Event.addListener(this.id + "-googledocs-auth-link", "click", this.onLoginClick);
       },
       
       /**
@@ -107,11 +106,6 @@
       onReturnClick: function GDT_onReturnClick(e)
       {
          YAHOO.util.Event.preventDefault(e);
-         /*
-          * Send the user back to the last page - this could be either the document list or document details page
-          * 
-          * We could use window.history.back(), but that does not trigger the document actions and metadata to be reloaded
-          */
          this._navigateForward();
       },
 
@@ -570,96 +564,6 @@
       },
       
       /**
-       * Authenticate to Google Docs using OAuth flow
-       * 
-       * @method onLoginClick
-       * @param e {object} Click event object
-       */
-      onLoginClick: function GDT_onLoginClick(e)
-      {
-         YAHOO.util.Event.preventDefault(e);
-         
-        var loadingMessage = null, timerShowLoadingMessage = null, loadingMessageShowing = false, me = this;
-         
-         var fnShowLoadingMessage = function Googledocs_fnShowLoadingMessage() {
-            // Check the timer still exists. This is to prevent IE firing the
-            // event after we cancelled it. Which is "useful".
-            if (timerShowLoadingMessage) {
-               loadingMessage = Alfresco.util.PopupManager.displayMessage( {
-                        displayTime : 0,
-                        text : '<span class="wait">' + this.msg("googledocs.actions.editing") + '</span>',
-                        noEscape : true
-                     });
-
-               if (YAHOO.env.ua.ie > 0) {
-                  this.loadingMessageShowing = true;
-               } else {
-                  loadingMessage.showEvent.subscribe(
-                              function() {
-                                 this.loadingMessageShowing = true;
-                              }, this, true);
-               }
-            }
-         };
-         
-         var destroyLoaderMessage = function Googledocs_destroyLoaderMessage() {
-            if (timerShowLoadingMessage) {
-               // Stop the "slow loading" timed function
-               timerShowLoadingMessage.cancel();
-               timerShowLoadingMessage = null;
-            }
-
-            if (loadingMessage) {
-               if (loadingMessageShowing) {
-                  // Safe to destroy
-                  loadingMessage.destroy();
-                  loadingMessage = null;
-               } else {
-                  // Wait and try again later. Scope doesn't get set correctly
-                  // with "this"
-                  YAHOO.lang.later(100, me, destroyLoaderMessage);
-               }
-            }
-         };
-         
-         destroyLoaderMessage();
-         timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage);
-         
-         var success = {
-               fn : function(response){
-                     loadingMessageShowing = true;
-                     destroyLoaderMessage();
-                     
-                     // basic and ugly
-                    window.showModalDialog(response.json.authURL);   
-
-                    loggedIn();
-                  
-               },
-               scope : this
-         };
-         
-         var failure = {
-               fn : function(response) {
-
-                  destroyLoaderMessage();
-                  Alfresco.util.PopupManager.displayMessage( {
-                           text : this.msg("googledocs.actions.authentication.failure")
-                        });
-
-               },
-               scope : this
-         };
-         
-         Alfresco.util.Ajax.jsonGet( {
-            url : Alfresco.constants.PROXY_URI + 'googledocs/authurl?state='+Alfresco.constants.PROXY_URI+"&override=true",
-            dataObj : {},
-            successCallback : success,
-            failureCallback : failure
-         });
-      },
-      
-      /**
        * Displays the corresponding details page for the current node
        *
        * @method _navigateForward
@@ -670,7 +574,11 @@
          /* Did we come from the document library? If so, then direct the user back there */
          if (document.referrer.match(/documentlibrary([?]|$)/) || document.referrer.match(/repository([?]|$)/))
          {
-            // go back to the referrer page
+            /*
+             * Send the user back to the last page - this could be either the document list or document details page
+             * 
+             * We could use window.history.back(), but that does not trigger the document actions and metadata to be reloaded
+             */
             window.location.href = document.referrer;
          }
          else

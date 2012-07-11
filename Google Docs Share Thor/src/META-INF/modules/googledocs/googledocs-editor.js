@@ -95,6 +95,7 @@
          // TODO check for Google login?
          // TODO Deal with editorURL being empty?
          Dom.get(this.id + "-gdocs-wrapper").innerHTML = "<iframe class=\"gdocs-embed\" src=\"" + this.options.editorURL + "\"></iframe>";
+         //YAHOO.util.Event.addListener(this.id + "-googledocs-auth-link", "click", this.onLoginClick);
       },
       
       /**
