@@ -1363,13 +1363,13 @@ public class GoogleDocsServiceImpl
                     for (int i = workingList.size() - 1; i >= 0; i--)
                     {
                         RevisionEntry revisionEntry = workingList.get(i);
-                        String username = getUserMetadata().getAuthors().get(0).getName();
+                        String email = getUserMetadata().getAuthors().get(0).getEmail();
 
                         // if there is no author -- the entry is the initial
                         // creation
                         if (revisionEntry.getAuthors().size() > 0)
                         {
-                            if (revisionEntry.getAuthors().get(0).getName().equals(username))
+                            if (revisionEntry.getAuthors().get(0).getEmail().equals(email))
                             {
                                 workingList.remove(i);
                             }
