@@ -149,6 +149,18 @@
       <property name="behaviourFilter">
          <ref bean="policyBehaviourFilter" />
       </property>
+      <property name="activityService">
+         <ref bean="activityService"/>
+      </property>
+      <property name="siteService">
+         <ref bean="siteService"/>
+      </property>
+      <property name="tenantService">
+         <ref bean="tenantService" />
+      </property>
+      <property name="personService">
+         <ref bean="personService"/>
+      </property>
       <property name="importFormats">
          <map>
             <entry
