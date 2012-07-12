@@ -24,59 +24,20 @@
     */
    var Dom = YAHOO.util.Dom,
       Event = YAHOO.util.Event;
-   
-   function loadAccountsLogo(p_obj)
-   {
-      // create the profile image element
-      var imgEl = document.createElement("IMG");
-      Dom.setAttribute(imgEl, "src", "https://accounts.google.com/CheckCookie?" + 
-            "continue=https%3A%2F%2Fwww.google.com%2Fintl%2Fen%2Fimages%2Flogos%2Faccounts_logo.png&" + 
-            "followup=https%3A%2F%2Fwww.google.com%2Fintl%2Fen%2Fimages%2Flogos%2Faccounts_logo.png&" + 
-            "chtml=LoginDoneHtml&checkedDomains=youtube&checkConnection=youtube%3A291%3A1&" + 
-            "ts=" + Date.now());
-      Dom.setStyle(imgEl, "display", "none");
-      Event.addListener(imgEl, "load", p_obj.onLoad.fn, p_obj.onLoad.scope, true);
-      Event.addListener(imgEl, "error", p_obj.onError.fn, p_obj.onError.scope, true);
-      document.body.appendChild(imgEl);
-   }
-   
-   function onGetAuthenticationFailure(response)
-   {
-      destroyLoaderMessage();
-      Alfresco.util.PopupManager.displayMessage( {
-         text : this.msg("googledocs.actions.authentication.failure")
-      });
-   }
-   
-   // config.onLoggedIn should be on object literal of the form { fn:, scope }
-   function checkGoogleLogin(config)
-   {
-      loadAccountsLogo.call(this, {
-         onLoad:
-         { 
-            fn: config.onLoggedIn.fn,
-            scope: config.onLoggedIn.scope
-         },
-         onError:
-         {
-            // Re-start OAuth to force the user to log in
-            fn: function GDE_onLoad()
-            {
-               doOAuth(response.json.authURL, {
-                  onComplete: {
-                     fn: config.onLoggedIn.fn,
-                     scope: config.onLoggedIn.scope
-                  }
-               });
-            },
-            scope: this
-         }
-      });
-   }
 
+   /*
+    * Static user-displayed message, timer and status
+    */
    var loadingMessage = null, timerShowLoadingMessage = null, loadingMessageShowing = false;
    
-   var fnShowLoadingMessage = function Googledocs_fnShowLoadingMessage(msg)
+   /**
+    * Show the specified text to the user as an overlaid panel
+    * 
+    * @method fnShowLoadingMessage
+    * @static
+    * @param msg {String} The message text to display
+    */
+   var fnShowLoadingMessage = function GDA_fnShowLoadingMessage(msg)
    {
       // Check the timer still exists. This is to prevent IE firing the
       // event after we cancelled it. Which is "useful".
@@ -102,7 +63,13 @@
       }
    };
    
-   var destroyLoaderMessage = function Googledocs_destroyLoaderMessage()
+   /**
+    * Destroy the message displayed to the user
+    * 
+    * @method destroyLoaderMessage
+    * @static
+    */
+   var destroyLoaderMessage = function GDA_destroyLoaderMessage()
    {
       if (timerShowLoadingMessage)
       {
@@ -127,6 +94,94 @@
       }
    };
    
+   /**
+    * Forward the browser to the editing page for the specified repository nodeRef
+    * 
+    * @param nodeRef {String} NodeRef of the item being edited
+    * @returns null
+    */
+   var navigateToEditorPage = function GDA_navigateToEditorPage(nodeRef)
+   {
+      window.location = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT + 
+         "site/" + Alfresco.constants.SITE + "/googledocsEditor?nodeRef=" + nodeRef;
+   };
+   
+   /**
+    * Insert the Google accounts logo into the Dom with event handlers, in order for us to detect whether or not the user
+    * is currently logged into Google or not
+    * 
+    * @function loadAccountsLogo
+    * @static
+    * @param config {object} object literal containing success callback
+    *          - onLoad: object literal of form { fn: ..., scope: ... } to be executed if the image loads correctly (i.e. user is logged in)
+    *          - onError: object literal of form { fn: ..., scope: ... } to be executed if the image loads with errors (i.e. user not logged in)
+    * 
+    */
+   var loadAccountsLogo = function GDA_loadAccountsLogo(config)
+   {
+      // create the profile image element
+      var imgEl = document.createElement("IMG");
+      Dom.setAttribute(imgEl, "src", "https://accounts.google.com/CheckCookie?" + 
+            "continue=https%3A%2F%2Fwww.google.com%2Fintl%2Fen%2Fimages%2Flogos%2Faccounts_logo.png&" + 
+            "followup=https%3A%2F%2Fwww.google.com%2Fintl%2Fen%2Fimages%2Flogos%2Faccounts_logo.png&" + 
+            "chtml=LoginDoneHtml&checkedDomains=youtube&checkConnection=youtube%3A291%3A1&" + 
+            "ts=" + Date.now());
+      Dom.setStyle(imgEl, "display", "none");
+      Event.addListener(imgEl, "load", config.onLoad.fn, config.onLoad.scope, true);
+      Event.addListener(imgEl, "error", config.onError.fn, config.onError.scope, true);
+      document.body.appendChild(imgEl);
+   };
+
+   /**
+    * Perform some work, checking first that the user is logged in to Google in the client. If they are not logged in then
+    * an attempt is made to force them to re-login by prompting them to run through the OAuth process again, before doing the
+    * work.
+    * 
+    * @function checkGoogleLogin
+    * @static
+    * @param config {object} object literal containing success callback
+    *          - onLoggedIn: object literal of form { fn: ..., scope: ... } to be executed if the user is logged in to Google
+    * 
+    */
+   var checkGoogleLogin = function GDA_checkGoogleLogin(config)
+   {
+      loadAccountsLogo.call(this, {
+         onLoad:
+         { 
+            fn: config.onLoggedIn.fn,
+            scope: config.onLoggedIn.scope
+         },
+         onError:
+         {
+            // Re-start OAuth to force the user to log in
+            fn: function GDE_onLoad()
+            {
+               requestOAuthURL({
+                  onComplete: {
+                     fn: config.onLoggedIn.fn,
+                     scope: config.onLoggedIn.scope
+                  },
+                  override: true
+               });
+            },
+            scope: this
+         }
+      });
+   };
+   
+   /**
+    * Start the OAuth process in the client. A popup window is opened using the supplied URL, which should present an appropriate
+    * authorization screen, and hand back control to the parent window.
+    * 
+    * When control is received back again the callback supplied in the config will be executed
+    * 
+    * @method doOAuth
+    * @static
+    * 
+    * @param authURL {String} URL to use in the popup to start authorization
+    * @param config {object} object literal containing success callback
+    *          - onComplete: object literal of form { fn: ..., scope: ... } to be executed when OAuth has completed
+    */
    var doOAuth = function GDA_launchOAuth(authURL, config)
    {
       // basic and ugly
@@ -137,7 +192,17 @@
    };
    
    /**
-    * @param config {object} must include callback object 'onComplete' as {fn: .., scope: ...}
+    * Make a request to the repository to get the OAuth URL to be used to authorize against Google Docs, and start the 
+    * OAuth process in the client if required. Normally authorization is performed only if not currently authorized, but
+    * the override flag can be used to force re-authentication.
+    * 
+    * @method requestOAuthURL
+    * @static
+    * 
+    * @param config {object} object literal containing success callback
+    *          - onComplete: object literal of form { fn: ..., scope: ... } to be executed when OAuth has completed
+    *          - override: {boolean} Normally OAuth will be attempted only if the repository indicates the user is not
+    *             authenticated. Use this flag to force re-authorization regardless of the current state.
     */
    var requestOAuthURL = function GDA_requestOAuthURL(config)
    {
@@ -149,23 +214,53 @@
          },
          successCallback: {
             fn: function(response) {
-               doOAuth(response.json.authURL, {
-                  onComplete: {
-                     fn: config.onComplete.fn,
-                     scope: config.onComplete.scope
-                  }
-               });
+               if (!response.json.authenticated || config.override == true)
+               {
+                  doOAuth(response.json.authURL, {
+                     onComplete: {
+                        fn: config.onComplete.fn,
+                        scope: config.onComplete.scope
+                     }
+                     /*onComplete: {
+                        fn: function() {
+                           requestOAuthURL.call(this); // Recursively call outer function
+                        }
+                     }*/
+                  });
+               }
+               else
+               {
+                  config.onComplete.fn.call(config.onComplete.scope);
+               }
             },
             scope: this
          },
          failureCallback: {
-            fn: onGetAuthenticationFailure,
+            fn: function() {
+               destroyLoaderMessage();
+               Alfresco.util.PopupManager.displayMessage( {
+                  text : this.msg("googledocs.actions.authentication.failure")
+               });
+            },
             scope: this
          }
       });
    };
    
-   var _request = function DGA__request(config)
+   /**
+    * Make a request to the repository to perform a Google Docs related action
+    * 
+    * The request is executed via an async call and the status of the reponse is checked. If a 502 response is returned, then
+    * an attempt is made to re-authorize the repository to Google Docs via OAuth, before the request is re-tried.
+    * 
+    * @method _request
+    * @static
+    * 
+    * @param config {object} object literal containing success and failure callbacks
+    *          - successCallback: object literal of form { fn: ..., scope: ... } to be executed when the request succeeds
+    *          - failureCallback: object literal of form { fn: ..., scope: ... } to be executed when the request succeeds
+    */
+   var _request = function GDA__request(config)
    {
       var success = config.successCallback;
           
@@ -181,12 +276,13 @@
                         _request.call(this, config); // Recursively call outer function
                      },
                      scope: this
-                  }
+                  },
+                  override: true
                });
             }
             else
             {
-               config.failureCallback.call(config.failureCallback.scope);
+               config.failureCallback.fn.call(config.failureCallback.scope);
             }
          },
          scope: this
@@ -201,12 +297,18 @@
    };
    
    /**
+    * Create a new content item of the specified type in Google Docs. This method fires off a request to the repository, and will handle
+    * authorization errors returned by attempting to re-authorize via OAuth.
+    * 
+    * After creating the item in Google Docs the user is forwarded directly to the editor page.
+    * 
     * @method createContent
     * @static
     * 
-    * @param contentType {string} e.g. "presentation"
+    * @param record {object} Object literal representing the folder in which to create the content. Must have a 'nodeRef' property.
+    * @param contentType {string} one of "document", "spreadsheet" or "presentation"
     */
-   var createContent = function Googledocs_createContent(record, contentType)
+   var createContent = function GDA_createContent(record, contentType)
    {
       _request.call(this, {
          url: Alfresco.constants.PROXY_URI + 'googledocs/createContent',
@@ -219,7 +321,7 @@
             {
                loadingMessageShowing = true;
                destroyLoaderMessage();
-               window.location = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT + "site/" + Alfresco.constants.SITE + "/googledocsEditor?nodeRef=" + response.json.nodeRef; 
+               navigateToEditorPage(response.json.nodeRef);
             },
             scope : this
          },
@@ -236,69 +338,29 @@
    };
 
    /**
-    * Get the Google authentication status from the repo and do some work based on the result. If not authenticated an attempt will be made to reconnect.
+    * Delegate handler for Create Google Docs XXX actions. Defers to createContent() to perform the actual work, this function wraps createContent
+    * with checks to first ensure that the current user is authorized against Google Docs and that they are logged into Google in the client.
     * 
-    * @method getAuthenticationStatus
-    * @static
-    * 
-    * @param config {object} must have property 'onAuthenticated' { fn, scope }
-    */
-   var getAuthenticationStatus = function getAuthenticationStatus(config)
-   {
-      Alfresco.util.Ajax.jsonGet({
-         url: Alfresco.constants.PROXY_URI + "googledocs/authurl",
-         dataObj: {
-            state: Alfresco.constants.PROXY_URI,
-            override: "true"
-         },
-         successCallback:
-         {
-            fn: function(response)
-            {
-               var authURL = response.json.authURL;
-               if (!response.json.authenticated)
-               {
-                  doOAuth(authURL, {
-                     onComplete: {
-                        fn: function() {
-                           getAuthenticationStatus.call(this); // Recursively call outer function
-                        }
-                     }
-                  });
-                  doWork.call(this);
-               }
-               else
-               {
-                  config.onAuthenticated.fn.call(config.onAuthenticated.scope);
-               }
-            }
-         },
-         failureCallback: {
-            fn: onGetAuthenticationFailure,
-            scope: this
-         }
-      });
-   };
-
-   /**
     * @method createGoogleDoc
     * @static
     * 
-    * @param contentType {string} e.g. "presentation"
+    * @param record {object} Object literal representing the folder in which to create the content. Must have a 'nodeRef' property.
+    * @param contentType {string} one of "document", "spreadsheet" or "presentation"
     */
    var createGoogleDoc = function createGoogleDoc(record, contentType)
    {
       destroyLoaderMessage.call(this);
       timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage, [this.msg("create-content.googledocs." + contentType + ".creating")]);
 
-      getAuthenticationStatus.call(this, {
-         onAuthenticated: {
+      requestOAuthURL.call(this, {
+         onComplete: {
             fn: function() {
                checkGoogleLogin.call(this, {
                   onLoggedIn: {
                      fn: function() {
                         createContent.call(this, record, contentType);
-                     }
+                     },
+                     scope: this
                   }
                });
             },
@@ -326,10 +388,10 @@
                   fn : function(response){
                      loadingMessageShowing = true;
                      destroyLoaderMessage();
-                     window.location = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT + "site/" + Alfresco.constants.SITE + "/googledocsEditor?nodeRef=" + response.json.nodeRef; 
+                     navigateToEditorPage(response.json.nodeRef);
                   },
                   scope : this
-             },
+               },
                failureCallback: {
                   fn: function() {
                      destroyLoaderMessage();
@@ -409,8 +471,8 @@
             
          };
          
-         getAuthenticationStatus.call(this, {
-            onAuthenticated: {
+         requestOAuthURL.call(this, {
+            onComplete: {
                fn: function() {
                   checkGoogleLogin.call(this, {
                      onLoggedIn: {
@@ -434,13 +496,13 @@
          destroyLoaderMessage.call(this);
          timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage, [this.msg("googledocs.actions.resume")]);
          
-         getAuthenticationStatus.call(this, {
-            onAuthenticated: {
+         requestOAuthURL.call(this, {
+            onComplete: {
                fn: function() {
                   checkGoogleLogin.call(this, {
                      onLoggedIn: {
                         fn: function() {
-                           window.location = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT+"site/"+Alfresco.constants.SITE + "/googledocsEditor?nodeRef=" + record.nodeRef;
+                           navigateToEditorPage(record.nodeRef);
                         }
                      }
                   });
@@ -449,9 +511,9 @@
             }
          });
       }
-   }),   
+   }),
    
-   //Start Create Content Actions
+   // Start Create Content Actions
    
    YAHOO.Bubbling.fire("registerAction", {
       actionName : "onGoogledocsActionCreateDocument",
