@@ -33,7 +33,7 @@
    /*
     * Static user-displayed message, timer and status
     */
-   var loadingMessage = null;
+   var userMessage = null, userMessageText = "";
    
    /**
     * Destroy the message displayed to the user
@@ -43,10 +43,11 @@
     */
    var hideMessage = function GDA_hideMessage()
    {
-      if (loadingMessage)
+      if (userMessage)
       {
-         loadingMessage.destroy();
-         loadingMessage = null;
+         userMessage.destroy();
+         userMessage = null;
+         userMessageText = "";
       }
    };
    
@@ -62,14 +63,18 @@
     */
    var showMessage = function GDA_showMessage(config)
    {
-      hideMessage();
-      var displayTime = (config.displayTime === null || typeof config.displayTime == "undefined") ? 0 : config.displayTime,
-            showSpinner = (config.showSpinner === null || typeof config.showSpinner == "undefined") ? true : config.showSpinner;
-      loadingMessage = Alfresco.util.PopupManager.displayMessage({
-         displayTime: displayTime,
-         text: showSpinner ? '<span class="wait">' + config.text + '</span>' : config.text,
-         noEscape: true
-      });
+      if (userMessageText != config.text) // only update if text has changed
+      {
+         hideMessage();
+         var displayTime = (config.displayTime === null || typeof config.displayTime == "undefined") ? 0 : config.displayTime,
+               showSpinner = (config.showSpinner === null || typeof config.showSpinner == "undefined") ? true : config.showSpinner;
+         userMessage = Alfresco.util.PopupManager.displayMessage({
+            displayTime: displayTime,
+            text: showSpinner ? '<span class="wait">' + config.text + '</span>' : config.text,
+            noEscape: true
+         });
+         userMessageText = config.text;
+      }
    }
    
    /**
