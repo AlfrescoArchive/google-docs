@@ -28,6 +28,10 @@
    -o-border-image: url("images/btn-default-border.png") 1 stretch; /* Opera */
 }
 
+.gd-button:hover {
+	cursor: pointer;
+}
+
 .gd-logo {
 	width: 140px;
    height: 30px;
