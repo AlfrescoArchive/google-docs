@@ -167,6 +167,8 @@
 
          var discardContent = function GDT_discardContent()
          {
+            this.destroy(); // Remove the confirmation dialog
+            
             var success =
             {
                fn: function GDT_discardSuccess(response) {
@@ -381,6 +383,9 @@
                      {
                         this.configDialog.widgets.okButton.set("disabled", true);
                         this.configDialog.widgets.cancelButton.set("disabled", true);
+                        
+                        // Hide the dialog before showing the message [GOOGLEDOCS-37]
+                        this.configDialog.hide();
                         
                         this.showMessage({
                            text: this.msg("googledocs.actions.saving"),
