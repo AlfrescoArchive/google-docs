@@ -464,9 +464,17 @@ public class GoogleDocsServiceImpl
             if (accessGrant.getRefreshToken() == null)
             {
                 OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
-                if (credentialInfo.getOAuthRefreshToken() != null)
+                // In the "rare" case that no refresh token is returned and the
+                // users credentials are no longer there we need to skip this
+                // next check
+                if (credentialInfo != null)
                 {
-                    accessGrant = new AccessGrant(accessGrant.getAccessToken(), accessGrant.getScope(), credentialInfo.getOAuthRefreshToken(), accessGrant.getExpireTime().intValue());
+                    // If there is a persisted refresh ticket...add it to the
+                    // accessGrant so that it is persisted across the update
+                    if (credentialInfo.getOAuthRefreshToken() != null)
+                    {
+                        accessGrant = new AccessGrant(accessGrant.getAccessToken(), accessGrant.getScope(), credentialInfo.getOAuthRefreshToken(), accessGrant.getExpireTime().intValue());
+                    }
                 }
             }
 
