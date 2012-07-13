@@ -19,6 +19,11 @@
 
 (function() {
    
+   /**
+    * Google Docs namespace
+    */
+   Alfresco.GoogleDocs = Alfresco.GoogleDocs || {};
+   
    /*
     * YUI aliases
     */
@@ -51,13 +56,13 @@
 
          if (YAHOO.env.ua.ie > 0)
          {
-            this.loadingMessageShowing = true;
+            loadingMessageShowing = true;
          }
          else
          {
             loadingMessage.showEvent.subscribe(
                function() {
-                  this.loadingMessageShowing = true;
+                  loadingMessageShowing = true;
                }, this, true);
          }
       }
@@ -93,6 +98,19 @@
          }
       }
    };
+   
+   /**
+    * Cancel any existing popup message and show a new message
+    * 
+    * @method cancelAndShowMessage
+    * @static
+    * @param msg {String} The message text to display
+    */
+   var cancelAndShowMessage = function GDA_cancelAndShowMessage(msg)
+   {
+      destroyLoaderMessage.call(this);
+      timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage, [msg]);
+   }
    
    /**
     * Forward the browser to the editing page for the specified repository nodeRef
@@ -147,15 +165,26 @@
    {
       loadAccountsLogo.call(this, {
          onLoad:
-         { 
-            fn: config.onLoggedIn.fn,
-            scope: config.onLoggedIn.scope
+         {
+            fn: function GDA_checkGoogleLogin_onLoad()
+            {
+               if (Alfresco.logger.isDebugEnabled() )
+               {
+                  Alfresco.logger.debug("Google accounts logo loaded successfully. Continuing.");
+               }
+               config.onLoggedIn.fn.call(config.onLoggedIn.scope);
+            },
+            scope: this
          },
          onError:
          {
             // Re-start OAuth to force the user to log in
-            fn: function GDE_onLoad()
+            fn: function GDA_checkGoogleLogin_onError()
             {
+               if (Alfresco.logger.isDebugEnabled() )
+               {
+                  Alfresco.logger.debug("Google accounts logo loaded with errors. Re-requesting OAuth.");
+               }
                requestOAuthURL({
                   onComplete: {
                      fn: config.onLoggedIn.fn,
@@ -184,11 +213,25 @@
     */
    var doOAuth = function GDA_launchOAuth(authURL, config)
    {
-      // basic and ugly
-      // TODO Improve this
-      window.showModalDialog(authURL);   
-      // TODO execute a handler only when the process has completed
-      config.onComplete.fn.call(config.onComplete.scope);
+      var returnFn = function(result)
+      {
+         if (result)
+         {
+            // execute the handler only when the process has completed
+            config.onComplete.fn.call(config.onComplete.scope);
+         }
+      };
+      Alfresco.GoogleDocs.onOAuthReturn = returnFn;
+      
+      if (typeof window.showModalDialog == "function")
+      {
+         var returnVal = window.showModalDialog(authURL, {onOAuthReturn: returnFn}, "dialogwidth:400;dialogheight:400"); // only returns on popup close
+      }
+      else
+      {
+         var popup = window.open(authURL, "GDOAuth", "menubar=no,location=no,resizable=no,scrollbars=no,status=no,width=400,height=400,modal=yes"); // returns straight away
+      }
+      destroyLoaderMessage.call(this);
    };
    
    /**
@@ -206,6 +249,11 @@
     */
    var requestOAuthURL = function GDA_requestOAuthURL(config)
    {
+      if (Alfresco.logger.isDebugEnabled())
+      {
+         Alfresco.logger.debug("Checking Google authorization status");
+         Alfresco.logger.debug("Override status: " + config.override);
+      }
       Alfresco.util.Ajax.jsonGet({
          url: Alfresco.constants.PROXY_URI + "googledocs/authurl",
          dataObj : {
@@ -214,8 +262,16 @@
          },
          successCallback: {
             fn: function(response) {
+               if (Alfresco.logger.isDebugEnabled())
+               {
+                  Alfresco.logger.debug("Authorized: " + response.json.authenticated);
+               }
                if (!response.json.authenticated || config.override == true)
                {
+                  if (Alfresco.logger.isDebugEnabled())
+                  {
+                     Alfresco.logger.debug("Authorizing using URL: " + response.json.authURL);
+                  }
                   doOAuth(response.json.authURL, {
                      onComplete: {
                         fn: config.onComplete.fn,
@@ -270,6 +326,10 @@
          {
             if (response.serverResponse.status == 502) // Remote authentication has failed
             {
+               if (Alfresco.logger.isDebugEnabled() )
+               {
+                  Alfresco.logger.debug("Google Docs request requires authorization but repository does not appear to be authorized. Re-requesting OAuth.");
+               }
                requestOAuthURL({
                   onComplete: {
                      fn: function() {
@@ -310,6 +370,10 @@
     */
    var createContent = function GDA_createContent(record, contentType)
    {
+      if (Alfresco.logger.isDebugEnabled() )
+      {
+         Alfresco.logger.debug("Creating Google Doc of type " + contentType);
+      }
       _request.call(this, {
          url: Alfresco.constants.PROXY_URI + 'googledocs/createContent',
          dataObj: {
@@ -349,8 +413,8 @@
     */
    var createGoogleDoc = function createGoogleDoc(record, contentType)
    {
-      destroyLoaderMessage.call(this);
-      timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage, [this.msg("create-content.googledocs." + contentType + ".creating")]);
+      var msgId = "create-content.googledocs." + contentType + ".creating";
+      cancelAndShowMessage.call(this, this.msg(msgId));
 
       requestOAuthURL.call(this, {
          onComplete: {
@@ -358,6 +422,7 @@
                checkGoogleLogin.call(this, {
                   onLoggedIn: {
                      fn: function() {
+                        cancelAndShowMessage.call(this, this.msg(msgId));
                         createContent.call(this, record, contentType);
                      },
                      scope: this
@@ -375,10 +440,10 @@
          
          var me = this;
          
-         destroyLoaderMessage.call(this);
-         timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage, [this.msg("googledocs.actions.editing")]);
+         cancelAndShowMessage.call(this, this.msg("googledocs.actions.editing"));
          
          var editDocument = function Googledocs_editDocument() {
+            cancelAndShowMessage.call(this, this.msg("googledocs.actions.editing"));
             _request.call(this, {
                url: Alfresco.constants.PROXY_URI + 'googledocs/uploadContent',
                dataObj: {
@@ -492,9 +557,8 @@
    YAHOO.Bubbling.fire("registerAction", {
       actionName : "onGoogledocsActionResume",
       fn : function dlA_onGoogledocsActionResume(record) {
-         
-         destroyLoaderMessage.call(this);
-         timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage, [this.msg("googledocs.actions.resume")]);
+
+         cancelAndShowMessage.call(this, this.msg("googledocs.actions.resume"));
          
          requestOAuthURL.call(this, {
             onComplete: {
@@ -537,5 +601,7 @@
          createGoogleDoc.call(this, record, "presentation");
       }
    })
+   
+   Alfresco.GoogleDocs.onOAuthReturn = null;
    
 })();

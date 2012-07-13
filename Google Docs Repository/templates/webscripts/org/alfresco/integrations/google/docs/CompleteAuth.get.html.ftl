@@ -45,16 +45,30 @@ div.panel
       <br/>
       <#if authenticated>
        <script type="text/javascript">
-         self.close();
+         if (typeof window.opener.window.Alfresco.GoogleDocs == "object" && typeof window.opener.window.Alfresco.GoogleDocs.onOAuthReturn == "function")
+         {
+            window.opener.window.Alfresco.GoogleDocs.onOAuthReturn(true);
+            self.close();
+         }
+         else if (typeof window.dialogArguments == "object" && typeof window.dialogArguments.onOAuthReturn == "function")
+         {
+            window.dialogArguments.onOAuthReturn(true);
+            returnValue = {authenticated: true};
+            self.close();
+         }
+         else
+         {
+            alert("Could not find return function in parent window");
+         }
       </script>
       <p style="font-size:150%">Link to Google Docs&trade; Account Complete.</p>
       <br/>
       <p>If the page does not close, clink the link below</p>
       <#else>
-      <p style="font-size:150%">Failed to link Google Docs&trade; Account.  Please try again at a later time.  If the issue continues, please contact your System Administrator.</p>
+      <p style="font-size:150%">Failed to link Google Docs&trade; Account. Please try again at a later time. If the issue continues, please contact your System Administrator.</p>
       </#if>
       <br/>
-      <a href="self.close();">Close page</a>
+      <a href="javascript: self.close();">Close page</a>
       <br/>
       <br/>
       <br/>
