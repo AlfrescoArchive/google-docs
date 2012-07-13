@@ -10,7 +10,7 @@
                </div>
                <div class="yui-u">
                   <input id="${el}-minorVersion-radioButton" type="radio" name="majorVersion" value="false" checked="checked" tabindex="0"/>
-                  <label for="${el}-minorVersion-radioButton" id="${el}-minorVersion">${msg("label.minorVersion")}</label>
+                  <label for="${el}-minorVersion-radioButton" id="${el}-minorVersion">${msg("label.minorVersion", minorVersion)}</label>
                </div>
             </div>
             <div class="yui-gd">
@@ -18,7 +18,7 @@
                </div>
                <div class="yui-u">
                   <input id="${el}-majorVersion-radioButton" type="radio" name="majorVersion" value="true" tabindex="0"/>
-                  <label for="${el}-majorVersion-radioButton" id="${el}-majorVersion">${msg("label.majorVersion")}</label>
+                  <label for="${el}-majorVersion-radioButton" id="${el}-majorVersion">${msg("label.majorVersion", majorVersion)}</label>
                </div>
             </div>
             <div class="yui-gd">

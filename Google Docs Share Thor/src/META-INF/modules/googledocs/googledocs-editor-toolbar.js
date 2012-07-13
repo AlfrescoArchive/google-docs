@@ -74,6 +74,15 @@
           * @default ""
           */
          nodeRef: "",
+
+         /**
+          * Site URL name
+          * 
+          * @property site
+          * @type String
+          * @default ""
+          */
+         site: "",
          
          /**
           * Whether the repository content item is versioned or not
@@ -82,7 +91,16 @@
           * @type boolean
           * @default true
           */
-         isVersioned: true
+         isVersioned: true,
+         
+         /**
+          * Version of the current document, if versioned
+          * 
+          * @property version
+          * @type String
+          * @default ""
+          */
+         version: true
       },
 
       /**
@@ -361,10 +379,13 @@
          {
             if (!this.configDialog)
             {
+               var templateUrl = Alfresco.constants.URL_SERVICECONTEXT + "modules/googledocs/create-new-version?version=" + 
+                  this.options.version;
+               
                this.configDialog = new Alfresco.module.SimpleDialog(this.id + "-configDialog").setOptions(
                {
                   width: "30em",
-                  templateUrl: Alfresco.constants.URL_SERVICECONTEXT + "modules/googledocs/create-new-version",
+                  templateUrl: templateUrl,
                   actionUrl: actionUrl,
                   onSuccess: success,
                   onFailure: failure,

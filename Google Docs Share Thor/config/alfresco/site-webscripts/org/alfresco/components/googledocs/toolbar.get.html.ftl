@@ -8,7 +8,9 @@
 <script type="text/javascript">//<![CDATA[
 new Alfresco.GoogleDocs.Toolbar("${el}").setOptions({
    nodeRef: "${page.url.args.nodeRef?js_string}",
-   isVersioned: ${isVersioned?string}
+   site: "${site?js_string}",
+   isVersioned: ${isVersioned?string},
+   version: "${version?js_string}"
 }).setMessages(
    ${messages}
 );
