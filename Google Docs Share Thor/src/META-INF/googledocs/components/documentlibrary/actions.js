@@ -33,83 +33,43 @@
    /*
     * Static user-displayed message, timer and status
     */
-   var loadingMessage = null, timerShowLoadingMessage = null, loadingMessageShowing = false;
-   
-   /**
-    * Show the specified text to the user as an overlaid panel
-    * 
-    * @method fnShowLoadingMessage
-    * @static
-    * @param msg {String} The message text to display
-    */
-   var fnShowLoadingMessage = function GDA_fnShowLoadingMessage(msg)
-   {
-      // Check the timer still exists. This is to prevent IE firing the
-      // event after we cancelled it. Which is "useful".
-      if (timerShowLoadingMessage)
-      {
-         loadingMessage = Alfresco.util.PopupManager.displayMessage({
-            displayTime : 0,
-            text : '<span class="wait">' + msg + '</span>',
-            noEscape : true
-         });
-
-         if (YAHOO.env.ua.ie > 0)
-         {
-            loadingMessageShowing = true;
-         }
-         else
-         {
-            loadingMessage.showEvent.subscribe(
-               function() {
-                  loadingMessageShowing = true;
-               }, this, true);
-         }
-      }
-   };
+   var loadingMessage = null;
    
    /**
     * Destroy the message displayed to the user
     * 
-    * @method destroyLoaderMessage
+    * @method hideMessage
     * @static
     */
-   var destroyLoaderMessage = function GDA_destroyLoaderMessage()
+   var hideMessage = function GDA_hideMessage()
    {
-      if (timerShowLoadingMessage)
-      {
-         // Stop the "slow loading" timed function
-         timerShowLoadingMessage.cancel();
-         timerShowLoadingMessage = null;
-      }
-
       if (loadingMessage)
       {
-         if (loadingMessageShowing)
-         {
-            // Safe to destroy
-            loadingMessage.destroy();
-            loadingMessage = null;
-         }
-         else
-         {
-            // Wait and try again later
-            YAHOO.lang.later(100, this, destroyLoaderMessage);
-         }
+         loadingMessage.destroy();
+         loadingMessage = null;
       }
    };
    
    /**
-    * Cancel any existing popup message and show a new message
+    * Remove any existing popup message and show a new message
     * 
-    * @method cancelAndShowMessage
+    * @method showMessage
     * @static
-    * @param msg {String} The message text to display
+    * @param config {object} object literal containing success callback
+    *          - text {String} The message text to display
+    *          - displayTime {int} Display time in seconds. Defaults to zero, i.e. show forever
+    *          - showSpinner {boolean} Whether to display the spinner image or not, default is true
     */
-   var cancelAndShowMessage = function GDA_cancelAndShowMessage(msg)
+   var showMessage = function GDA_showMessage(config)
    {
-      destroyLoaderMessage.call(this);
-      timerShowLoadingMessage = YAHOO.lang.later(0, this, fnShowLoadingMessage, [msg]);
+      hideMessage();
+      var displayTime = (config.displayTime === null || typeof config.displayTime == "undefined") ? 0 : config.displayTime,
+            showSpinner = (config.showSpinner === null || typeof config.showSpinner == "undefined") ? true : config.showSpinner;
+      loadingMessage = Alfresco.util.PopupManager.displayMessage({
+         displayTime: displayTime,
+         text: showSpinner ? '<span class="wait">' + config.text + '</span>' : config.text,
+         noEscape: true
+      });
    }
    
    /**
@@ -231,7 +191,7 @@
       {
          var popup = window.open(authURL, "GDOAuth", "menubar=no,location=no,resizable=no,scrollbars=no,status=no,width=400,height=400,modal=yes"); // returns straight away
       }
-      destroyLoaderMessage.call(this);
+      hideMessage.call(this);
    };
    
    /**
@@ -293,9 +253,10 @@
          },
          failureCallback: {
             fn: function() {
-               destroyLoaderMessage();
-               Alfresco.util.PopupManager.displayMessage( {
-                  text : this.msg("googledocs.actions.authentication.failure")
+               showMessage({
+                  text: this.msg("googledocs.actions.authentication.failure"), 
+                  displayTime: 2.5,
+                  showSpinner: false
                });
             },
             scope: this
@@ -383,17 +344,16 @@
          successCallback: {
             fn: function(response)
             {
-               loadingMessageShowing = true;
-               destroyLoaderMessage();
                navigateToEditorPage(response.json.nodeRef);
             },
             scope : this
          },
          failureCallback: {
             fn: function() {
-               destroyLoaderMessage();
-               Alfresco.util.PopupManager.displayMessage({
-                  text: this.msg("create-content.googledocs." + contentType + ".failure")
+               showMessage({
+                  text: this.msg("create-content.googledocs." + contentType + ".failure"), 
+                  displayTime: 2.5,
+                  showSpinner: false
                });
             },
             scope: this
@@ -414,7 +374,11 @@
    var createGoogleDoc = function createGoogleDoc(record, contentType)
    {
       var msgId = "create-content.googledocs." + contentType + ".creating";
-      cancelAndShowMessage.call(this, this.msg(msgId));
+      showMessage({
+         text: this.msg("create-content.googledocs." + contentType + ".creating"), 
+         displayTime: 0,
+         showSpinner: true
+      });
 
       requestOAuthURL.call(this, {
          onComplete: {
@@ -422,7 +386,11 @@
                checkGoogleLogin.call(this, {
                   onLoggedIn: {
                      fn: function() {
-                        cancelAndShowMessage.call(this, this.msg(msgId));
+                        showMessage({
+                           text: this.msg("create-content.googledocs." + contentType + ".creating"), 
+                           displayTime: 0,
+                           showSpinner: true
+                        });
                         createContent.call(this, record, contentType);
                      },
                      scope: this
@@ -440,28 +408,39 @@
          
          var me = this;
          
-         cancelAndShowMessage.call(this, this.msg("googledocs.actions.editing"));
+         showMessage({
+            text: this.msg("googledocs.actions.editing"), 
+            displayTime: 0,
+            showSpinner: true
+         });
          
          var editDocument = function Googledocs_editDocument() {
-            cancelAndShowMessage.call(this, this.msg("googledocs.actions.editing"));
+            showMessage({
+               text: this.msg("googledocs.actions.editing"), 
+               displayTime: 0,
+               showSpinner: true
+            });
             _request.call(this, {
                url: Alfresco.constants.PROXY_URI + 'googledocs/uploadContent',
                dataObj: {
                   nodeRef: record.nodeRef
                },
-               successCallback: {
-                  fn : function(response){
-                     loadingMessageShowing = true;
-                     destroyLoaderMessage();
+               successCallback:
+               {
+                  fn : function(response)
+                  {
                      navigateToEditorPage(response.json.nodeRef);
                   },
                   scope : this
                },
-               failureCallback: {
-                  fn: function() {
-                     destroyLoaderMessage();
-                     Alfresco.util.PopupManager.displayMessage({
-                        text : this.msg("googledocs.actions.editing.failure")
+               failureCallback:
+               {
+                  fn: function()
+                  {
+                     showMessage({
+                        text: this.msg("googledocs.actions.editing.failure"), 
+                        displayTime: 2.5,
+                        showSpinner: false
                      });
                   },
                   scope: this
@@ -490,8 +469,7 @@
                   handler: function cancelEdit()
                   {
                      me.promptActive = false;
-                     loadingMessageShowing = true;
-                     destroyLoaderMessage();
+                     hideMessage();
                      this.destroy();  
                   },
                   isDefault: true
@@ -501,30 +479,33 @@
          
          var checkConversion = function Googledocs_checkConversion(){
             
-            var success = {
-                  fn : function(response)
+            var success =
+            {
+               fn : function(response)
+               {
+                  if (response.json.export_action != "default")
                   {
-                     if (response.json.export_action != "default")
-                     {
-                        conversionWarning.call(this, response.json.export_action);
-                     }
-                     else
-                     {
-                        editDocument.call(this);
-                     }
-                  },
-                  scope : this
+                     conversionWarning.call(this, response.json.export_action);
+                  }
+                  else
+                  {
+                     editDocument.call(this);
+                  }
+               },
+               scope : this
             };
             
-            var failure = {
-                  fn : function(response){
-                     loadingMessageShowing = true;
-                     destroyLoaderMessage();
-                     Alfresco.util.PopupManager.displayMessage( {
-                              text : this.msg("googledocs.actions.exportable.check.failure")
-                           });
-                  },
-                  scope : this
+            var failure =
+            {
+               fn : function(response)
+               {
+                  showMessage({
+                     text: this.msg("googledocs.actions.exportable.check.failure"), 
+                     displayTime: 2.5,
+                     showSpinner: false
+                  });
+               },
+               scope : this
             };
             
             Alfresco.util.Ajax.jsonGet( {
@@ -558,7 +539,11 @@
       actionName : "onGoogledocsActionResume",
       fn : function dlA_onGoogledocsActionResume(record) {
 
-         cancelAndShowMessage.call(this, this.msg("googledocs.actions.resume"));
+         showMessage({
+            text: this.msg("googledocs.actions.resume"), 
+            displayTime: 0,
+            showSpinner: true
+         });
          
          requestOAuthURL.call(this, {
             onComplete: {
