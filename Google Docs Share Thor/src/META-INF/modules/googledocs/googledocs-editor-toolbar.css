@@ -41,12 +41,24 @@
    background-repeat: no-repeat;
 }
 
-.gdback, .gd-logo {
+.gdback, .gd-logo, .after-gdback {
 	float: left;
 }
 
-.gddiscard, .gdsave {
+.gddiscard, .gdsave, .before-gdsave {
    float: right;
+}
+
+.before-gdsave {
+	width: 1px;
+	height: 100%;
+	background: url("images/btn-border.png") top right;
+}
+
+.after-gdback {
+   width: 1px;
+   height: 100%;
+   background: url("images/btn-border.png") top left;
 }
 
 .alfresco-share .sticky-wrapper .gdtoolbar button {
