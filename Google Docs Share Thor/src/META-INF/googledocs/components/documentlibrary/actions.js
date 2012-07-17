@@ -186,16 +186,45 @@
             config.onComplete.fn.call(config.onComplete.scope);
          }
       };
-      Alfresco.GoogleDocs.onOAuthReturn = returnFn;
       
-      if (typeof window.showModalDialog == "function")
+      /* 
+       * Throw up a prompt to the user telling them they need to reauthorize Alfresco. This prepares them for 
+       * the OAuth popup and allows us to launch the new window without this getting blocked by the browser.
+       */
+      Alfresco.util.PopupManager.displayPrompt(
       {
-         var returnVal = window.showModalDialog(authURL, {onOAuthReturn: returnFn}, "dialogwidth:400;dialogheight:400"); // only returns on popup close
-      }
-      else
-      {
-         var popup = window.open(authURL, "GDOAuth", "menubar=no,location=no,resizable=no,scrollbars=no,status=no,width=400,height=400,modal=yes"); // returns straight away
-      }
+         title: Alfresco.util.message("title.googleDocs.reAuthorize"),
+         text: Alfresco.util.message("text.googleDocs.reAuthorize"),
+         noEscape: true,
+         buttons: [
+         {
+            text: Alfresco.util.message("button.ok", this.name),
+            handler: function GDA_doOAuth_okHandler()
+            {
+               this.destroy();
+               
+               Alfresco.GoogleDocs.onOAuthReturn = returnFn;
+               
+               if (typeof window.showModalDialog == "function")
+               {
+                  var returnVal = window.showModalDialog(authURL, {onOAuthReturn: returnFn}, "dialogwidth:400;dialogheight:400"); // only returns on popup close
+               }
+               else
+               {
+                  var popup = window.open(authURL, "GDOAuth", "menubar=no,location=no,resizable=no,scrollbars=no,status=no,width=400,height=400,modal=yes"); // returns straight away
+               }
+            }
+         },
+         {
+            text: Alfresco.util.message("button.cancel", this.name),
+            handler: function GDA_doOAuth_cancelHandler()
+            {
+               this.destroy();  
+            },
+            isDefault: true
+         }]
+      });
+      
       hideMessage.call(this);
    };
    
