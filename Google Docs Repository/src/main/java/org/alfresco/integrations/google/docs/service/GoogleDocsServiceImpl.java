@@ -70,6 +70,7 @@ import org.springframework.social.oauth2.GrantType;
 import org.springframework.social.oauth2.OAuth2Parameters;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 
 import com.google.gdata.client.docs.DocsService;
 import com.google.gdata.client.media.ResumableGDataFileUploader;
@@ -515,6 +516,13 @@ public class GoogleDocsServiceImpl
                     {
                         throw new GoogleDocsAuthenticationException("Token Refresh Failed.");
                     }
+                }
+            }
+            catch (HttpClientErrorException hcee)
+            {
+                if (hcee.getStatusCode().equals(HttpStatus.SC_BAD_REQUEST))
+                {
+                    throw new GoogleDocsAuthenticationException(hcee.getMessage());
                 }
             }
 

@@ -57,7 +57,7 @@ public class UploadContent
         }
         catch (GoogleDocsAuthenticationException gdae)
         {
-            throw new WebScriptException(HttpStatus.SC_FORBIDDEN, gdae.getMessage());
+            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdae.getMessage());
         }
         catch (GoogleDocsServiceException gdse)
         {

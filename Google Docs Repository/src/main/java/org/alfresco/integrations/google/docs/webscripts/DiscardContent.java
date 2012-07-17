@@ -106,7 +106,7 @@ public class DiscardContent
             }
             catch (GoogleDocsAuthenticationException gdae)
             {
-                throw new WebScriptException(HttpStatus.SC_UNAUTHORIZED, gdae.getMessage());
+                throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdae.getMessage());
             }
             catch (GoogleDocsRefreshTokenException gdrte)
             {
