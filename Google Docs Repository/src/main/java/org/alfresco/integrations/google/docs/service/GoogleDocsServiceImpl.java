@@ -1,3 +1,21 @@
+/**
+ * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * 
+ * This file is part of Alfresco
+ * 
+ * Alfresco is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ * 
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 package org.alfresco.integrations.google.docs.service;
 
@@ -622,7 +640,7 @@ public class GoogleDocsServiceImpl
 
             try
             {
-                return docsService.insert(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA), entry);
+                return docsService.insert(new URL(GoogleDocsConstants.URL_BASE_FEED), entry);
             }
             catch (IOException ioe)
             {
@@ -1032,7 +1050,7 @@ public class GoogleDocsServiceImpl
 
         try
         {
-            docsService.delete(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA
+            docsService.delete(new URL(GoogleDocsConstants.URL_BASE_FEED
                                        + "/"
                                        + documentListEntry.getResourceId().substring(documentListEntry.getResourceId().lastIndexOf(':') + 1)
                                        + "?delete=true"), documentListEntry.getEtag());
@@ -1340,7 +1358,7 @@ public class GoogleDocsServiceImpl
 
         try
         {
-            RevisionFeed revisionFeed = docsService.getFeed(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA + "/"
+            RevisionFeed revisionFeed = docsService.getFeed(new URL(GoogleDocsConstants.URL_BASE_FEED + "/"
                                                                     + resourceID.substring(resourceID.lastIndexOf(':') + 1)
                                                                     + "/revisions"), RevisionFeed.class);
 
@@ -1453,7 +1471,7 @@ public class GoogleDocsServiceImpl
 
         try
         {
-            documentListEntry = docsService.getEntry(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA + "/"
+            documentListEntry = docsService.getEntry(new URL(GoogleDocsConstants.URL_BASE_FEED + "/"
                                                              + resourceID.substring(resourceID.lastIndexOf(':') + 1)), DocumentListEntry.class);
         }
         catch (IOException ioe)
