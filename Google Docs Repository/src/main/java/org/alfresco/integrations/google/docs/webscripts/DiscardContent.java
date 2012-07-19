@@ -79,7 +79,7 @@ public class DiscardContent
         Map<String, Serializable> map = parseContent(req);
         NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
 
-        if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS))
+        if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
         {
             DocumentListEntry documentListEntry;
             try

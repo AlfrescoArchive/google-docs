@@ -34,6 +34,7 @@ import java.util.ArrayList;
  * @author: mikeh
  * @author jottley
  */
+@Deprecated
 public class DoesNotHaveAspectEvaluator
     extends BaseEvaluator
 {

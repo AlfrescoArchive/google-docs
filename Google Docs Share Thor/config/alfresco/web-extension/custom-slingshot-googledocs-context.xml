@@ -22,7 +22,7 @@
    <bean id="evaluator.doclib.google.docs.doesnothaveaspect" parent="evaluator.doclib.metadata.doesNotHaveAspect">
       <property name="aspects">
          <list>
-            <value>g:googledocs</value>
+            <value>gd2:editingInGoogle</value>
          </list>
       </property>
    </bean>
@@ -30,7 +30,7 @@
    <bean id="evaluator.doclib.google.docs.aspect" class="org.alfresco.web.evaluator.HasAspectEvaluator">
       <property name="aspects">
          <list>
-            <value>g:googledocs</value>
+            <value>gd2:editingInGoogle</value>
          </list>
       </property>
    </bean>

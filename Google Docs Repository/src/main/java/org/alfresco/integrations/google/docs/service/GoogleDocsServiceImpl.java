@@ -1086,7 +1086,7 @@ public class GoogleDocsServiceImpl
             Map<QName, Serializable> aspectProperties = new HashMap<QName, Serializable>();
             aspectProperties.put(GoogleDocsModel.PROP_RESOURCE_ID, documentListEntry.getResourceId());
             aspectProperties.put(GoogleDocsModel.PROP_EDITORURL, documentListEntry.getDocumentLink().getHref());
-            nodeService.addAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS, aspectProperties);
+            nodeService.addAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE, aspectProperties);
         }
         finally
         {
@@ -1100,9 +1100,9 @@ public class GoogleDocsServiceImpl
         behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
         try
         {
-            if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS))
+            if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
             {
-                nodeService.removeAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS);
+                nodeService.removeAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE);
             }
         }
         finally
