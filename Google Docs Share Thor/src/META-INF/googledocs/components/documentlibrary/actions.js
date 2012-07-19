@@ -35,6 +35,11 @@
     */
    var userMessage = null, userMessageText = "";
    
+   /*
+    * OAuth dialog width and height in pixels
+    */
+   var OAUTH_WINDOW_WIDTH = 480, OAUTH_WINDOW_HEIGHT = 480;
+   
    /**
     * Destroy the message displayed to the user
     * 
@@ -207,11 +212,11 @@
                
                if (typeof window.showModalDialog == "function")
                {
-                  var returnVal = window.showModalDialog(authURL, {onOAuthReturn: returnFn}, "dialogwidth:400;dialogheight:400"); // only returns on popup close
+                  var returnVal = window.showModalDialog(authURL, {onOAuthReturn: returnFn}, "dialogwidth:" + OAUTH_WINDOW_WIDTH + ";dialogheight:" + OAUTH_WINDOW_HEIGHT); // only returns on popup close
                }
                else
                {
-                  var popup = window.open(authURL, "GDOAuth", "menubar=no,location=no,resizable=no,scrollbars=no,status=no,width=400,height=400,modal=yes"); // returns straight away
+                  var popup = window.open(authURL, "GDOAuth", "menubar=no,location=no,resizable=no,scrollbars=yes,status=no,width=" + OAUTH_WINDOW_WIDTH + ",height=" + OAUTH_WINDOW_HEIGHT + ",modal=yes"); // returns straight away
                }
             }
          },
