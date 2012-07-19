@@ -8,7 +8,7 @@
 		Alfresco when generating the App Key.
 -->
 	<head>
-		<title>Alfresco &raquo; Authorisation</title>
+		<title>Alfresco &raquo; Authorization</title>
 		<style type="text/css">
 			body {margin:3em;font-family:arial,helvetica,clean,sans-serif;}
 			div.header {background:#56A3D9;}
@@ -17,8 +17,8 @@
 	</head>
 	<body>
 		<img src="http://www.alfresco.com/images/alfresco-logo.png" alt="Alfresco" />
-		<div class="header"><h1>Google Authorisation</h1></div>
-		<p id="status">Completing your authorisation...</p>
+		<div class="header"><h1>Google Authorization</h1></div>
+		<p id="status">Completing your authorization...</p>
 		<script>
          // The Auth token is received from the publisher as a hash on the URL of this call
          // This needs passing back to the originating Alfresco instance.
@@ -32,7 +32,7 @@
                // The Alfresco Auth Return webscript expects the access token as a query string parameter, not as a URL fragment.
                var accessToken = window.location.search.split("code=");
                   url = decodeURIComponent(authCallbackUrl);
-               statusEl.innerHTML = "Your authorisation has been received.<br /> You are being redirected back to Alfresco Share to finish processing the authorisation.";
+               statusEl.innerHTML = "Your authorization has been received.<br /> You are being redirected back to Alfresco to finish processing the authorization.";
                // Use a client side redirect to send the user there. That page should sort everything out and close itself, if possible.
                window.location = url + "googledocs/completeauth?access_token=" + accessToken[1];
             }
