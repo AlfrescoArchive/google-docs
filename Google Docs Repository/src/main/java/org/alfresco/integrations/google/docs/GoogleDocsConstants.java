@@ -30,7 +30,7 @@ public interface GoogleDocsConstants
     public static final String REMOTE_SYSTEM             = "googledocs";
 
     // Google OAuth2 redirect URI
-    public static final String REDIRECT_URI              = "http://www.ottleys.net/test.html"; // [GOOGLEDOCS-50] "http://www.alfresco.com/google-auth-return.html";
+    public static final String REDIRECT_URI              = "http://www.alfresco.com/google-auth-return.html";
     
     // Google OAuth2 Scopes
     public static final String SCOPE                     = "https://docs.google.com/feeds/ https://docs.googleusercontent.com/ https://spreadsheets.google.com/feeds/";
