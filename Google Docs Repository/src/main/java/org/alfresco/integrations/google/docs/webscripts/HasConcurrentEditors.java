@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
+import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.apache.commons.httpclient.HttpStatus;
@@ -73,6 +74,17 @@ public class HasConcurrentEditors
         catch (GoogleDocsRefreshTokenException gdrte)
         {
             throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage());
+        }
+        catch (GoogleDocsServiceException gdse)
+        {
+            if (gdse.getPassedStatusCode() > -1)
+            {
+                throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage());
+            }
+            else
+            {
+                throw new WebScriptException(gdse.getMessage());
+            }
         }
         catch (IOException ioe)
         {

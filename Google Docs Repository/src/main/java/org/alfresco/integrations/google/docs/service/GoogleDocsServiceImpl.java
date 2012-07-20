@@ -1327,7 +1327,8 @@ public class GoogleDocsServiceImpl
     public boolean hasConcurrentEditors(NodeRef nodeRef)
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
-            IOException
+            GoogleDocsServiceException,
+            IOException 
     {
         DocsService docsService = getDocsService(getConnection());
 
@@ -1431,7 +1432,7 @@ public class GoogleDocsServiceImpl
         }
         catch (ServiceException se)
         {
-            new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
+            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
         }
 
         return concurrentChange;
@@ -1468,6 +1469,7 @@ public class GoogleDocsServiceImpl
     public MetadataEntry getUserMetadata()
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException,
             IOException
     {
         DocsService docsService = getDocsService(getConnection());
@@ -1484,7 +1486,7 @@ public class GoogleDocsServiceImpl
         }
         catch (ServiceException se)
         {
-            new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
+            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
         }
 
         return metadataEntry;

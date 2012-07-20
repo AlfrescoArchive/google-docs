@@ -77,6 +77,7 @@ public interface GoogleDocsService
     public MetadataEntry getUserMetadata()
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException,
             IOException;
 
 
@@ -276,6 +277,7 @@ public interface GoogleDocsService
     public boolean hasConcurrentEditors(NodeRef nodeRef)
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException,
             IOException;
 
 
