@@ -171,7 +171,7 @@ public class SaveContent
         }
         catch (IOException ioe)
         {
-            new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
+            throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
         }
 
         // Finish this off with a version create or update

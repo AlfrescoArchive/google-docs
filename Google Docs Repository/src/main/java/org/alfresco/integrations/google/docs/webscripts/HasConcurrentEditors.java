@@ -88,7 +88,7 @@ public class HasConcurrentEditors
         }
         catch (IOException ioe)
         {
-            new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
+            throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
         }
 
         return model;
