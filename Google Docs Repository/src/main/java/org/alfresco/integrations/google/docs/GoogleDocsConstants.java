@@ -1,3 +1,21 @@
+/**
+ * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * 
+ * This file is part of Alfresco
+ * 
+ * Alfresco is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ * 
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 package org.alfresco.integrations.google.docs;
 
@@ -12,7 +30,8 @@ public interface GoogleDocsConstants
     public static final String REMOTE_SYSTEM             = "googledocs";
 
     // Google OAuth2 redirect URI
-    public static final String REDIRECT_URI              = "http://www.ottleys.net/test.html";                                                                         // "http://www.alfresco.com";
+    public static final String REDIRECT_URI              = "http://www.alfresco.com/google-auth-return.html";
+    
     // Google OAuth2 Scopes
     public static final String SCOPE                     = "https://docs.google.com/feeds/ https://docs.googleusercontent.com/ https://spreadsheets.google.com/feeds/";
     // Google docsService Client Name
@@ -22,7 +41,7 @@ public interface GoogleDocsConstants
     public static final String BASE_URL                  = "https://docs.google.com/feeds";
     public static final String METADATA_URL              = BASE_URL + "/metadata/default";
     public static final String BASE_SPREADSHEET_URL      = "https://spreadsheets.google.com/feeds";
-    public static final String URL_CREATE_NEW_MEDIA      = BASE_URL + "/default/private/full";
+    public static final String URL_BASE_FEED             = BASE_URL + "/default/private/full";
     public static final String URL_CREATE_MEDIA          = BASE_URL + "/upload/create-session/default/private/full";
     public static final String URL_DOCUMENT_DOWNLOAD     = BASE_URL + "/download/documents/Export";
     public static final String URL_PRESENTATION_DOWNLOAD = BASE_URL + "/download/presentations/Export";
@@ -32,14 +51,10 @@ public interface GoogleDocsConstants
     public static final String DOCUMENT_TYPE             = "document";
     public static final String PRESENTATION_TYPE         = "presentation";
     public static final String SPREADSHEET_TYPE          = "spreadsheet";
-    @Deprecated
-    // Not yet Implemented
-    public static final String FOLDER_TYPE               = "folder";
 
     // Google New Document Names
     public static final String NEW_DOCUMENT_NAME         = "Untitled Document";
     public static final String NEW_PRESENTATION_NAME     = "Untitled Presentation";
     public static final String NEW_SPREADSHEET_NAME      = "Untitled Spreadsheet";
-    public static final String NEW_FOLDER_NAME           = "New Collection";
 
 }

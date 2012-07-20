@@ -35,7 +35,7 @@ div.panel
    display: inline-block;
 }
    </style>
-   <title>Alfresco &raquo; Link Google Docs&trade; Account</title>
+   <title>${msg('auth.title')}</title>
 </head>
 <body>
    <div>
@@ -45,16 +45,30 @@ div.panel
       <br/>
       <#if authenticated>
        <script type="text/javascript">
-         self.close();
+         if (typeof window.opener.window.Alfresco.GoogleDocs == "object" && typeof window.opener.window.Alfresco.GoogleDocs.onOAuthReturn == "function")
+         {
+            window.opener.window.Alfresco.GoogleDocs.onOAuthReturn(true);
+            self.close();
+         }
+         else if (typeof window.dialogArguments == "object" && typeof window.dialogArguments.onOAuthReturn == "function")
+         {
+            window.dialogArguments.onOAuthReturn(true);
+            returnValue = {authenticated: true};
+            self.close();
+         }
+         else
+         {
+            alert("${msg('err.noreturn')}");
+         }
       </script>
-      <p style="font-size:150%">Link to Google Docs&trade; Account Complete.</p>
+      <p style="font-size:150%">${msg('auth.complete')}</p>
       <br/>
-      <p>If the page does not close, clink the link below</p>
+      <p>${msg('auth.close')}</p>
       <#else>
-      <p style="font-size:150%">Failed to link Google Docs&trade; Account.  Please try again at a later time.  If the issue continues, please contact your System Administrator.</p>
+      <p style="font-size:150%">${msg('err.auth')}</p>
       </#if>
       <br/>
-      <a href="self.close();">Close page</a>
+      <a href="javascript: self.close();">${msg('link.close')}</a>
       <br/>
       <br/>
       <br/>

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<model name="g:googledocs" xmlns="http://www.alfresco.org/model/dictionary/1.0">
+<model name="gd2:googledocs" xmlns="http://www.alfresco.org/model/dictionary/1.0">
     
     <description>Google Docs</description>
     <author>Jared Ottley</author>
-    <version>1.0</version>
+    <version>2.0</version>
     
     
     <imports>
@@ -12,20 +12,20 @@
     </imports>
     
     <namespaces>
-        <namespace uri="http://www.alfresco.org/model/googledocs/1.0" prefix="g"/>
+        <namespace uri="http://www.alfresco.org/model/googledocs/2.0" prefix="gd2"/>
     </namespaces>
     
     <aspects>
-        <aspect name="g:googledocs">
+        <aspect name="gd2:editingInGoogle">
             <title>Google Docs</title>
 			<properties>
-				<property name="g:resourceID">
+				<property name="gd2:resourceID">
 					<type>d:text</type>
 				</property>
-            <property name="g:locked">
+            <property name="gd2:locked">
                <type>d:boolean</type>
             </property>
-            <property name="g:editorURL">
+            <property name="gd2:editorURL">
                <type>d:text</type>
             </property>
 			</properties>

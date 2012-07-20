@@ -1,3 +1,21 @@
+/**
+ * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * 
+ * This file is part of Alfresco
+ * 
+ * Alfresco is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ * 
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 package org.alfresco.integrations.google.docs.service;
 
@@ -35,6 +53,9 @@ import org.alfresco.query.CannedQueryPageDetails;
 import org.alfresco.query.PagingRequest;
 import org.alfresco.query.PagingResults;
 import org.alfresco.repo.policy.BehaviourFilter;
+import org.alfresco.repo.security.authentication.AuthenticationUtil;
+import org.alfresco.repo.tenant.TenantService;
+import org.alfresco.service.cmr.activities.ActivityService;
 import org.alfresco.service.cmr.lock.LockService;
 import org.alfresco.service.cmr.lock.LockStatus;
 import org.alfresco.service.cmr.lock.LockType;
@@ -48,10 +69,15 @@ import org.alfresco.service.cmr.repository.ContentWriter;
 import org.alfresco.service.cmr.repository.MimetypeService;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.security.PersonService;
+import org.alfresco.service.cmr.security.PersonService.PersonInfo;
+import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.Pair;
 import org.alfresco.util.TempFileProvider;
 import org.apache.commons.httpclient.HttpStatus;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.core.io.Resource;
 import org.springframework.social.ApiException;
 import org.springframework.social.connect.Connection;
@@ -62,6 +88,7 @@ import org.springframework.social.oauth2.GrantType;
 import org.springframework.social.oauth2.OAuth2Parameters;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 
 import com.google.gdata.client.docs.DocsService;
 import com.google.gdata.client.media.ResumableGDataFileUploader;
@@ -94,6 +121,10 @@ public class GoogleDocsServiceImpl
     private LockService                      lockservice;
     private MimetypeService                  mimetypeService;
     private BehaviourFilter                  behaviourFilter;
+    private ActivityService                  activityService;
+    private SiteService                      siteService;
+    private TenantService                    tenantService;
+    private PersonService                    personService;
 
     private FileNameUtil                     filenameUtil;
 
@@ -111,6 +142,10 @@ public class GoogleDocsServiceImpl
     // Time (in seconds) between last edit and now to consider edits as
     // concurrent
     private int                              idleThreshold     = 0;
+
+    // Activities
+    private static final String              FILE_ADDED        = "org.alfresco.documentlibrary.file-added";
+    private static final String              FILE_UPDATED      = "org.alfresco.documentlibrary.file-updated";
 
 
     public void setImportFormats(Map<String, String> importFormats)
@@ -176,6 +211,31 @@ public class GoogleDocsServiceImpl
     public void setBehaviourFilter(BehaviourFilter behaviourFilter)
     {
         this.behaviourFilter = behaviourFilter;
+    }
+
+
+    public void setActivityService(ActivityService activityService)
+    {
+        this.activityService = activityService;
+    }
+
+
+    public void setSiteService(SiteService siteService)
+    {
+        this.siteService = siteService;
+    }
+
+
+    public void setTenantService(TenantService tenantService)
+    {
+        this.tenantService = tenantService;
+    }
+
+
+    public void setPersonService(PersonService personService)
+    {
+        this.personService = personService;
+        personService.setCreateMissingPeople(false);
     }
 
 
@@ -386,8 +446,6 @@ public class GoogleDocsServiceImpl
              * parameters.setScope(SCOPE); parameters.setState(state);
              */
 
-            // TODO Add offline
-
             MultiValueMap<String, String> additionalParameters = new LinkedMultiValueMap<String, String>(1);
             additionalParameters.add("access_type", "offline");
 
@@ -420,6 +478,25 @@ public class GoogleDocsServiceImpl
 
         try
         {
+            // If this is a reauth....we may not get back the refresh token. We
+            // need to make sure it is persisted across the "refresh".
+            if (accessGrant.getRefreshToken() == null)
+            {
+                OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
+                // In the "rare" case that no refresh token is returned and the
+                // users credentials are no longer there we need to skip this
+                // next check
+                if (credentialInfo != null)
+                {
+                    // If there is a persisted refresh ticket...add it to the
+                    // accessGrant so that it is persisted across the update
+                    if (credentialInfo.getOAuthRefreshToken() != null)
+                    {
+                        accessGrant = new AccessGrant(accessGrant.getAccessToken(), accessGrant.getScope(), credentialInfo.getOAuthRefreshToken(), accessGrant.getExpireTime().intValue());
+                    }
+                }
+            }
+
             oauth2CredentialsStoreService.storePersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM, accessGrant.getAccessToken(), accessGrant.getRefreshToken(), expiresIn, new Date());
 
             authenticationComplete = true;
@@ -457,6 +534,13 @@ public class GoogleDocsServiceImpl
                     {
                         throw new GoogleDocsAuthenticationException("Token Refresh Failed.");
                     }
+                }
+            }
+            catch (HttpClientErrorException hcee)
+            {
+                if (hcee.getStatusCode().equals(HttpStatus.SC_BAD_REQUEST))
+                {
+                    throw new GoogleDocsAuthenticationException(hcee.getMessage());
                 }
             }
 
@@ -557,7 +641,7 @@ public class GoogleDocsServiceImpl
 
             try
             {
-                return docsService.insert(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA), entry);
+                return docsService.insert(new URL(GoogleDocsConstants.URL_BASE_FEED), entry);
             }
             catch (IOException ioe)
             {
@@ -590,12 +674,18 @@ public class GoogleDocsServiceImpl
             writer.setMimetype("application/msword");
             writer.putContent(newDocument.getInputStream());
 
+            postActivity(FILE_ADDED, nodeRef);
+
             // Cloud Analytics Service
             Analytics.record_UploadDocument("application/msword", newDocument.contentLength(), false);
         }
         catch (IOException ioe)
         {
             throw ioe;
+        }
+        catch (JSONException jsonException)
+        {
+            throw new GoogleDocsAuthenticationException("Unable to create activity entry: " + jsonException.getMessage(), jsonException);
         }
 
         return documentListEntry;
@@ -617,12 +707,18 @@ public class GoogleDocsServiceImpl
             writer.setMimetype("application/vnd.ms-excel");
             writer.putContent(newSpreadsheet.getInputStream());
 
+            postActivity(FILE_ADDED, nodeRef);
+
             // Cloud Analtics Service
             Analytics.record_UploadDocument("application/vnd.ms-excel", newSpreadsheet.contentLength(), false);
         }
         catch (IOException ioe)
         {
             throw ioe;
+        }
+        catch (JSONException jsonException)
+        {
+            throw new GoogleDocsAuthenticationException("Unable to create activity entry: " + jsonException.getMessage(), jsonException);
         }
 
         return documentListEntry;
@@ -644,12 +740,18 @@ public class GoogleDocsServiceImpl
             writer.setMimetype("application/vnd.ms-powerpoint");
             writer.putContent(newPresentation.getInputStream());
 
+            postActivity(FILE_ADDED, nodeRef);
+
             // Cloud Analytics Service
             Analytics.record_UploadDocument("application/vnd.ms-powerpoint", newPresentation.contentLength(), false);
         }
         catch (IOException ioe)
         {
             throw ioe;
+        }
+        catch (JSONException jsonException)
+        {
+            throw new GoogleDocsAuthenticationException("Unable to create activity entry: " + jsonException.getMessage(), jsonException);
         }
 
         return documentListEntry;
@@ -695,6 +797,8 @@ public class GoogleDocsServiceImpl
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
             }
 
+            postActivity(FILE_UPDATED, nodeRef);
+
         }
         catch (IOException ioe)
         {
@@ -703,6 +807,10 @@ public class GoogleDocsServiceImpl
         catch (ServiceException se)
         {
             throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
+        }
+        catch (JSONException jsonException)
+        {
+            throw new GoogleDocsAuthenticationException("Unable to create activity entry: " + jsonException.getMessage(), jsonException);
         }
     }
 
@@ -748,16 +856,18 @@ public class GoogleDocsServiceImpl
             writer.setMimetype(mimeType);
             writer.putContent(ms.getInputStream());
 
-            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
-            {
-                nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
-            }
-
             DocumentListEntry documentListEntry = getDocumentListEntry(resourceID);
 
             renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
 
             deleteContent(nodeRef, documentListEntry);
+
+            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+            {
+                nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
+            }
+
+            postActivity(FILE_UPDATED, nodeRef);
 
         }
         catch (IOException ioe)
@@ -767,6 +877,10 @@ public class GoogleDocsServiceImpl
         catch (ServiceException se)
         {
             throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
+        }
+        catch (JSONException jsonException)
+        {
+            throw new GoogleDocsAuthenticationException("Unable to create activity entry: " + jsonException.getMessage(), jsonException);
         }
     }
 
@@ -823,6 +937,8 @@ public class GoogleDocsServiceImpl
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
             }
 
+            postActivity(FILE_UPDATED, nodeRef);
+
         }
         catch (IOException ioe)
         {
@@ -831,6 +947,10 @@ public class GoogleDocsServiceImpl
         catch (ServiceException se)
         {
             throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
+        }
+        catch (JSONException jsonException)
+        {
+            throw new GoogleDocsAuthenticationException("Unable to create activity entry: " + jsonException.getMessage(), jsonException);
         }
     }
 
@@ -880,7 +1000,6 @@ public class GoogleDocsServiceImpl
             // In prodcution this should always be true
             entry.setHidden(false);
 
-            // Will this be Sync?
             ResumableGDataFileUploader uploader = new ResumableGDataFileUploader.Builder(docsService, new URL(GoogleDocsConstants.URL_CREATE_MEDIA), mediaFile, entry).chunkSize(10485760L).build();
             uploader.start();
 
@@ -933,7 +1052,7 @@ public class GoogleDocsServiceImpl
 
         try
         {
-            docsService.delete(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA
+            docsService.delete(new URL(GoogleDocsConstants.URL_BASE_FEED
                                        + "/"
                                        + documentListEntry.getResourceId().substring(documentListEntry.getResourceId().lastIndexOf(':') + 1)
                                        + "?delete=true"), documentListEntry.getEtag());
@@ -966,11 +1085,10 @@ public class GoogleDocsServiceImpl
             }
 
             // Get the googleMetadata to reference the Node
-            // TODO Do we need to add eTag for discard/revision
             Map<QName, Serializable> aspectProperties = new HashMap<QName, Serializable>();
             aspectProperties.put(GoogleDocsModel.PROP_RESOURCE_ID, documentListEntry.getResourceId());
             aspectProperties.put(GoogleDocsModel.PROP_EDITORURL, documentListEntry.getDocumentLink().getHref());
-            nodeService.addAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS, aspectProperties);
+            nodeService.addAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE, aspectProperties);
         }
         finally
         {
@@ -984,9 +1102,9 @@ public class GoogleDocsServiceImpl
         behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
         try
         {
-            if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS))
+            if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
             {
-                nodeService.removeAspect(nodeRef, GoogleDocsModel.ASPECT_GOOGLEDOCS);
+                nodeService.removeAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE);
             }
         }
         finally
@@ -1242,7 +1360,7 @@ public class GoogleDocsServiceImpl
 
         try
         {
-            RevisionFeed revisionFeed = docsService.getFeed(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA + "/"
+            RevisionFeed revisionFeed = docsService.getFeed(new URL(GoogleDocsConstants.URL_BASE_FEED + "/"
                                                                     + resourceID.substring(resourceID.lastIndexOf(':') + 1)
                                                                     + "/revisions"), RevisionFeed.class);
 
@@ -1281,13 +1399,13 @@ public class GoogleDocsServiceImpl
                     for (int i = workingList.size() - 1; i >= 0; i--)
                     {
                         RevisionEntry revisionEntry = workingList.get(i);
-                        String username = getUserMetadata().getAuthors().get(0).getName();
+                        String email = getUserMetadata().getAuthors().get(0).getEmail();
 
                         // if there is no author -- the entry is the initial
                         // creation
                         if (revisionEntry.getAuthors().size() > 0)
                         {
-                            if (revisionEntry.getAuthors().get(0).getName().equals(username))
+                            if (revisionEntry.getAuthors().get(0).getEmail().equals(email))
                             {
                                 workingList.remove(i);
                             }
@@ -1355,7 +1473,7 @@ public class GoogleDocsServiceImpl
 
         try
         {
-            documentListEntry = docsService.getEntry(new URL(GoogleDocsConstants.URL_CREATE_NEW_MEDIA + "/"
+            documentListEntry = docsService.getEntry(new URL(GoogleDocsConstants.URL_BASE_FEED + "/"
                                                              + resourceID.substring(resourceID.lastIndexOf(':') + 1)), DocumentListEntry.class);
         }
         catch (IOException ioe)
@@ -1393,6 +1511,38 @@ public class GoogleDocsServiceImpl
         }
 
         return metadataEntry;
+    }
+
+
+    private void postActivity(String activityType, NodeRef nodeRef)
+        throws JSONException
+    {
+        try
+        {
+            String siteId = siteService.getSite(nodeRef).getShortName();
+
+            JSONObject jsonActivityData = new JSONObject();
+
+            PersonInfo personInfo = personService.getPerson(personService.getPerson(AuthenticationUtil.getRunAsUser()));
+
+            jsonActivityData.put("firstName", personInfo.getFirstName());
+            jsonActivityData.put("lastName", personInfo.getLastName());
+            jsonActivityData.put("title", fileFolderService.getFileInfo(nodeRef).getName());
+            jsonActivityData.put("page", "document-details?nodeRef=" + nodeRef.toString());
+            jsonActivityData.put("nodeRef", nodeRef.toString());
+
+            if (AuthenticationUtil.isMtEnabled())
+            {
+                // MT share - add tenantDomain
+                jsonActivityData.put("tenantDomain", tenantService.getCurrentUserDomain());
+            }
+
+            activityService.postActivity(activityType, siteId, GoogleDocsService.class.getSimpleName(), jsonActivityData.toString());
+        }
+        catch (JSONException jsonException)
+        {
+            throw jsonException;
+        }
     }
 
 
