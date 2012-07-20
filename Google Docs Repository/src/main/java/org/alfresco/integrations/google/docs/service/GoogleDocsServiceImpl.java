@@ -673,18 +673,12 @@ public class GoogleDocsServiceImpl
             writer.setMimetype("application/msword");
             writer.putContent(newDocument.getInputStream());
 
-            postActivity(FILE_ADDED, nodeRef);
-
             // Cloud Analytics Service
             Analytics.record_UploadDocument("application/msword", newDocument.contentLength(), false);
         }
         catch (IOException ioe)
         {
             throw ioe;
-        }
-        catch (JSONException jsonException)
-        {
-            throw new GoogleDocsAuthenticationException("Unable to create activity entry: " + jsonException.getMessage(), jsonException);
         }
 
         return documentListEntry;
@@ -706,18 +700,12 @@ public class GoogleDocsServiceImpl
             writer.setMimetype("application/vnd.ms-excel");
             writer.putContent(newSpreadsheet.getInputStream());
 
-            postActivity(FILE_ADDED, nodeRef);
-
             // Cloud Analtics Service
             Analytics.record_UploadDocument("application/vnd.ms-excel", newSpreadsheet.contentLength(), false);
         }
         catch (IOException ioe)
         {
             throw ioe;
-        }
-        catch (JSONException jsonException)
-        {
-            throw new GoogleDocsAuthenticationException("Unable to create activity entry: " + jsonException.getMessage(), jsonException);
         }
 
         return documentListEntry;
@@ -739,18 +727,12 @@ public class GoogleDocsServiceImpl
             writer.setMimetype("application/vnd.ms-powerpoint");
             writer.putContent(newPresentation.getInputStream());
 
-            postActivity(FILE_ADDED, nodeRef);
-
             // Cloud Analytics Service
             Analytics.record_UploadDocument("application/vnd.ms-powerpoint", newPresentation.contentLength(), false);
         }
         catch (IOException ioe)
         {
             throw ioe;
-        }
-        catch (JSONException jsonException)
-        {
-            throw new GoogleDocsAuthenticationException("Unable to create activity entry: " + jsonException.getMessage(), jsonException);
         }
 
         return documentListEntry;
@@ -790,14 +772,13 @@ public class GoogleDocsServiceImpl
             renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
 
             deleteContent(nodeRef, documentListEntry);
+            
+            postActivity(nodeRef);
 
             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
             }
-
-            postActivity(FILE_UPDATED, nodeRef);
-
         }
         catch (IOException ioe)
         {
@@ -860,14 +841,13 @@ public class GoogleDocsServiceImpl
             renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
 
             deleteContent(nodeRef, documentListEntry);
+            
+            postActivity(nodeRef);
 
             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
             }
-
-            postActivity(FILE_UPDATED, nodeRef);
-
         }
         catch (IOException ioe)
         {
@@ -930,14 +910,13 @@ public class GoogleDocsServiceImpl
             renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
 
             deleteContent(nodeRef, documentListEntry);
+            
+            postActivity(nodeRef);
 
             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
             }
-
-            postActivity(FILE_UPDATED, nodeRef);
-
         }
         catch (IOException ioe)
         {
@@ -1512,11 +1491,17 @@ public class GoogleDocsServiceImpl
     }
 
 
-    private void postActivity(String activityType, NodeRef nodeRef)
+    private void postActivity(NodeRef nodeRef)
         throws JSONException
     {
         try
         {
+            String activityType = FILE_UPDATED;
+            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+            {
+                activityType = FILE_ADDED;
+            }
+            
             String siteId = siteService.getSite(nodeRef).getShortName();
 
             JSONObject jsonActivityData = new JSONObject();
