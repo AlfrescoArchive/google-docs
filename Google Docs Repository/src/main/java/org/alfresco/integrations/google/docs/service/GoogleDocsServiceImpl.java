@@ -377,7 +377,8 @@ public class GoogleDocsServiceImpl
 
     private Connection<GoogleDocs> getConnection()
         throws GoogleDocsAuthenticationException,
-            GoogleDocsRefreshTokenException
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException
     {
         Connection<GoogleDocs> connection = null;
 
@@ -407,6 +408,10 @@ public class GoogleDocsServiceImpl
                         catch (GoogleDocsRefreshTokenException gdrte)
                         {
                             throw gdrte;
+                        }
+                        catch (GoogleDocsServiceException gdse)
+                        {
+                            throw gdse;
                         }
                     }
                 }
@@ -512,7 +517,8 @@ public class GoogleDocsServiceImpl
 
     private AccessGrant refreshAccessToken()
         throws GoogleDocsAuthenticationException,
-            GoogleDocsRefreshTokenException
+            GoogleDocsRefreshTokenException, 
+            GoogleDocsServiceException
     {
         OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
 
@@ -541,7 +547,10 @@ public class GoogleDocsServiceImpl
                 if (hcee.getStatusCode().ordinal() == HttpStatus.SC_BAD_REQUEST)
                 {
                     throw new GoogleDocsAuthenticationException(hcee.getMessage());
+                } else {
+                    throw new GoogleDocsServiceException(hcee.getMessage(), hcee.getStatusCode().ordinal());
                 }
+                
             }
 
             if (accessGrant != null)
