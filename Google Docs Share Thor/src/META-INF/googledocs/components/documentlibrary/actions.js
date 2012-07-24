@@ -199,7 +199,7 @@
                   handler: function continueToEdit()
                   {
                      this.destroy();
-                     editDocument.call(this);
+                     editDocument.call(me);
                   }
                },
                {
