@@ -547,7 +547,9 @@ public class GoogleDocsServiceImpl
                 if (hcee.getStatusCode().value() == HttpStatus.SC_BAD_REQUEST)
                 {
                     throw new GoogleDocsAuthenticationException(hcee.getMessage());
-                } else {
+                }
+                else
+                {
                     throw new GoogleDocsServiceException(hcee.getMessage(), hcee.getStatusCode().ordinal());
                 }
                 
