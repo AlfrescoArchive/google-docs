@@ -21,7 +21,7 @@
 	<target name="clean">
 		<delete dir="${build.dir}" includeemptydirs="true" />
 		<delete>
-			<fileset dir="${project.dir}/src/META-INF/${component.name}/components/documentlibrary" includes="**/*" excludes="actions.js, actions.css"/>
+			<fileset dir="${project.dir}/src/META-INF/${component.name}/components/documentlibrary" includes="**/*" excludes="actions.js, actions.css, actions-common.js"/>
 	      <fileset dir="${project.dir}/src/META-INF/modules/${component.name}/" includes="**/*-min.js"/>
 		</delete>
 	</target>

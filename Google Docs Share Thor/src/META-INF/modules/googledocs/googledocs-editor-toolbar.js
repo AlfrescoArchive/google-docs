@@ -50,6 +50,11 @@
    Alfresco.GoogleDocs.Toolbar = function(htmlId)
    {
       Alfresco.GoogleDocs.Toolbar.superclass.constructor.call(this, "Alfresco.GoogleDocs.Toolbar", htmlId, ["button"]);
+
+      /*
+       * Decoupled event listeners
+       */
+      YAHOO.Bubbling.on('editorLoaded', this.onEditorLoaded, this);
    };
 
    /**
@@ -110,52 +115,8 @@
        */
       onReady: function GDT_onReady()
       {
+         // Return button is always available; others are dependent on the user being logged into Google
          YAHOO.util.Event.addListener(this.id + "-googledocs-back-button", "click", this.onReturnClick, this, true);
-         YAHOO.util.Event.addListener(this.id + "-googledocs-discard-button", "click", this.onDiscardClick, this, true);
-         YAHOO.util.Event.addListener(this.id + "-googledocs-save-button", "click", this.onSaveClick, this, true);
-      },
-
-      /**
-       * User-displayed message
-       * 
-       * @property displayMessage
-       * 
-       */
-      displayMessage: null,
-      
-      /**
-       * Destroy the message displayed to the user
-       * 
-       * @method hideMessage
-       */
-      hideMessage: function GDT_hideMessage()
-      {
-         if (this.displayMessage)
-         {
-            this.displayMessage.destroy();
-            this.displayMessage = null;
-         }
-      },
-      
-      /**
-       * Remove any existing user message and show a new message
-       * 
-       * @method showMessage
-       * @param config {object} object literal containing success callback
-       *          - text {String} The message text to display
-       *          - displayTime {int} Display time in seconds. Defaults to zero, i.e. show forever
-       *          - showSpinner {boolean} Whether to display the spinner image or not, default is true
-       */
-      showMessage: function GDT_showMessage(config)
-      {
-         this.hideMessage();
-         var displayTime = (config.displayTime === null || typeof config.displayTime == "undefined") ? 0 : config.displayTime,
-               showSpinner = (config.showSpinner === null || typeof config.showSpinner == "undefined") ? true : config.showSpinner;
-         this.displayMessage = Alfresco.util.PopupManager.displayMessage({
-            displayTime: displayTime,
-            text: showSpinner ? '<span class="wait">' + config.text + '</span>' : config.text,
-            noEscape: true
-         });
       },
       
       /**
@@ -210,7 +171,7 @@
                            handler: function submitDiscard()
                            {
                               this.destroy();
-                              me.showMessage({
+                              Alfresco.GoogleDocs.showMessage({
                                  text: me.msg("googledocs.actions.discard"),
                                  displayTime: 0,
                                  showSpinner: true
@@ -231,7 +192,7 @@
                            text: me.msg("button.cancel"),
                            handler: function cancelDiscard()
                            {
-                              me.hideMessage();
+                              Alfresco.GoogleDocs.hideMessage();
                               this.destroy();
                            },
                            isDefault: true 
@@ -240,7 +201,7 @@
                   }
                   else
                   {
-                     me.showMessage({
+                     Alfresco.GoogleDocs.showMessage({
                         text: me.msg("googledocs.actions.discard.failure"),
                         displayTime: 2.5,
                         showSpinner: false
@@ -252,7 +213,7 @@
             
             var actionUrl = Alfresco.constants.PROXY_URI + "googledocs/discardContent";
 
-            me.showMessage({
+            Alfresco.GoogleDocs.showMessage({
                text: me.msg("googledocs.actions.discard"),
                displayTime: 0,
                showSpinner: true
@@ -267,25 +228,39 @@
                failureCallback: failure
             });
          };
-         
-         Alfresco.util.PopupManager.displayPrompt(
-         {
-            title: this.msg("googledocs.actions.discard.warning.title"),
-            text: this.msg("googledocs.actions.discard.warning.text"),
-            noEscape: false,
-            buttons: [
-            {
-               text: this.msg("button.ok"),
-               handler: discardContent   
-            },
-            {
-               text: this.msg("button.cancel"),
-               handler: function cancelDiscard()
-               {
-                  this.destroy();  
+
+         Alfresco.GoogleDocs.requestOAuthURL.call(this, {
+            onComplete: {
+               fn: function() {
+                  Alfresco.GoogleDocs.checkGoogleLogin.call(this, {
+                     onLoggedIn: {
+                        fn: function() {
+                           Alfresco.util.PopupManager.displayPrompt(
+                           {
+                              title: this.msg("googledocs.actions.discard.warning.title"),
+                              text: this.msg("googledocs.actions.discard.warning.text"),
+                              noEscape: false,
+                              buttons: [
+                              {
+                                 text: this.msg("button.ok"),
+                                 handler: discardContent   
+                              },
+                              {
+                                 text: this.msg("button.cancel"),
+                                 handler: function cancelDiscard()
+                                 {
+                                    this.destroy();  
+                                 },
+                                 isDefault: true
+                              }]
+                           });
+                        },
+                        scope: this
+                     }
+                  });
                },
-               isDefault: true
-            }]
+               scope: this
+            }
          });
       },
 
@@ -365,7 +340,7 @@
                }
                else
                {
-                  me.showMessage({
+                  Alfresco.GoogleDocs.showMessage({
                      text: me.msg("googledocs.actions.saving.failure"),
                      displayTime: 2.5,
                      showSpinner: false
@@ -375,76 +350,80 @@
             scope : this
          };
          
-         if (this.options.isVersioned)
-         {
-            if (!this.configDialog)
-            {
-               var templateUrl = Alfresco.constants.URL_SERVICECONTEXT + "modules/googledocs/create-new-version?version=" + 
-                  this.options.version;
-               
-               this.configDialog = new Alfresco.module.SimpleDialog(this.id + "-configDialog").setOptions(
-               {
-                  width: "30em",
-                  templateUrl: templateUrl,
-                  actionUrl: actionUrl,
-                  onSuccess: success,
-                  onFailure: failure,
-                  doSetupFormsValidation:
-                  {
-                     fn: function GDT_doSetupForm_callback(form)
-                     {
-                        // Set the nodeRef form field value from the local setting
-                        Dom.get(this.configDialog.id + "-nodeRef").value = this.options.nodeRef;
-                     },
-                     scope: this
-                  },
-                  doBeforeFormSubmit:
-                  {
-                     fn: function GDT_doBeforeVersionFormSubmit()
-                     {
-                        this.configDialog.widgets.okButton.set("disabled", true);
-                        this.configDialog.widgets.cancelButton.set("disabled", true);
-                        
-                        // Hide the dialog before showing the message [GOOGLEDOCS-37]
-                        this.configDialog.hide();
-                        
-                        this.showMessage({
-                           text: this.msg("googledocs.actions.saving"),
-                           displayTime: 0,
-                           showSpinner: true
-                        });
-                     },
-                     scope: this
-                  }
-               });
-            }
-            else
-            {
-               this.configDialog.setOptions(
-               {
-                  actionUrl: actionUrl
-               });
-            }
-            this.configDialog.show();
-         }
-         else
-         {
-            this.showMessage({
-               text: this.msg("googledocs.actions.saving"),
-               displayTime: 0,
-               showSpinner: true
-            });
-            
-            Alfresco.util.Ajax.jsonPost({
-               url: actionUrl,
-               dataObj: {
-                  nodeRef: this.options.nodeRef,
-                  override: this.saveDiscardConfirmed
+         Alfresco.GoogleDocs.requestOAuthURL.call(this, {
+            onComplete: {
+               fn: function() {
+                  Alfresco.GoogleDocs.checkGoogleLogin.call(this, {
+                     onLoggedIn: {
+                        fn: function() {
+                           if (this.options.isVersioned)
+                           {
+                              if (!this.configDialog)
+                              {
+                                 var templateUrl = Alfresco.constants.URL_SERVICECONTEXT + "modules/googledocs/create-new-version?version=" + 
+                                    this.options.version;
+                                 
+                                 this.configDialog = new Alfresco.module.SimpleDialog(this.id + "-configDialog").setOptions(
+                                 {
+                                    width: "30em",
+                                    templateUrl: templateUrl,
+                                    actionUrl: actionUrl,
+                                    onSuccess: success,
+                                    onFailure: failure,
+                                    doSetupFormsValidation:
+                                    {
+                                       fn: function GDT_doSetupForm_callback(form)
+                                       {
+                                          // Set the nodeRef form field value from the local setting
+                                          Dom.get(this.configDialog.id + "-nodeRef").value = this.options.nodeRef;
+                                       },
+                                       scope: this
+                                    },
+                                    doBeforeFormSubmit:
+                                    {
+                                       fn: function GDT_doBeforeVersionFormSubmit()
+                                       {
+                                          this.configDialog.widgets.okButton.set("disabled", true);
+                                          this.configDialog.widgets.cancelButton.set("disabled", true);
+                                          
+                                          // Hide the dialog before showing the message [GOOGLEDOCS-37]
+                                          this.configDialog.hide();
+                                          
+                                          Alfresco.GoogleDocs.showMessage({
+                                             text: this.msg("googledocs.actions.saving"),
+                                             displayTime: 0,
+                                             showSpinner: true
+                                          });
+                                       },
+                                       scope: this
+                                    }
+                                 });
+                              }
+                              else
+                              {
+                                 this.configDialog.setOptions(
+                                 {
+                                    actionUrl: actionUrl
+                                 });
+                              }
+                              this.configDialog.show();
+                           }
+                           else
+                           {
+                              Alfresco.GoogleDocs.showMessage({
+                                 text: this.msg("googledocs.actions.saving"),
+                                 displayTime: 0,
+                                 showSpinner: true
+                              });
+                           }
+                        },
+                        scope: this
+                     }
+                  });
                },
-               successCallback: success,
-               failureCallback: failure
-            });
-         }
+               scope: this
+            }
+         });
       },
       
       /**
@@ -470,6 +449,17 @@
             // go forward to the appropriate details page for the node
             window.location.href = $siteURL("document-details?nodeRef=" + this.options.nodeRef);
          }
+      },
+      
+      /**
+       * Decoupled event listener for editor loaded
+       * 
+       * @method onEditorLoaded
+       */
+      onEditorLoaded: function GDT_onEditorLoaded(layer, args)
+      {
+         YAHOO.util.Event.addListener(this.id + "-googledocs-discard-button", "click", this.onDiscardClick, this, true);
+         YAHOO.util.Event.addListener(this.id + "-googledocs-save-button", "click", this.onSaveClick, this, true);
       }
       
       

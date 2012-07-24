@@ -92,10 +92,18 @@
        */
       onReady: function GDE_onReady()
       {
-         // TODO check for Google login?
+         Alfresco.GoogleDocs.checkGoogleLogin.call(this, {
+            onLoggedIn: {
+               fn: function() {
+                  Dom.get(this.id + "-gdocs-wrapper").innerHTML = "<iframe class=\"gdocs-embed\" src=\"" + this.options.editorURL + "\"></iframe>";
+                  
+                  // Notify the toolbar that we are done, so it can enable its buttons
+                  YAHOO.Bubbling.fire ('editorLoaded', {});
+               },
+               scope: this
+            }
+         });
          // TODO Deal with editorURL being empty?
-         Dom.get(this.id + "-gdocs-wrapper").innerHTML = "<iframe class=\"gdocs-embed\" src=\"" + this.options.editorURL + "\"></iframe>";
-         //YAHOO.util.Event.addListener(this.id + "-googledocs-auth-link", "click", this.onLoginClick);
       },
       
       /**
