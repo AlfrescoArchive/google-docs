@@ -252,6 +252,9 @@
             </entry>
             <entry key="presentation">
                <map>
+                  <entry key="application/vnd.openxmlformats-officedocument.presentationml.presentation">
+                     <value>pptx</value>
+                  </entry>
                   <entry key="application/vnd.ms-powerpoint">
                      <value>ppt</value>
                   </entry>
@@ -268,10 +271,6 @@
       </property>
       <property name="downgradeMappings">
          <map>
-            <entry
-               key="application/vnd.openxmlformats-officedocument.presentationml.presentation">
-               <value>application/vnd.ms-powerpoint</value>
-            </entry>
             <entry
                key="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
                <value>application/vnd.ms-excel</value>
