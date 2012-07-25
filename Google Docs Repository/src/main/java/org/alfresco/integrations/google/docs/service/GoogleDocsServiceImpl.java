@@ -36,7 +36,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.alfresco.integrations.AbstractIntegration;
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
 import org.alfresco.integrations.google.docs.GoogleDocsModel;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
@@ -110,7 +109,6 @@ import com.google.gdata.util.ServiceException;
  * @author Jared Ottley <jared.ottley@alfresco.com>
  */
 public class GoogleDocsServiceImpl
-    extends AbstractIntegration
     implements GoogleDocsService
 {
     // Services
@@ -1539,13 +1537,5 @@ public class GoogleDocsServiceImpl
         {
             throw jsonException;
         }
-    }
-
-
-    @Override
-    public void removeApp(boolean removeContent)
-    {
-        // TODO Auto-generated method stub
-
     }
 }

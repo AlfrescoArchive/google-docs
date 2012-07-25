@@ -3,9 +3,6 @@
    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-   <!-- OAuth2 Store Bean Definitions -->
-   <!-- <import resource="classpath:alfresco/oauth2-services-context.xml" /> -->
-
    <!-- Load the Model -->
    <bean id="googledocsModel.dictionaryBootstrap" parent="dictionaryModelBootstrap"
       depends-on="dictionaryBootstrap">
@@ -303,13 +300,6 @@
          <ref bean="fileFolderService"/>
       </property>
    </bean>
-
-   <!-- Property Decorator -->
-   <!-- bean id="googleDocsImportable" class="org.alfresco.integrations.google.docs.repo.jscript.app.Importable"> 
-      <property name="googledocsService"> <ref bean="googledocsService"/> </property> 
-      </bean> <bean id="googleDocsApplicationScriptUtils" parent="applicationScriptUtils"> 
-      <property name="decoratedProperties"> <map merge="true"> <entry key="cm:content"> 
-      <ref bean="googleDocsImportable"/> </entry> </map> </property> </bean> -->
 
    <!-- Custom Response -->
    <bean id="googleDocsImportFormats"
