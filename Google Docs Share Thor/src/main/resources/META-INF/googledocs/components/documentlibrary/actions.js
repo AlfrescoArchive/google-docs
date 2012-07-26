@@ -26,11 +26,6 @@
  */
 (function() {
    
-   /**
-    * Google Docs namespace
-    */
-   Alfresco.GoogleDocs = Alfresco.GoogleDocs || {};
-   
    /*
     * YUI aliases
     */
