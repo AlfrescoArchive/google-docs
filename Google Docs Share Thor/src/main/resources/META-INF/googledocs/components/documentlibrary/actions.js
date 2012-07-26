@@ -45,8 +45,10 @@
     */
    var navigateToEditorPage = function GDA_navigateToEditorPage(nodeRef)
    {
-      window.location = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT + 
-         "site/" + Alfresco.constants.SITE + "/googledocsEditor?nodeRef=" + nodeRef;
+      var returnPath = location.pathname.replace(Alfresco.constants.URL_PAGECONTEXT, "") + location.search + location.hash;
+      Alfresco.util.navigateTo(Alfresco.util.siteURL("googledocsEditor?nodeRef=" + encodeURIComponent(nodeRef) + "&return=" + encodeURIComponent(returnPath), {
+         site: Alfresco.constants.SITE
+      }, true));
    };
    
    /**

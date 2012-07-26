@@ -434,8 +434,15 @@
        */
       _navigateForward: function GDT__navigateForward()
       {
+         /* Was the return page specified */
+         var returnPath = Alfresco.util.getQueryStringParameter("return", location.hash.replace("#", ""));
+         if (returnPath)
+         {
+            returnPath = returnPath.replace(/\?file=[^&#]*/, ""); // remove the 'file' querystring param, which causes a file to be highlighted
+            window.location.href = location.protocol + "//" + location.host + Alfresco.constants.URL_PAGECONTEXT + returnPath;
+         }
          /* Did we come from the document library? If so, then direct the user back there */
-         if (document.referrer.match(/documentlibrary([?]|$)/) || document.referrer.match(/repository([?]|$)/))
+         else if (document.referrer.match(/documentlibrary([?]|$)/) || document.referrer.match(/repository([?]|$)/))
          {
             /*
              * Send the user back to the last page - this could be either the document list or document details page
