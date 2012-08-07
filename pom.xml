@@ -9,7 +9,7 @@
 
    <modules>
       <module>Google Docs Repository</module>
-      <module>Google Docs Share Thor</module>
+      <module>Google Docs Share</module>
    </modules>
 
 </project>
