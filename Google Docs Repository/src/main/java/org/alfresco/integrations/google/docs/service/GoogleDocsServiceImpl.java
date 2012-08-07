@@ -47,7 +47,6 @@ import org.alfresco.integrations.google.docs.exceptions.MustUpgradeFormatExcepti
 import org.alfresco.integrations.google.docs.utils.FileNameUtil;
 import org.alfresco.integrations.google.docs.utils.RevisionEntryComparator;
 import org.alfresco.model.ContentModel;
-import org.alfresco.module.org_alfresco_module_cloud.analytics.Analytics;
 import org.alfresco.query.CannedQueryPageDetails;
 import org.alfresco.query.PagingRequest;
 import org.alfresco.query.PagingResults;
@@ -515,7 +514,7 @@ public class GoogleDocsServiceImpl
 
     private AccessGrant refreshAccessToken()
         throws GoogleDocsAuthenticationException,
-            GoogleDocsRefreshTokenException, 
+            GoogleDocsRefreshTokenException,
             GoogleDocsServiceException
     {
         OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
@@ -550,7 +549,7 @@ public class GoogleDocsServiceImpl
                 {
                     throw new GoogleDocsServiceException(hcee.getMessage(), hcee.getStatusCode().ordinal());
                 }
-                
+
             }
 
             if (accessGrant != null)
@@ -682,8 +681,6 @@ public class GoogleDocsServiceImpl
             writer.setMimetype("application/msword");
             writer.putContent(newDocument.getInputStream());
 
-            // Cloud Analytics Service
-            Analytics.record_UploadDocument("application/msword", newDocument.contentLength(), false);
         }
         catch (IOException ioe)
         {
@@ -709,8 +706,6 @@ public class GoogleDocsServiceImpl
             writer.setMimetype("application/vnd.ms-excel");
             writer.putContent(newSpreadsheet.getInputStream());
 
-            // Cloud Analtics Service
-            Analytics.record_UploadDocument("application/vnd.ms-excel", newSpreadsheet.contentLength(), false);
         }
         catch (IOException ioe)
         {
@@ -736,8 +731,6 @@ public class GoogleDocsServiceImpl
             writer.setMimetype("application/vnd.ms-powerpoint");
             writer.putContent(newPresentation.getInputStream());
 
-            // Cloud Analytics Service
-            Analytics.record_UploadDocument("application/vnd.ms-powerpoint", newPresentation.contentLength(), false);
         }
         catch (IOException ioe)
         {
@@ -781,7 +774,7 @@ public class GoogleDocsServiceImpl
             renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
 
             deleteContent(nodeRef, documentListEntry);
-            
+
             postActivity(nodeRef);
 
             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
@@ -850,7 +843,7 @@ public class GoogleDocsServiceImpl
             renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
 
             deleteContent(nodeRef, documentListEntry);
-            
+
             postActivity(nodeRef);
 
             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
@@ -919,7 +912,7 @@ public class GoogleDocsServiceImpl
             renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
 
             deleteContent(nodeRef, documentListEntry);
-            
+
             postActivity(nodeRef);
 
             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
@@ -1001,9 +994,6 @@ public class GoogleDocsServiceImpl
                 }
             }
             uploaded = uploader.getResponse(DocumentListEntry.class);
-
-            // Cloud Analytics Service
-            Analytics.record_UploadDocument(fileInfo.getContentData().getMimetype(), fileInfo.getContentData().getSize(), true);
 
         }
         catch (IOException ioe)
@@ -1313,7 +1303,6 @@ public class GoogleDocsServiceImpl
             }
         }
 
-
         NodeRef lastDup = findLastDuplicate(nodeRef, name);
 
         if (lastDup != null)
@@ -1337,7 +1326,7 @@ public class GoogleDocsServiceImpl
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
             GoogleDocsServiceException,
-            IOException 
+            IOException
     {
         DocsService docsService = getDocsService(getConnection());
 
@@ -1512,12 +1501,14 @@ public class GoogleDocsServiceImpl
             {
                 activityType = FILE_ADDED;
             }
-            
+
             String siteId = siteService.getSite(nodeRef).getShortName();
 
             JSONObject jsonActivityData = new JSONObject();
 
-            PersonInfo personInfo = personService.getPerson(personService.getPerson(AuthenticationUtil.getRunAsUser()));
+            // Using local getPerson ... not cloud
+            // personservice.getPerson(nodeRef) which returns personInfo object
+            PersonInfo personInfo = getPerson(personService.getPerson(AuthenticationUtil.getRunAsUser()));
 
             jsonActivityData.put("firstName", personInfo.getFirstName());
             jsonActivityData.put("lastName", personInfo.getLastName());
@@ -1537,5 +1528,11 @@ public class GoogleDocsServiceImpl
         {
             throw jsonException;
         }
+    }
+
+
+    private PersonInfo getPerson(NodeRef nodeRef)
+    {
+        return new PersonInfo(nodeRef, AuthenticationUtil.getRunAsUser(), nodeService.getProperty(nodeRef, ContentModel.PROP_FIRSTNAME).toString(), nodeService.getProperty(nodeRef, ContentModel.PROP_LASTNAME).toString());
     }
 }
