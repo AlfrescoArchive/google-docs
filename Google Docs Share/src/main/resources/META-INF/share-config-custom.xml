@@ -34,7 +34,7 @@
 		</actionGroups>	
 	</config>
 	
-<config evaluator="string-compare" condition="DocumentLibrary" replace="true">
+<config evaluator="string-compare" condition="DocumentLibrary">
       <create-content>
          <content id="google-docs" label="create-content.googledocs.document" icon="document" index="50" type="javascript">
             <param name="function">onGoogledocsActionCreateDocument</param>
