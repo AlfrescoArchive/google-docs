@@ -415,6 +415,16 @@
                                  displayTime: 0,
                                  showSpinner: true
                               });
+                              
+                              Alfresco.util.Ajax.jsonPost({
+                                 url: actionUrl,
+                                 dataObj: {
+                                    nodeRef: this.options.nodeRef,
+                                    override: this.saveDiscardConfirmed
+                                 },
+                                 successCallback: success,
+                                 failureCallback: failure
+                              });
                            }
                         },
                         scope: this
