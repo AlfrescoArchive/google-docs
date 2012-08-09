@@ -219,8 +219,9 @@
                showSpinner: true
             });
 
-            Alfresco.util.Ajax.jsonPost({
+            Alfresco.GoogleDocs.request({
                url: actionUrl,
+               method: "POST",
                dataObj: {
                   nodeRef: me.options.nodeRef
                },
@@ -290,7 +291,8 @@
          {
             fn: function GDT_saveFailure(response) {
 
-               if (response.serverResponse.status == 409)
+               
+               if (response.serverResponse.status == 409) // Concurrent editors warning
                {
                   Alfresco.util.PopupManager.displayPrompt(
                   {
@@ -340,11 +342,27 @@
                }
                else
                {
-                  Alfresco.GoogleDocs.showMessage({
-                     text: me.msg("googledocs.actions.saving.failure"),
-                     displayTime: 2.5,
-                     showSpinner: false
-                  });
+                  if (response.serverResponse.status == 502 && me.configDialog) // 502s may be returned here if the POST call is made by the dialog (and is not wrapped)
+                  {
+                     Alfresco.GoogleDocs.requestOAuthURL({
+                        onComplete: {
+                           fn: function() {
+                              // Re-submit the form
+                              me.configDialog.widgets.okButton.fireEvent("click", {});
+                           },
+                           scope: this
+                        },
+                        override: true
+                     });
+                  }
+                  else
+                  {
+                     Alfresco.GoogleDocs.showMessage({
+                        text: me.msg("googledocs.actions.saving.failure"),
+                        displayTime: 2.5,
+                        showSpinner: false
+                     });
+                  }
                }
             },
             scope : this
@@ -416,8 +434,10 @@
                                  showSpinner: true
                               });
                               
-                              Alfresco.util.Ajax.jsonPost({
+                              
+                              Alfresco.GoogleDocs.request({
                                  url: actionUrl,
+                                 method: "POST",
                                  dataObj: {
                                     nodeRef: this.options.nodeRef,
                                     override: this.saveDiscardConfirmed

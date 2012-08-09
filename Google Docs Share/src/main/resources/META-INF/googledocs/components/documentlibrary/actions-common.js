@@ -56,7 +56,10 @@
    {
       if (userMessage)
       {
-         userMessage.destroy();
+         if (userMessage.element)
+         {
+            userMessage.destroy();
+         }
          userMessage = null;
          userMessageText = "";
       }
@@ -336,14 +339,15 @@
             }
             else
             {
-               config.failureCallback.fn.call(config.failureCallback.scope);
+               config.failureCallback.fn.call(config.failureCallback.scope, response);
             }
          },
          scope: this
       };
        
-      Alfresco.util.Ajax.jsonGet({
+      Alfresco.util.Ajax.jsonRequest({
          url: config.url,
+         method: config.method || "GET",
          dataObj: config.dataObj,
          successCallback: success,
          failureCallback: failure
