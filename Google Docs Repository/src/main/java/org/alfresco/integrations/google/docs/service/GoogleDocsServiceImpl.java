@@ -1366,7 +1366,7 @@ public class GoogleDocsServiceImpl
                     }
                 }
 
-                // If there any revisions that occured within the last
+                // If there any revisions that occurred within the last
                 // 'idleThreshold' seconds of time....
                 if (workingList.size() > 0)
                 {
@@ -1403,14 +1403,14 @@ public class GoogleDocsServiceImpl
             }
             else
             {
-                String username = getUserMetadata().getAuthors().get(0).getName();
+                String email = getUserMetadata().getAuthors().get(0).getEmail();
 
                 // if the authors list is empty -- the author was the original
                 // creator and it is the initial copy
                 if (!revisionList.get(0).getAuthors().isEmpty())
                 {
 
-                    if (!revisionList.get(0).getAuthors().get(0).getName().equals(username))
+                    if (!revisionList.get(0).getAuthors().get(0).getEmail().equals(email))
                     {
                         Calendar bufferTime = Calendar.getInstance();
                         bufferTime.add(Calendar.SECOND, -idleThreshold);
