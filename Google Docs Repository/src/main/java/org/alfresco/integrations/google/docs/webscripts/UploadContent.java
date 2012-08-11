@@ -21,6 +21,7 @@ package org.alfresco.integrations.google.docs.webscripts;
 
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +29,12 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthentication
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
+import org.alfresco.model.ContentModel;
+import org.alfresco.repo.version.Version2Model;
 import org.alfresco.service.cmr.repository.NodeRef;
+import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.version.VersionService;
+import org.alfresco.service.cmr.version.VersionType;
 import org.apache.commons.httpclient.HttpStatus;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
@@ -47,6 +53,8 @@ public class UploadContent
 {
 
     private GoogleDocsService   googledocsService;
+    private NodeService         nodeService;
+    private VersionService      versionService;
 
     private static final String PARAM_NODEREF = "nodeRef";
     private static final String MODEL_NODEREF = "nodeRef";
@@ -55,6 +63,18 @@ public class UploadContent
     public void setGoogledocsService(GoogleDocsService googledocsService)
     {
         this.googledocsService = googledocsService;
+    }
+
+
+    public void setNodeService(NodeService nodeService)
+    {
+        this.nodeService = nodeService;
+    }
+
+
+    public void setVersionService(VersionService versionService)
+    {
+        this.versionService = versionService;
     }
 
 
@@ -70,6 +90,24 @@ public class UploadContent
         try
         {
             entry = googledocsService.uploadFile(nodeRef);
+
+            // If this is a non-cloud instance of Alfresco, we need to make the
+            // node versionable before we start working on it. We want the the
+            // version component to be triggered on save. The versionable aspect
+            // is only added if this is existing content, not if it was just
+            // created where the document is the initial version when saved
+            if (!nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY)
+                && !nodeService.hasAspect(nodeRef, ContentModel.ASPECT_VERSIONABLE))
+            {
+                Map<String, Serializable> versionProperties = new HashMap<String, Serializable>();
+                versionProperties.put(Version2Model.PROP_VERSION_TYPE, VersionType.MAJOR);
+
+                nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION, true);
+                nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION_PROPS, true);
+
+                versionService.createVersion(nodeRef, versionProperties);
+            }
+
             googledocsService.decorateNode(nodeRef, entry, false);
             googledocsService.lockNode(nodeRef);
         }
@@ -101,5 +139,4 @@ public class UploadContent
 
         return model;
     }
-
 }

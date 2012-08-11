@@ -362,6 +362,12 @@
       <property name="googledocsService">
          <ref bean="googledocsService" />
       </property>
+      <property name="nodeService">
+      	 <ref bean="nodeService"/>
+      </property>
+      <property name="versionService">
+         <ref bean="versionService" />
+      </property>
    </bean>
    
    <bean id="webscript.org.alfresco.integrations.google.docs.SaveContent.post" class="org.alfresco.integrations.google.docs.webscripts.SaveContent" parent="webscript">
