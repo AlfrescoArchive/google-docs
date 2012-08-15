@@ -23,6 +23,7 @@
  * @namespace Alfresco.GoogleDocs
  * @class Alfresco.GoogleDocs.Toolbar
  * @author wabson
+ * @author jottley
  */
 (function()
 {
@@ -339,6 +340,26 @@
                         isDefault: true 
                      }]  
                   });
+               }
+               else if (response.serverResponse.status == 419) //  Invalid Filename warning
+               {
+                   Alfresco.util.PopupManager.displayPrompt(
+                           {
+                              title: me.msg("googledocs.invalidFilename.title"),
+                              text: me.msg("googledocs.invalidFilename.text"),
+                              noEscape: true,
+                              buttons: [
+                              {
+                                 text: me.msg("button.ok"),
+                                 handler: function submitDiscard()
+                                 {
+                                    // Close the confirmation pop-up
+                                	Alfresco.GoogleDocs.hideMessage();
+                                    this.destroy();
+                                 },
+                                 isDefault: true
+                              }]  
+                           });
                }
                else
                {

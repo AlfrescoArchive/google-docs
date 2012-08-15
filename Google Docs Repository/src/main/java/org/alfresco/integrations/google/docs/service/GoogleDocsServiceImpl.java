@@ -54,6 +54,9 @@ import org.alfresco.repo.policy.BehaviourFilter;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.service.cmr.activities.ActivityService;
+import org.alfresco.service.cmr.dictionary.ConstraintDefinition;
+import org.alfresco.service.cmr.dictionary.ConstraintException;
+import org.alfresco.service.cmr.dictionary.DictionaryService;
 import org.alfresco.service.cmr.lock.LockService;
 import org.alfresco.service.cmr.lock.LockStatus;
 import org.alfresco.service.cmr.lock.LockType;
@@ -70,6 +73,7 @@ import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.cmr.security.PersonService.PersonInfo;
 import org.alfresco.service.cmr.site.SiteService;
+import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.Pair;
 import org.alfresco.util.TempFileProvider;
@@ -123,6 +127,7 @@ public class GoogleDocsServiceImpl
     private TenantService                    tenantService;
     private PersonService                    personService;
 
+    private DictionaryService                dictionaryService;
     private FileNameUtil                     filenameUtil;
 
     // Property Mappings
@@ -233,6 +238,12 @@ public class GoogleDocsServiceImpl
     {
         this.personService = personService;
         personService.setCreateMissingPeople(false);
+    }
+
+
+    public void setDictionaryService(DictionaryService dictionaryService)
+    {
+        this.dictionaryService = dictionaryService;
     }
 
 
@@ -801,7 +812,8 @@ public class GoogleDocsServiceImpl
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
-            IOException
+            IOException,
+            ConstraintException
     {
         // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
@@ -870,7 +882,8 @@ public class GoogleDocsServiceImpl
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
-            IOException
+            IOException,
+            ConstraintException
     {
         // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
@@ -939,7 +952,8 @@ public class GoogleDocsServiceImpl
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
-            IOException
+            IOException,
+            ConstraintException
     {
         // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
@@ -1266,9 +1280,14 @@ public class GoogleDocsServiceImpl
      * @param name New name
      */
     private void renameNode(NodeRef nodeRef, String name)
+        throws ConstraintException
     {
-        // not all file types can be round tripped. This should Correct
-        // extensions on files where the format is modifed or Add an extension
+        // First, is the file name valid?
+        ConstraintDefinition filenameConstraintDef = dictionaryService.getConstraint(QName.createQName(NamespaceService.CONTENT_MODEL_1_0_URI, "filename"));
+        filenameConstraintDef.getConstraint().evaluate(name);
+
+        // Not all file types can be round-tripped. This should correct
+        // extensions on files where the format is modified or add an extension
         // to file types where there is no extension
         FileInfo fileInfo = fileFolderService.getFileInfo(nodeRef);
         String mimetype = fileInfo.getContentData().getMimetype();
@@ -1313,7 +1332,7 @@ public class GoogleDocsServiceImpl
             }
         }
 
-        // if there is no change in the name we don't want to make a change in
+        // If there is no change in the name we don't want to make a change in
         // the repo
         if (!fileInfo.getName().equals(name))
         {

@@ -30,6 +30,7 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsTypeException;
 import org.alfresco.integrations.google.docs.exceptions.MustDowngradeFormatException;
 import org.alfresco.integrations.google.docs.exceptions.MustUpgradeFormatException;
 import org.alfresco.service.Auditable;
+import org.alfresco.service.cmr.dictionary.ConstraintException;
 import org.alfresco.service.cmr.repository.NodeRef;
 
 import com.google.gdata.data.docs.DocumentListEntry;
@@ -189,7 +190,8 @@ public interface GoogleDocsService
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
-            IOException;
+            IOException,
+            ConstraintException;
 
 
     /**
@@ -203,7 +205,8 @@ public interface GoogleDocsService
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
-            IOException;
+            IOException,
+            ConstraintException;
 
 
     /**
@@ -217,7 +220,8 @@ public interface GoogleDocsService
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
-            IOException;
+            IOException,
+            ConstraintException;
 
 
     /**

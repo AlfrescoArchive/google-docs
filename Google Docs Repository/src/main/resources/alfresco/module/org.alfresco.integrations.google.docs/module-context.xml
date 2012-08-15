@@ -140,6 +140,9 @@
       <property name="fileNameUtil">
          <ref bean="fileNameUtil"/>
       </property>
+      <property name="dictionaryService">
+      	<ref bean="dictionaryService"/>
+      </property>
       <property name="mimetypeService">
          <ref bean="mimetypeService"/>
       </property>

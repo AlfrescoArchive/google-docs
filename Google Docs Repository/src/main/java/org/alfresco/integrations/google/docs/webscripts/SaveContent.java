@@ -32,6 +32,7 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceExcepti
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.version.Version2Model;
+import org.alfresco.service.cmr.dictionary.ConstraintException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.version.VersionService;
@@ -172,6 +173,10 @@ public class SaveContent
         catch (IOException ioe)
         {
             throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
+        }
+        catch (ConstraintException ce)
+        {
+            throw new WebScriptException(GoogleDocsConstants.STATUS_INTEGIRTY_VIOLATION, ce.getMessage(), ce);
         }
 
         // Finish this off with a version create or update
