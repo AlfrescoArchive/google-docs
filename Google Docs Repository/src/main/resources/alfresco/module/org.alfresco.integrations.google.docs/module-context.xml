@@ -201,6 +201,10 @@
             <entry key="application/x-vnd.oasis.opendocument.spreadsheet">
                <value>spreadsheet</value>
             </entry>
+            <!-- GOOGLEDOCS-71 Work around Alfresco only supporting this mimetype for ODS OpenOffice SpreadSheets -->
+            <entry key="application/vnd.oasis.opendocument.spreadsheet">
+               <value>spreadsheet</value>
+            </entry>
             <entry
                key="application/vnd.openxmlformats-officedocument.wordprocessingml.document">
                <value>document</value>
