@@ -159,6 +159,24 @@ public class SaveContent
             {
                 throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, "Content Type: " + contentType + " unknown.");
             }
+
+            // Finish this off with a version create or update
+            Map<String, Serializable> versionProperties = new HashMap<String, Serializable>();
+            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_VERSIONABLE))
+            {
+                versionProperties.put(Version2Model.PROP_VERSION_TYPE, map.get(JSON_KEY_MAJORVERSION));
+                versionProperties.put(Version2Model.PROP_DESCRIPTION, map.get(JSON_KEY_DESCRIPTION));
+            }
+            else
+            {
+                versionProperties.put(Version2Model.PROP_VERSION_TYPE, VersionType.MAJOR);
+
+                nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION, true);
+                nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION_PROPS, true);
+            }
+
+            versionService.createVersion(nodeRef, versionProperties);
+
         }
         catch (GoogleDocsAuthenticationException gdae)
         {
@@ -187,29 +205,10 @@ public class SaveContent
         {
             throw new WebScriptException(GoogleDocsConstants.STATUS_INTEGIRTY_VIOLATION, ce.getMessage(), ce);
         }
-
-
-        // Finish this off with a version create or update
-        Map<String, Serializable> versionProperties = new HashMap<String, Serializable>();
-        if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_VERSIONABLE))
-        {
-            versionProperties.put(Version2Model.PROP_VERSION_TYPE, map.get(JSON_KEY_MAJORVERSION));
-            versionProperties.put(Version2Model.PROP_DESCRIPTION, map.get(JSON_KEY_DESCRIPTION));
-        }
-        else
-        {
-            versionProperties.put(Version2Model.PROP_VERSION_TYPE, VersionType.MAJOR);
-
-            nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION, true);
-            nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION_PROPS, true);
-        }
-
-        try
-        {
-            versionService.createVersion(nodeRef, versionProperties);
-        }
         catch (AccessDeniedException ade)
         {
+            // This code will make changes after the rollback has occurred to clean up the node (remove the lock and the Google Docs
+            // aspect
             AlfrescoTransactionSupport.bindListener(new TransactionListenerAdapter()
             {
                 public void afterRollback()
@@ -219,7 +218,6 @@ public class SaveContent
                         public Object execute()
                             throws Throwable
                         {
-
                             return AuthenticationUtil.runAsSystem(new AuthenticationUtil.RunAsWork<Object>()
                             {
                                 public Object doWork()
