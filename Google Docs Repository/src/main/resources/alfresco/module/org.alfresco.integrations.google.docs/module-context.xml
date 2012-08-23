@@ -407,6 +407,9 @@
       <property name="nodeService">
          <ref bean="nodeService"/>
       </property>
+      <property name="transactionService">
+         <ref bean="transactionService"/>
+      </property>
    </bean>
 
 </beans>

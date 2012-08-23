@@ -200,6 +200,30 @@
                         }]  
                      });
                   }
+                  else if (response.serverResponse.status == 403) //  Access Denied warning
+                  {
+                      Alfresco.util.PopupManager.displayPrompt(
+                              {
+                                 title: me.msg("googledocs.accessDenied.title"),
+                                 text: me.msg("googledocs.accessDenied.text"),
+                                 noEscape: true,
+                                 buttons: [
+                                 {
+                                    text: me.msg("button.ok"),
+                                    handler: function submitDiscard()
+                                    {
+                                       // Close the confirmation pop-up
+                                   	Alfresco.GoogleDocs.hideMessage();
+                                       this.destroy();
+                                       window.location.href = Alfresco.util.uriTemplate("userdashboardpage",
+                                               {
+                                           userid: encodeURIComponent(Alfresco.constants.USERNAME)
+                                        });
+                                    },
+                                    isDefault: true
+                                 }]  
+                              });
+                  }
                   else
                   {
                      Alfresco.GoogleDocs.showMessage({

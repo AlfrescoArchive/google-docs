@@ -3,18 +3,14 @@
  * 
  * This file is part of Alfresco
  * 
- * Alfresco is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ * Alfresco is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  * 
- * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License along with Alfresco. If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
 package org.alfresco.integrations.google.docs.webscripts;
@@ -31,9 +27,15 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenEx
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.model.ContentModel;
+import org.alfresco.repo.security.authentication.AuthenticationUtil;
+import org.alfresco.repo.security.permissions.AccessDeniedException;
+import org.alfresco.repo.transaction.AlfrescoTransactionSupport;
+import org.alfresco.repo.transaction.TransactionListenerAdapter;
+import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransactionCallback;
 import org.alfresco.service.cmr.repository.InvalidNodeRefException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.transaction.TransactionService;
 import org.apache.commons.httpclient.HttpStatus;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -52,6 +54,7 @@ public class DiscardContent
 {
     private GoogleDocsService   googledocsService;
     private NodeService         nodeService;
+    private TransactionService  transactionService;
 
     private static final String JSON_KEY_NODEREF  = "nodeRef";
     private static final String JSON_KEY_OVERRIDE = "override";
@@ -71,13 +74,19 @@ public class DiscardContent
     }
 
 
+    public void setTransactionService(TransactionService transactionService)
+    {
+        this.transactionService = transactionService;
+    }
+
+
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
         Map<String, Object> model = new HashMap<String, Object>();
 
         Map<String, Serializable> map = parseContent(req);
-        NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
+        final NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
 
         if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
         {
@@ -140,6 +149,37 @@ public class DiscardContent
                 {
                     throw new WebScriptException(gdse.getMessage());
                 }
+            }
+            catch (AccessDeniedException ade)
+            {
+                // This code will make changes after the rollback has occurred to clean up the node (remove the lock and the Google
+                // Docs aspect
+                AlfrescoTransactionSupport.bindListener(new TransactionListenerAdapter()
+                {
+                    public void afterRollback()
+                    {
+                        transactionService.getRetryingTransactionHelper().doInTransaction(new RetryingTransactionCallback<Object>()
+                        {
+                            public Object execute()
+                                throws Throwable
+                            {
+                                return AuthenticationUtil.runAsSystem(new AuthenticationUtil.RunAsWork<Object>()
+                                {
+                                    public Object doWork()
+                                        throws Exception
+                                    {
+                                        googledocsService.unlockNode(nodeRef);
+                                        googledocsService.unDecorateNode(nodeRef);
+
+                                        return null;
+                                    }
+                                });
+                            }
+                        }, false, true);
+                    }
+                });
+
+                throw new WebScriptException(HttpStatus.SC_FORBIDDEN, ade.getMessage(), ade);
             }
         }
         else
