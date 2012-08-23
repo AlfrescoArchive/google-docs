@@ -1087,7 +1087,7 @@ public class GoogleDocsServiceImpl
     }
 
 
-    private void unDecorateNode(NodeRef nodeRef)
+    public void unDecorateNode(NodeRef nodeRef)
     {
         behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
         try

@@ -3,18 +3,14 @@
  * 
  * This file is part of Alfresco
  * 
- * Alfresco is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ * Alfresco is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  * 
- * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License along with Alfresco. If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
 package org.alfresco.integrations.google.docs.webscripts;
@@ -31,12 +27,18 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenEx
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.model.ContentModel;
+import org.alfresco.repo.security.authentication.AuthenticationUtil;
+import org.alfresco.repo.security.permissions.AccessDeniedException;
+import org.alfresco.repo.transaction.AlfrescoTransactionSupport;
+import org.alfresco.repo.transaction.TransactionListenerAdapter;
+import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransactionCallback;
 import org.alfresco.repo.version.Version2Model;
 import org.alfresco.service.cmr.dictionary.ConstraintException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.version.VersionService;
 import org.alfresco.service.cmr.version.VersionType;
+import org.alfresco.service.transaction.TransactionService;
 import org.apache.commons.httpclient.HttpStatus;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -57,6 +59,7 @@ public class SaveContent
     private GoogleDocsService   googledocsService;
     private NodeService         nodeService;
     private VersionService      versionService;
+    private TransactionService  transactionService;
 
     private static final String JSON_KEY_NODEREF      = "nodeRef";
     private static final String JSON_KEY_MAJORVERSION = "majorVersion";
@@ -84,6 +87,12 @@ public class SaveContent
     }
 
 
+    public void setTransactionService(TransactionService transactionService)
+    {
+        this.transactionService = transactionService;
+    }
+
+
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
@@ -92,7 +101,7 @@ public class SaveContent
         boolean success = false;
 
         Map<String, Serializable> map = parseContent(req);
-        NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
+        final NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
 
         try
         {
@@ -179,6 +188,7 @@ public class SaveContent
             throw new WebScriptException(GoogleDocsConstants.STATUS_INTEGIRTY_VIOLATION, ce.getMessage(), ce);
         }
 
+
         // Finish this off with a version create or update
         Map<String, Serializable> versionProperties = new HashMap<String, Serializable>();
         if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_VERSIONABLE))
@@ -194,7 +204,40 @@ public class SaveContent
             nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION_PROPS, true);
         }
 
-        versionService.createVersion(nodeRef, versionProperties);
+        try
+        {
+            versionService.createVersion(nodeRef, versionProperties);
+        }
+        catch (AccessDeniedException ade)
+        {
+            AlfrescoTransactionSupport.bindListener(new TransactionListenerAdapter()
+            {
+                public void afterRollback()
+                {
+                    transactionService.getRetryingTransactionHelper().doInTransaction(new RetryingTransactionCallback<Object>()
+                    {
+                        public Object execute()
+                            throws Throwable
+                        {
+
+                            return AuthenticationUtil.runAsSystem(new AuthenticationUtil.RunAsWork<Object>()
+                            {
+                                public Object doWork()
+                                    throws Exception
+                                {
+                                    googledocsService.unlockNode(nodeRef);
+                                    googledocsService.unDecorateNode(nodeRef);
+
+                                    return null;
+                                }
+                            });
+                        }
+                    }, false, true);
+                }
+            });
+
+            throw new WebScriptException(HttpStatus.SC_FORBIDDEN, ade.getMessage(), ade);
+        }
 
         model.put(MODEL_SUCCESS, success);
 

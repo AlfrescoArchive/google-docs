@@ -61,6 +61,7 @@
             org.alfresco.integrations.google.docs.service.GoogleDocsService.createSpreadSheet=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.createPresentation=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.decorateNode=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.unDecorateNode=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.isExportable=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.isImportable=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.getImportFormatsList=ACL_ALLOW
@@ -109,6 +110,7 @@
             <value>createSpreadSheet</value>
             <value>createPresentation</value>
             <value>decorateNode</value>
+            <value>unDecorateNode</value>
             <value>getDocument</value>
             <value>getSpreadSheet</value>
             <value>getPresentation</value>
@@ -386,6 +388,9 @@
       </property>
       <property name="versionService">
          <ref bean="versionService" />
+      </property>
+      <property name="transactionService">
+            <ref bean="transactionService"/>
       </property>
    </bean>
    

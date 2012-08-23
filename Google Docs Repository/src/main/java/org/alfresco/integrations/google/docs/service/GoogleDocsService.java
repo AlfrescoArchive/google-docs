@@ -3,18 +3,14 @@
  * 
  * This file is part of Alfresco
  * 
- * Alfresco is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ * Alfresco is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  * 
- * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License along with Alfresco. If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
 package org.alfresco.integrations.google.docs.service;
@@ -52,8 +48,7 @@ public interface GoogleDocsService
 
 
     /**
-     * Build the OAuth2 URL needed to authenticate the current user against
-     * Google Docs
+     * Build the OAuth2 URL needed to authenticate the current user against Google Docs
      * 
      * @param state
      * @return
@@ -63,8 +58,7 @@ public interface GoogleDocsService
 
 
     /**
-     * Complete the OAuth2 Dance for the current user, persisting the OAuth2
-     * Tokens.
+     * Complete the OAuth2 Dance for the current user, persisting the OAuth2 Tokens.
      * 
      * @param access_token
      * @return
@@ -138,14 +132,20 @@ public interface GoogleDocsService
 
 
     /**
+     * Remove Google Docs Aspect
+     * 
+     * @param nodeRef
+     */
+    public void unDecorateNode(NodeRef nodeRef);
+
+
+    /**
      * Can the mimetype be exported from Google Docs?
      * 
      * @param mimetype
      * @return
-     * @throws MustUpgradeFormatException Thrown if the mimetype must be changed
-     * to a newer mimetype (ex. sxw -> odt)
-     * @throws MustDowngradeFormatException Thrown if the mimetype must be
-     * changed to an older mimetype (ex. docx -> doc)
+     * @throws MustUpgradeFormatException Thrown if the mimetype must be changed to a newer mimetype (ex. sxw -> odt)
+     * @throws MustDowngradeFormatException Thrown if the mimetype must be changed to an older mimetype (ex. docx -> doc)
      */
     public boolean isExportable(String mimetype)
         throws MustUpgradeFormatException,
@@ -170,8 +170,8 @@ public interface GoogleDocsService
 
 
     /**
-     * Get the Google Doc Content type. A content type is a mapping of mimetype
-     * to Google Doc Type (document, spreadsheet or presentation)
+     * Get the Google Doc Content type. A content type is a mapping of mimetype to Google Doc Type (document, spreadsheet or
+     * presentation)
      * 
      * @param nodeRef
      * @return
@@ -180,8 +180,7 @@ public interface GoogleDocsService
 
 
     /**
-     * Retrieve the Google Doc Document associated to this node from Google Docs
-     * into the repository
+     * Retrieve the Google Doc Document associated to this node from Google Docs into the repository
      * 
      * @param nodeRef
      */
@@ -195,8 +194,7 @@ public interface GoogleDocsService
 
 
     /**
-     * Retrieve the Google Doc Spreadsheet associated to this node from Google
-     * Docs into the repository
+     * Retrieve the Google Doc Spreadsheet associated to this node from Google Docs into the repository
      * 
      * @param nodeRef
      */
@@ -210,8 +208,7 @@ public interface GoogleDocsService
 
 
     /**
-     * Retrieve the Google Doc Presentation associated to this node from Google
-     * Docs into the repository
+     * Retrieve the Google Doc Presentation associated to this node from Google Docs into the repository
      * 
      * @param nodeRef
      */
