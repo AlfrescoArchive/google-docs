@@ -128,8 +128,104 @@
        */
       onReturnClick: function GDT_onReturnClick(e)
       {
-         YAHOO.util.Event.preventDefault(e);
-         this._navigateForward();
+    	  YAHOO.util.Event.preventDefault(e);
+			 
+    	  var me = this; // 'this' gets broken by button handlers, need to use alias
+    	  			 
+    	  var success =
+    	  {
+    	     fn: function GDT_returnSuccess(response) {
+    	        this._navigateForward();
+    	     },
+    	     scope: this
+    	  };
+    	  
+    	  var failure =
+    	  {
+    	     fn: function GDT_returnFailure(response) {
+    	        if (response.serverResponse.status == 404)
+    	        {
+    	           this.destroy(); // Remove the confirmation dialog
+    	  			
+    	           var success =
+    	           {
+    	              fn: function GDT_discardSuccess(response) {
+    	                 window.location.href = Alfresco.util.uriTemplate("userdashboardpage",
+    	                    {
+    	                       userid: encodeURIComponent(Alfresco.constants.USERNAME)
+    	  			      });
+    	  			   },
+    	  			   scope : this
+    	  			};
+    	  			
+    	  			var failure = 
+    	  			{
+    	  			   fn: function GDT_discardFailure(response) {
+    	  			      if (response.serverResponse.status != 403) //  Access Denied warning will be swallowed
+    	  			      {
+    	  			         Alfresco.GoogleDocs.showMessage({
+    	  			            text: me.msg("googledocs.actions.discard.failure"),
+    	  			            displayTime: 2.5,
+    	  			            showSpinner: false
+    	  			         });
+    	  			      }
+    	  			   },
+    	  			   scope : this
+    	  			};
+    	  			
+    	  			var actionUrl = Alfresco.constants.PROXY_URI + "googledocs/discardContent";
+    	  			
+    	  			Alfresco.GoogleDocs.showMessage({
+    	  			   text: me.msg("googledocs.accessDenied.text"),
+    	  			   displayTime: 0,
+    	  			   showSpinner: true
+    	  			});
+    	  			
+    	  			Alfresco.GoogleDocs.request({
+    	  			   url: actionUrl,
+    	  			   method: "POST",
+    	  			           dataObj: {
+    	  			              nodeRef: me.options.nodeRef,
+    	  			              override: true
+    	  			           },
+    	  			           successCallback: success,
+    	  			           failureCallback: failure
+    	  			        });
+    	        }
+    	        else
+    	        {
+    	           Alfresco.util.PopupManager.displayPrompt(
+    	           {   
+    	              title: me.msg("googledocs.error.title"),
+    	              text: me.msg("googledocs.error.text"),
+    	              noEscape: true,
+    	              buttons: [
+    	              {
+    	                 text: me.msg("button.ok"),
+    	                 handler: function submitDiscard()
+    	                 {
+    	  			       // Close the confirmation pop-up
+    	  			       Alfresco.GoogleDocs.hideMessage();
+    	  			       this.destroy();
+    	  			    },
+    	  			    isDefault: true
+    	  			  
+    	  			}]
+    	           });
+    	        }
+    	     },
+    	     scope:  this
+    	  };
+    	  			
+    	  var actionUrl = Alfresco.constants.PROXY_URI + "api/sites/" + Alfresco.constants.SITE + "/memberships/" + Alfresco.constants.USERNAME;
+    	  				
+    	  Alfresco.GoogleDocs.request({
+    	     url: actionUrl,
+    	     dataObj: {},
+    	     successCallback: success,
+    	     failureCallback: failure
+    	  });				
+	 
       },
 
       /**
@@ -368,46 +464,46 @@
                else if (response.serverResponse.status == 419) //  Invalid Filename warning
                {
                    Alfresco.util.PopupManager.displayPrompt(
-                           {
-                              title: me.msg("googledocs.invalidFilename.title"),
-                              text: me.msg("googledocs.invalidFilename.text"),
-                              noEscape: true,
-                              buttons: [
-                              {
-                                 text: me.msg("button.ok"),
-                                 handler: function submitDiscard()
-                                 {
-                                    // Close the confirmation pop-up
-                                	Alfresco.GoogleDocs.hideMessage();
-                                    this.destroy();
-                                 },
-                                 isDefault: true
-                              }]  
-                           });
+                   {
+                      title: me.msg("googledocs.invalidFilename.title"),
+                      text: me.msg("googledocs.invalidFilename.text"),
+                      noEscape: true,
+                      buttons: [
+                      {
+                         text: me.msg("button.ok"),
+                         handler: function submitDiscard()
+                         {
+                            // Close the confirmation pop-up
+                        	Alfresco.GoogleDocs.hideMessage();
+                            this.destroy();
+                         },
+                         isDefault: true
+                      }]  
+                   });
                }
                else if (response.serverResponse.status == 403) //  Access Denied warning
                {
                    Alfresco.util.PopupManager.displayPrompt(
-                           {
-                              title: me.msg("googledocs.accessDenied.title"),
-                              text: me.msg("googledocs.accessDenied.text"),
-                              noEscape: true,
-                              buttons: [
-                              {
-                                 text: me.msg("button.ok"),
-                                 handler: function submitDiscard()
-                                 {
-                                    // Close the confirmation pop-up
-                                	Alfresco.GoogleDocs.hideMessage();
-                                    this.destroy();
-                                    window.location.href = Alfresco.util.uriTemplate("userdashboardpage",
-                                            {
-                                        userid: encodeURIComponent(Alfresco.constants.USERNAME)
-                                     });
-                                 },
-                                 isDefault: true
-                              }]  
-                           });
+                   {
+                      title: me.msg("googledocs.accessDenied.title"),
+                      text: me.msg("googledocs.accessDenied.text"),
+                      noEscape: true,
+                      buttons: [
+                      {
+                         text: me.msg("button.ok"),
+                         handler: function submitDiscard()
+                         {
+                            // Close the confirmation pop-up
+                        	Alfresco.GoogleDocs.hideMessage();
+                            this.destroy();
+                            window.location.href = Alfresco.util.uriTemplate("userdashboardpage",
+                                    {
+                                userid: encodeURIComponent(Alfresco.constants.USERNAME)
+                             });
+                         },
+                         isDefault: true
+                      }]  
+                   });
                }
                else
                {
