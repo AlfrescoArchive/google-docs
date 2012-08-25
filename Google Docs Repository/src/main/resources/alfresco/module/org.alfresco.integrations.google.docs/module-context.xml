@@ -390,7 +390,10 @@
          <ref bean="versionService" />
       </property>
       <property name="transactionService">
-            <ref bean="transactionService"/>
+         <ref bean="transactionService"/>
+      </property>
+      <property name="siteService">
+      	<ref bean="siteService"/>
       </property>
    </bean>
    
@@ -409,6 +412,9 @@
       </property>
       <property name="transactionService">
          <ref bean="transactionService"/>
+      </property>
+      <property name="siteService">
+      	<ref bean="siteService"/>
       </property>
    </bean>
 

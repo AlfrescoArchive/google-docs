@@ -36,6 +36,7 @@ import org.alfresco.repo.version.Version2Model;
 import org.alfresco.service.cmr.dictionary.ConstraintException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.cmr.version.VersionService;
 import org.alfresco.service.cmr.version.VersionType;
 import org.alfresco.service.transaction.TransactionService;
@@ -60,6 +61,7 @@ public class SaveContent
     private NodeService         nodeService;
     private VersionService      versionService;
     private TransactionService  transactionService;
+    private SiteService         siteService;
 
     private static final String JSON_KEY_NODEREF      = "nodeRef";
     private static final String JSON_KEY_MAJORVERSION = "majorVersion";
@@ -93,6 +95,12 @@ public class SaveContent
     }
 
 
+    public void setSiteService(SiteService siteService)
+    {
+        this.siteService = siteService;
+    }
+
+
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
@@ -105,77 +113,86 @@ public class SaveContent
 
         try
         {
-            if (!(Boolean)map.get(JSON_KEY_OVERRIDE))
+            if (siteService.isMember(siteService.getSite(nodeRef).getShortName(), AuthenticationUtil.getRunAsUser()))
             {
-                if (googledocsService.hasConcurrentEditors(nodeRef))
-                {
-                    throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString() + " has concurrent editors.");
-                }
-            }
 
-            String contentType = googledocsService.getContentType(nodeRef);
-            if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
-            {
-                if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+                if (!(Boolean)map.get(JSON_KEY_OVERRIDE))
                 {
-                    googledocsService.unlockNode(nodeRef);
-                    googledocsService.getDocument(nodeRef);
-                    success = true; // TODO Make getDocument return boolean
+                    if (googledocsService.hasConcurrentEditors(nodeRef))
+                    {
+                        throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString()
+                                                                             + " has concurrent editors.");
+                    }
+                }
+
+                String contentType = googledocsService.getContentType(nodeRef);
+                if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
+                {
+                    if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+                    {
+                        googledocsService.unlockNode(nodeRef);
+                        googledocsService.getDocument(nodeRef);
+                        success = true; // TODO Make getDocument return boolean
+                    }
+                    else
+                    {
+                        throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+                    }
+                }
+                else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
+                {
+                    if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+                    {
+                        googledocsService.unlockNode(nodeRef);
+                        googledocsService.getSpreadSheet(nodeRef);
+                        success = true; // TODO Make getSpreadsheet return
+                                        // boolean
+                    }
+                    else
+                    {
+                        throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+                    }
+                }
+                else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
+                {
+                    if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+                    {
+                        googledocsService.unlockNode(nodeRef);
+                        googledocsService.getPresentation(nodeRef);
+                        success = true; // TODO Make getPresentation return
+                                        // boolean
+                    }
+                    else
+                    {
+                        throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+                    }
                 }
                 else
                 {
-                    throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+                    throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, "Content Type: " + contentType + " unknown.");
                 }
-            }
-            else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
-            {
-                if (googledocsService.isGoogleDocsLockOwner(nodeRef))
+
+                // Finish this off with a version create or update
+                Map<String, Serializable> versionProperties = new HashMap<String, Serializable>();
+                if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_VERSIONABLE))
                 {
-                    googledocsService.unlockNode(nodeRef);
-                    googledocsService.getSpreadSheet(nodeRef);
-                    success = true; // TODO Make getSpreadsheet return
-                                    // boolean
+                    versionProperties.put(Version2Model.PROP_VERSION_TYPE, map.get(JSON_KEY_MAJORVERSION));
+                    versionProperties.put(Version2Model.PROP_DESCRIPTION, map.get(JSON_KEY_DESCRIPTION));
                 }
                 else
                 {
-                    throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
+                    versionProperties.put(Version2Model.PROP_VERSION_TYPE, VersionType.MAJOR);
+
+                    nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION, true);
+                    nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION_PROPS, true);
                 }
-            }
-            else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
-            {
-                if (googledocsService.isGoogleDocsLockOwner(nodeRef))
-                {
-                    googledocsService.unlockNode(nodeRef);
-                    googledocsService.getPresentation(nodeRef);
-                    success = true; // TODO Make getPresentation return
-                                    // boolean
-                }
-                else
-                {
-                    throw new WebScriptException(HttpStatus.SC_FORBIDDEN, "Document is locked by another user.");
-                }
+
+                versionService.createVersion(nodeRef, versionProperties);
             }
             else
             {
-                throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, "Content Type: " + contentType + " unknown.");
+                throw new AccessDeniedException("Access Denied.  You do not have the appropriate permissions to perform this operation.");
             }
-
-            // Finish this off with a version create or update
-            Map<String, Serializable> versionProperties = new HashMap<String, Serializable>();
-            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_VERSIONABLE))
-            {
-                versionProperties.put(Version2Model.PROP_VERSION_TYPE, map.get(JSON_KEY_MAJORVERSION));
-                versionProperties.put(Version2Model.PROP_DESCRIPTION, map.get(JSON_KEY_DESCRIPTION));
-            }
-            else
-            {
-                versionProperties.put(Version2Model.PROP_VERSION_TYPE, VersionType.MAJOR);
-
-                nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION, true);
-                nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION_PROPS, true);
-            }
-
-            versionService.createVersion(nodeRef, versionProperties);
 
         }
         catch (GoogleDocsAuthenticationException gdae)
@@ -225,6 +242,13 @@ public class SaveContent
                                 {
                                     googledocsService.unlockNode(nodeRef);
                                     googledocsService.unDecorateNode(nodeRef);
+
+                                    // If the node was just created ('Create Content') it will have the temporary aspect and should
+                                    // be completely removed.
+                                    if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+                                    {
+                                        nodeService.deleteNode(nodeRef);
+                                    }
 
                                     return null;
                                 }
