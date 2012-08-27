@@ -35,13 +35,13 @@
       <dependency>
          <groupId>org.alfresco.enterprise</groupId>
          <artifactId>alfresco-core</artifactId>
-         <version>4.1.0-SNAPSHOT</version>
+         <version>4.1.0-RC</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
          <groupId>org.alfresco.enterprise</groupId>
          <artifactId>alfresco-share</artifactId>
-         <version>4.1.0-SNAPSHOT</version>
+         <version>4.1.0-RC</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
