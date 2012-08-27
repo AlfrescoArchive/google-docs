@@ -17,8 +17,8 @@
 
    <bean id="googledocsConnectionFactory"
       class="org.springframework.social.google.docs.connect.GoogleDocsConnectionFactory">
-      <constructor-arg value="176148111206.apps.googleusercontent.com" />
-      <constructor-arg value="m6lTsstN2mNm8IiTFQSr8rCW" />
+      <constructor-arg value="176148111206-onm9idr174ub34k8pi09puui2nb46627.apps.googleusercontent.com" />
+      <constructor-arg value="yEbWWWax6QSwTTZhrqcLJrXq" />
    </bean>
 
 
