@@ -3,18 +3,14 @@
  * 
  * This file is part of Alfresco
  * 
- * Alfresco is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ * Alfresco is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  * 
- * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License along with Alfresco. If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
 package org.alfresco.integrations.google.docs.service;
@@ -94,6 +90,7 @@ import org.springframework.web.client.HttpClientErrorException;
 
 import com.google.gdata.client.docs.DocsService;
 import com.google.gdata.client.media.ResumableGDataFileUploader;
+import com.google.gdata.client.uploader.ResumableHttpFileUploader.UploadState;
 import com.google.gdata.data.MediaContent;
 import com.google.gdata.data.PlainTextConstruct;
 import com.google.gdata.data.docs.DocumentEntry;
@@ -253,9 +250,9 @@ public class GoogleDocsServiceImpl
     }
 
 
-    public ArrayList<String> getImportFormatsList()
+    public Map<String, String> getImportFormats()
     {
-        return new ArrayList<String>(importFormats.keySet());
+        return importFormats;
     }
 
 
@@ -453,10 +450,8 @@ public class GoogleDocsServiceImpl
         {
 
             /*
-             * When we change to spring social 1.0.2 OAuth2Parameters will need
-             * to be updated OAuth2Parameters parameters = new
-             * OAuth2Parameters(); parameters.setRedirectUri(REDIRECT_URI);
-             * parameters.setScope(SCOPE); parameters.setState(state);
+             * When we change to spring social 1.0.2 OAuth2Parameters will need to be updated OAuth2Parameters parameters = new
+             * OAuth2Parameters(); parameters.setRedirectUri(REDIRECT_URI); parameters.setScope(SCOPE); parameters.setState(state);
              */
 
             MultiValueMap<String, String> additionalParameters = new LinkedMultiValueMap<String, String>(1);
@@ -1007,7 +1002,15 @@ public class GoogleDocsServiceImpl
                     throw new GoogleDocsServiceException(ie.getMessage());
                 }
             }
-            uploaded = uploader.getResponse(DocumentListEntry.class);
+
+            if (uploader.getUploadState() != UploadState.CLIENT_ERROR)
+            {
+                uploaded = uploader.getResponse(DocumentListEntry.class);
+            }
+            else
+            {
+                throw new GoogleDocsServiceException("Error During Upload", HttpStatus.SC_METHOD_FAILURE);
+            }
 
         }
         catch (IOException ioe)
@@ -1135,9 +1138,8 @@ public class GoogleDocsServiceImpl
 
 
     /**
-     * Is the node locked by Googledocs? If the document is marked locked in the
-     * model, but not locked in the repository, the locked property is set to
-     * false
+     * Is the node locked by Googledocs? If the document is marked locked in the model, but not locked in the repository, the locked
+     * property is set to false
      * 
      * @param nodeRef
      * @return
@@ -1235,8 +1237,7 @@ public class GoogleDocsServiceImpl
 
 
     /**
-     * When the file format has changed or a new document is created we need to
-     * either change to extension or add an extesion
+     * When the file format has changed or a new document is created we need to either change to extension or add an extesion
      * 
      * @param name
      * @param office2007Pattern
@@ -1270,11 +1271,9 @@ public class GoogleDocsServiceImpl
 
 
     /**
-     * Modify the file extension is the file mimetype has changed. If the name
-     * was changed while being edited in google docs updated the name in
-     * Alfresco. If the name is already in use in the current folder, append
-     * -{number} to the name or if it already has a -{number} increment the
-     * number for the new file
+     * Modify the file extension is the file mimetype has changed. If the name was changed while being edited in google docs updated
+     * the name in Alfresco. If the name is already in use in the current folder, append -{number} to the name or if it already has
+     * a -{number} increment the number for the new file
      * 
      * @param nodeRef
      * @param name New name

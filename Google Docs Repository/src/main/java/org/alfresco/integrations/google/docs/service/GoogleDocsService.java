@@ -17,7 +17,7 @@ package org.alfresco.integrations.google.docs.service;
 
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Map;
 
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
@@ -160,13 +160,13 @@ public interface GoogleDocsService
      */
     public boolean isImportable(String mimetype);
 
-
+    
     /**
-     * List of mimetypes that can be imported into Google Docs.
+     * List of mimetypes that can be imported into Google Docs and the Google Doc Type
      * 
      * @return
      */
-    public ArrayList<String> getImportFormatsList();
+    public Map<String, String> getImportFormats();
 
 
     /**

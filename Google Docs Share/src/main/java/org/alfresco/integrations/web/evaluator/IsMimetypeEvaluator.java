@@ -21,7 +21,6 @@ package org.alfresco.integrations.web.evaluator;
 
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.web.evaluator.BaseEvaluator;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 public class IsMimetypeEvaluator extends BaseEvaluator
@@ -37,7 +36,7 @@ public class IsMimetypeEvaluator extends BaseEvaluator
     @Override
     public boolean evaluate(JSONObject jsonObject)
     {
-        JSONArray nodeArray = (JSONArray) getJSONValue(getMetadata(), accessor);
+        JSONObject importFormats = (JSONObject) getJSONValue(getMetadata(), accessor);
 
         try
         {
@@ -49,7 +48,7 @@ public class IsMimetypeEvaluator extends BaseEvaluator
             else
             {
                 String mimetype = (String) node.get("mimetype");
-                if (mimetype == null || !nodeArray.contains(mimetype)) { return false; }
+                if (mimetype == null || !importFormats.containsKey(mimetype)) { return false; }
             }
         }
         catch (Exception err)

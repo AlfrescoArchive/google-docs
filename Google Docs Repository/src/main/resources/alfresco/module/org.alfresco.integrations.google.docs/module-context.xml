@@ -64,7 +64,7 @@
             org.alfresco.integrations.google.docs.service.GoogleDocsService.unDecorateNode=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.isExportable=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.isImportable=ACL_ALLOW
-            org.alfresco.integrations.google.docs.service.GoogleDocsService.getImportFormatsList=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getImportFormats=ACL_ALLOWW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.getContentType=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.getDocument=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.getSpreadSheet=ACL_ALLOW
@@ -321,7 +321,7 @@
    <bean id="googleDocsCustomResponses" parent="slingshotDocLibCustomResponse">
       <property name="customResponses">
          <map merge="true">
-            <entry key="importFormats">
+            <entry key="googledocs">
                <ref bean="googleDocsImportFormats" />
             </entry>
          </map>

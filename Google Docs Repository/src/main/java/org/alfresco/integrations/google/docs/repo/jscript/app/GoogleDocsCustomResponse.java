@@ -46,7 +46,7 @@ public class GoogleDocsCustomResponse
     public Serializable populate()
     {
         Map<String, Serializable> map = new LinkedHashMap<String, Serializable>(1);
-        map.put("ImportFormats", googledocsService.getImportFormatsList());
+        map.put("importFormats", (Serializable)googledocsService.getImportFormats());
 
         return (Serializable)map;
     }

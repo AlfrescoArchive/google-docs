@@ -13,10 +13,18 @@
    
    <bean id="evaluator.doclib.metadata.isMimetype" class="org.alfresco.integrations.web.evaluator.IsMimetypeEvaluator"/>
    <bean id="evaluator.doclib.metadata.doesNotHaveAspect" class="org.alfresco.integrations.web.evaluator.DoesNotHaveAspectEvaluator"/>
-   
+   <bean id="evaluator.doclib.metadata.sizeLimit" class="org.alfresco.integrations.web.evaluator.SizeLimitEvaluator">
+      <property name="maxDocumentSize" value="2097152"/>
+      <property name="maxSpreadsheetSize" value="20971520"/>
+      <property name="maxPresentationSize" value="52428800"/>
+   </bean>
    
    <bean id="evaluator.doclib.google.docs.mimetype" parent="evaluator.doclib.metadata.isMimetype">
-      <property name="mimetypes" value="custom.importFormats.ImportFormats"/>
+      <property name="mimetypes" value="custom.googledocs.importFormats"/>
+   </bean>
+   
+   <bean id="evaluator.doclib.google.docs.maxsize" parent="evaluator.doclib.metadata.sizeLimit">
+   	  <property name="importFormats" value="custom.googledocs.importFormats"/>
    </bean>
    
    <bean id="evaluator.doclib.google.docs.doesnothaveaspect" parent="evaluator.doclib.metadata.doesNotHaveAspect">
@@ -40,6 +48,7 @@
          <list>
             <ref bean="evaluator.doclib.google.docs.mimetype" />
             <ref bean="evaluator.doclib.google.docs.doesnothaveaspect" />
+            <ref bean="evaluator.doclib.google.docs.maxsize" />
          </list>
       </property>
    </bean>
