@@ -211,9 +211,6 @@
                key="application/vnd.openxmlformats-officedocument.wordprocessingml.document">
                <value>document</value>
             </entry>
-            <entry key="text/html">
-               <value>document</value>
-            </entry>
          </map>
       </property>
       <property name="exportFormats">
@@ -228,9 +225,6 @@
                   </entry>
                   <entry key="text/plain">
                      <value>txt</value>
-                  </entry>
-                  <entry key="text/html">
-                     <value>html</value>
                   </entry>
                   <entry key="application/vnd.oasis.opendocument.text">
                      <value>odt</value>
