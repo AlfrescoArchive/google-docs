@@ -3,18 +3,14 @@
  * 
  * This file is part of Alfresco
  * 
- * Alfresco is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ * Alfresco is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  * 
- * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License along with Alfresco. If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
 package org.alfresco.integrations.google.docs.webscripts;
@@ -43,6 +39,8 @@ import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.Pair;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -58,6 +56,8 @@ import com.google.gdata.data.docs.DocumentListEntry;
 public class CreateContent
     extends DeclarativeWebScript
 {
+    private static final Log    log           = LogFactory.getLog(CreateContent.class);
+
     private GoogleDocsService   googledocsService;
     private FileFolderService   fileFolderService;
 
@@ -94,6 +94,8 @@ public class CreateContent
 
         String contentType = req.getParameter(PARAM_TYPE);
         NodeRef parentNodeRef = new NodeRef(req.getParameter(PARAM_PARENT));
+
+        log.debug("ContentType: " + contentType + "; Parent: " + parentNodeRef);
 
         FileInfo fileInfo = null;
         DocumentListEntry documentEntry = null;
@@ -203,6 +205,7 @@ public class CreateContent
         if (page.size() > 0)
         {
             fileInfo = page.get(0);
+            log.debug("Duplicate file name: " + (fileInfo != null ? fileInfo.getName() : "none"));
         }
 
         String name = null;

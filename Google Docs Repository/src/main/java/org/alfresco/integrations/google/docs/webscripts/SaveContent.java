@@ -41,6 +41,8 @@ import org.alfresco.service.cmr.version.VersionService;
 import org.alfresco.service.cmr.version.VersionType;
 import org.alfresco.service.transaction.TransactionService;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.extensions.surf.util.Content;
@@ -57,6 +59,8 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
 public class SaveContent
     extends DeclarativeWebScript
 {
+    private static final Log    log                   = LogFactory.getLog(SaveContent.class);
+
     private GoogleDocsService   googledocsService;
     private NodeService         nodeService;
     private VersionService      versionService;
@@ -110,6 +114,7 @@ public class SaveContent
 
         Map<String, Serializable> map = parseContent(req);
         final NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
+        log.debug("Saving Node to Alfresco from Google: " + nodeRef);
 
         try
         {
@@ -118,6 +123,7 @@ public class SaveContent
 
                 if (!(Boolean)map.get(JSON_KEY_OVERRIDE))
                 {
+                    log.debug("Check for Concurent Users.");
                     if (googledocsService.hasConcurrentEditors(nodeRef))
                     {
                         throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString()
@@ -126,6 +132,7 @@ public class SaveContent
                 }
 
                 String contentType = googledocsService.getContentType(nodeRef);
+                log.debug("NodeRef: " + nodeRef + "; ContentType: " + contentType);
                 if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
                 {
                     if (googledocsService.isGoogleDocsLockOwner(nodeRef))
@@ -187,6 +194,7 @@ public class SaveContent
                     nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION_PROPS, true);
                 }
 
+                log.debug("Version Node:" +nodeRef + "; Version Properties: "+ versionProperties);
                 versionService.createVersion(nodeRef, versionProperties);
             }
             else
@@ -230,6 +238,7 @@ public class SaveContent
             {
                 public void afterRollback()
                 {
+                    log.debug("Rollback Save to node: "+ nodeRef);
                     transactionService.getRetryingTransactionHelper().doInTransaction(new RetryingTransactionCallback<Object>()
                     {
                         public Object execute()
@@ -287,6 +296,7 @@ public class SaveContent
             {
                 throw new WebScriptException(HttpStatus.SC_BAD_REQUEST, "No content sent with request.");
             }
+            log.debug("Parsed JSON: " + jsonStr);
 
             json = new JSONObject(jsonStr);
 

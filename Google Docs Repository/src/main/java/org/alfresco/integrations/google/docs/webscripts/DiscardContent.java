@@ -38,6 +38,8 @@ import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.transaction.TransactionService;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.extensions.surf.util.Content;
@@ -53,6 +55,8 @@ import com.google.gdata.data.docs.DocumentListEntry;
 public class DiscardContent
     extends DeclarativeWebScript
 {
+    private static final Log    log               = LogFactory.getLog(DiscardContent.class);
+
     private GoogleDocsService   googledocsService;
     private NodeService         nodeService;
     private TransactionService  transactionService;
@@ -252,6 +256,7 @@ public class DiscardContent
             }
 
             jsonStr = content.getContent();
+            log.debug("Parsed JSON: " + jsonStr);
 
             if (jsonStr == null || jsonStr.trim().length() == 0)
             {

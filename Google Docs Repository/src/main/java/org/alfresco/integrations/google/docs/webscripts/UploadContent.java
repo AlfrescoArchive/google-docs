@@ -3,18 +3,14 @@
  * 
  * This file is part of Alfresco
  * 
- * Alfresco is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ * Alfresco is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  * 
- * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License along with Alfresco. If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
 package org.alfresco.integrations.google.docs.webscripts;
@@ -36,6 +32,8 @@ import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.version.VersionService;
 import org.alfresco.service.cmr.version.VersionType;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
@@ -51,6 +49,7 @@ import com.google.gdata.data.docs.DocumentListEntry;
 public class UploadContent
     extends DeclarativeWebScript
 {
+    private static final Log    log           = LogFactory.getLog(UploadContent.class);
 
     private GoogleDocsService   googledocsService;
     private NodeService         nodeService;
@@ -90,6 +89,7 @@ public class UploadContent
         try
         {
             entry = googledocsService.uploadFile(nodeRef);
+            log.debug(nodeRef + " Uploaded to Google.");
 
             // If this is a non-cloud instance of Alfresco, we need to make the
             // node versionable before we start working on it. We want the the
@@ -105,6 +105,7 @@ public class UploadContent
                 nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION, true);
                 nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION_PROPS, true);
 
+                log.debug("Version Node:" +nodeRef + "; Version Properties: "+ versionProperties);
                 versionService.createVersion(nodeRef, versionProperties);
             }
 

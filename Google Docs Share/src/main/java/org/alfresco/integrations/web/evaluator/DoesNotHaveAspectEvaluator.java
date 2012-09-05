@@ -3,18 +3,14 @@
  * 
  * This file is part of Alfresco
  * 
- * Alfresco is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ * Alfresco is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  * 
- * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License along with Alfresco. If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
 package org.alfresco.integrations.web.evaluator;
@@ -22,6 +18,8 @@ package org.alfresco.integrations.web.evaluator;
 
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.web.evaluator.BaseEvaluator;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -38,6 +36,8 @@ import java.util.ArrayList;
 public class DoesNotHaveAspectEvaluator
     extends BaseEvaluator
 {
+    private static final Log  log = LogFactory.getLog(DoesNotHaveAspectEvaluator.class);
+
     private ArrayList<String> aspects;
 
 
@@ -66,8 +66,11 @@ public class DoesNotHaveAspectEvaluator
                     {
                         if (nodeAspects.contains(aspect))
                         {
+                            log.debug("NodeRef: " + ((JSONObject)jsonObject.get("node")).get("nodeRef") + "; Does not have aspect "
+                                      + aspect);
                             return false;
                         }
+                        log.debug("NodeRef: " + ((JSONObject)jsonObject.get("node")).get("nodeRef") + "; Has aspect " + aspect);
                     }
                 }
             }

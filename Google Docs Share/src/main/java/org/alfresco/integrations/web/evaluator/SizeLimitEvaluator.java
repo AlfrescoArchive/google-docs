@@ -18,20 +18,23 @@ package org.alfresco.integrations.web.evaluator;
 
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.web.evaluator.BaseEvaluator;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.json.simple.JSONObject;
 
 
 public class SizeLimitEvaluator
     extends BaseEvaluator
 {
+    private static final Log log = LogFactory.getLog(SizeLimitEvaluator.class);
 
-    private String     accessor;
+    private String           accessor;
 
-    private JSONObject importFormats;
+    private JSONObject       importFormats;
 
-    private long       maxDocumentSize;
-    private long       maxSpreadsheetSize;
-    private long       maxPresentationSize;
+    private long             maxDocumentSize;
+    private long             maxSpreadsheetSize;
+    private long             maxPresentationSize;
 
 
     public void setImportFormats(String accessor)
@@ -74,8 +77,13 @@ public class SizeLimitEvaluator
             {
                 long size = ((Double)node.get("size")).longValue();
                 String contentType = getContentType(node.get("mimetype").toString());
+
+                log.debug("NodeRef: " + node.get("nodeRef") + "Contenttype: " + contentType + "; Max file Size: "
+                          + getMaxFileSize(contentType) + "; Actaul File Size: " + size);
+
                 if (contentType == null || size > getMaxFileSize(contentType))
                 {
+                    log.debug("NodeRef: " + node.get("nodeRef") + " exceeds Max file size.");
                     return false;
                 }
             }

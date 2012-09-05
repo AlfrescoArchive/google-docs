@@ -74,6 +74,8 @@ import org.alfresco.service.namespace.QName;
 import org.alfresco.util.Pair;
 import org.alfresco.util.TempFileProvider;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.core.io.Resource;
@@ -111,6 +113,8 @@ import com.google.gdata.util.ServiceException;
 public class GoogleDocsServiceImpl
     implements GoogleDocsService
 {
+    private static final Log                 log               = LogFactory.getLog(GoogleDocsServiceImpl.class);
+
     // Services
     private OAuth2CredentialsStoreService    oauth2CredentialsStoreService;
     private GoogleDocsConnectionFactory      connectionFactory;
@@ -391,11 +395,12 @@ public class GoogleDocsServiceImpl
 
         if (credentialInfo != null)
         {
-
+            log.debug("OAuth Access Token Exists");
             AccessGrant accessGrant = new AccessGrant(credentialInfo.getOAuthAccessToken());
 
             try
             {
+                log.debug("Attempt to create OAuth Connection");
                 connection = connectionFactory.createConnection(accessGrant);
             }
             catch (ApiException apie)
@@ -423,6 +428,7 @@ public class GoogleDocsServiceImpl
             }
         }
 
+        log.debug("Connection Created");
         return connection;
     }
 
@@ -438,6 +444,7 @@ public class GoogleDocsServiceImpl
             authenticated = true;
         }
 
+        log.debug("Authenticated: " + authenticated);
         return authenticated;
     }
 
@@ -463,6 +470,7 @@ public class GoogleDocsServiceImpl
 
         }
 
+        log.debug("Authentication URL: " + authenticateUrl);
         return authenticateUrl;
     }
 
@@ -490,6 +498,8 @@ public class GoogleDocsServiceImpl
             // need to make sure it is persisted across the "refresh".
             if (accessGrant.getRefreshToken() == null)
             {
+                log.debug("Missing Refresh Token");
+
                 OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
                 // In the "rare" case that no refresh token is returned and the
                 // users credentials are no longer there we need to skip this
@@ -501,6 +511,7 @@ public class GoogleDocsServiceImpl
                     if (credentialInfo.getOAuthRefreshToken() != null)
                     {
                         accessGrant = new AccessGrant(accessGrant.getAccessToken(), accessGrant.getScope(), credentialInfo.getOAuthRefreshToken(), accessGrant.getExpireTime().intValue());
+                        log.debug("Persisting Refresh Token across reauth");
                     }
                 }
             }
@@ -514,6 +525,8 @@ public class GoogleDocsServiceImpl
             throw new GoogleDocsServiceException(nsse.getMessage());
         }
 
+        log.debug("Authentication Complete: " + authenticationComplete);
+
         return authenticationComplete;
     }
 
@@ -523,6 +536,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             GoogleDocsServiceException
     {
+        log.debug("Refreshing Access Token");
         OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
 
         if (credentialInfo.getOAuthRefreshToken() != null)
@@ -584,6 +598,7 @@ public class GoogleDocsServiceImpl
                 throw new GoogleDocsAuthenticationException("No Access Grant Returned.");
             }
 
+            log.debug("Access Token Refreshed");
             return accessGrant;
 
         }
@@ -607,6 +622,7 @@ public class GoogleDocsServiceImpl
             throw apie;
         }
 
+        log.debug("Google Docs Client initiated");
         return docsService;
 
     }
@@ -619,6 +635,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             IOException
     {
+        log.debug("Create Content");
         DocsService docsService = getDocsService(getConnection());
 
         DocumentListEntry entry = null;
@@ -679,6 +696,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             IOException
     {
+        log.debug("Create Google Document for node " + nodeRef);
         DocumentListEntry documentListEntry = createContent(GoogleDocsConstants.DOCUMENT_TYPE, fileFolderService.getFileInfo(nodeRef).getName());
 
         try
@@ -704,6 +722,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             IOException
     {
+        log.debug("Create Google Spreadsheet for node " + nodeRef);
         DocumentListEntry documentListEntry = createContent(GoogleDocsConstants.SPREADSHEET_TYPE, fileFolderService.getFileInfo(nodeRef).getName());
 
         try
@@ -729,6 +748,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             IOException
     {
+        log.debug("Create Google Presentation for node " + nodeRef);
         DocumentListEntry documentListEntry = createContent(GoogleDocsConstants.PRESENTATION_TYPE, fileFolderService.getFileInfo(nodeRef).getName());
 
         try
@@ -753,7 +773,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             IOException
     {
-
+        log.debug("Get Google Document for node: " + nodeRef);
         DocsService docsService = getDocsService(getConnection());
 
         try
@@ -764,11 +784,15 @@ public class GoogleDocsServiceImpl
             String exportFormat = null;
 
             mimeType = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
+            log.debug("Current mimetype: " + fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype()
+                      + "; Mimetype of Google Doc: " + mimeType);
             exportFormat = getExportFormat(getContentType(nodeRef), mimeType);
+            log.debug("Export format: " + exportFormat);
 
             mc.setUri(GoogleDocsConstants.URL_DOCUMENT_DOWNLOAD + "?docID=" + resourceID.substring(resourceID.lastIndexOf(':') + 1)
                       + "&exportFormat=" + exportFormat);
 
+            log.debug("Export URL: " + mc.getUri());
             MediaSource ms = docsService.getMedia(mc);
 
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
@@ -786,6 +810,7 @@ public class GoogleDocsServiceImpl
             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
+                log.debug("Temporary Aspect Removed");
             }
         }
         catch (IOException ioe)
@@ -823,7 +848,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             IOException
     {
-
+        log.debug("Get Google Spreadsheet for node: " + nodeRef);
         DocsService docsService = getDocsService(getConnection());
 
         try
@@ -834,11 +859,15 @@ public class GoogleDocsServiceImpl
             String exportFormat = null;
 
             mimeType = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
+            log.debug("Current mimetype: " + fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype()
+                      + "; Mimetype of Google Doc: " + mimeType);
             exportFormat = getExportFormat(getContentType(nodeRef), mimeType);
+            log.debug("Export format: " + exportFormat);
 
             mc.setUri(GoogleDocsConstants.URL_SPREADSHEET_DOWNLOAD + "?key="
                       + resourceID.substring(resourceID.lastIndexOf(':') + 1) + "&exportFormat=" + exportFormat);
 
+            log.debug("Export URL: " + mc.getUri());
             MediaSource ms = docsService.getMedia(mc);
 
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
@@ -847,7 +876,7 @@ public class GoogleDocsServiceImpl
 
             DocumentListEntry documentListEntry = getDocumentListEntry(resourceID);
 
-            renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
+           renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
 
             deleteContent(nodeRef, documentListEntry);
 
@@ -856,6 +885,7 @@ public class GoogleDocsServiceImpl
             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
+                log.debug("Temporary Aspect Removed");
             }
         }
         catch (IOException ioe)
@@ -893,7 +923,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             IOException
     {
-
+        log.debug("Get Google Presentation for node: " + nodeRef);
         DocsService docsService = getDocsService(getConnection());
 
         try
@@ -904,11 +934,15 @@ public class GoogleDocsServiceImpl
             String exportFormat = null;
 
             mimeType = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
+            log.debug("Current mimetype: " + fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype()
+                      + "; Mimetype of Google Doc: " + mimeType);
             exportFormat = getExportFormat(getContentType(nodeRef), mimeType);
+            log.debug("Export format: " + exportFormat);
 
             mc.setUri(GoogleDocsConstants.URL_PRESENTATION_DOWNLOAD + "?docID="
                       + resourceID.substring(resourceID.lastIndexOf(':') + 1) + "&exportFormat=" + exportFormat);
 
+            log.debug("Export URL: " + mc.getUri());
             MediaSource ms = docsService.getMedia(mc);
 
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
@@ -926,6 +960,7 @@ public class GoogleDocsServiceImpl
             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
+                log.debug("Temporary Aspect Removed");
             }
         }
         catch (IOException ioe)
@@ -963,6 +998,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             IOException
     {
+        log.debug("Upload " + nodeRef + " to Google");
         DocsService docsService = getDocsService(getConnection());
 
         DocumentListEntry uploaded = null;
@@ -990,12 +1026,13 @@ public class GoogleDocsServiceImpl
 
             ResumableGDataFileUploader uploader = new ResumableGDataFileUploader.Builder(docsService, new URL(GoogleDocsConstants.URL_CREATE_MEDIA), mediaFile, entry).chunkSize(10485760L).build();
             uploader.start();
-
+            log.debug("Start Upload");
             while (!uploader.isDone())
             {
                 try
                 {
                     Thread.sleep(100);
+                    log.debug("Uploading...");
                 }
                 catch (InterruptedException ie)
                 {
@@ -1006,6 +1043,7 @@ public class GoogleDocsServiceImpl
             if (uploader.getUploadState() != UploadState.CLIENT_ERROR)
             {
                 uploaded = uploader.getResponse(DocumentListEntry.class);
+                log.debug("Upload Complete");
             }
             else
             {
@@ -1039,6 +1077,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             IOException
     {
+        log.debug("Delete Google Doc for " + nodeRef);
         boolean deleted = false;
 
         DocsService docsService = getDocsService(getConnection());
@@ -1062,12 +1101,14 @@ public class GoogleDocsServiceImpl
             throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
         }
 
+        log.debug("Deleted: " + deleted);
         return deleted;
     }
 
 
     public void decorateNode(NodeRef nodeRef, DocumentListEntry documentListEntry, boolean newcontent)
     {
+        log.debug("Add Google Docs Aspect to " + nodeRef);
         behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
         try
         {
@@ -1075,6 +1116,7 @@ public class GoogleDocsServiceImpl
             {
                 // Mark temporary until first save
                 nodeService.addAspect(nodeRef, ContentModel.ASPECT_TEMPORARY, null);
+                log.debug("Add Temporary Aspect");
             }
 
             // Get the googleMetadata to reference the Node
@@ -1082,6 +1124,8 @@ public class GoogleDocsServiceImpl
             aspectProperties.put(GoogleDocsModel.PROP_RESOURCE_ID, documentListEntry.getResourceId());
             aspectProperties.put(GoogleDocsModel.PROP_EDITORURL, documentListEntry.getDocumentLink().getHref());
             nodeService.addAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE, aspectProperties);
+            log.debug("Resource Id: " + aspectProperties.get(GoogleDocsModel.PROP_RESOURCE_ID));
+            log.debug("Editor Url:" + aspectProperties.get(GoogleDocsModel.PROP_EDITORURL));
         }
         finally
         {
@@ -1092,6 +1136,7 @@ public class GoogleDocsServiceImpl
 
     public void unDecorateNode(NodeRef nodeRef)
     {
+        log.debug("Remove Google Docs aspect from " + nodeRef);
         behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
         try
         {
@@ -1109,6 +1154,7 @@ public class GoogleDocsServiceImpl
 
     public void lockNode(NodeRef nodeRef)
     {
+        log.debug("Lock Node " + nodeRef + " for Google Docs Editing");
         behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
         try
         {
@@ -1124,6 +1170,7 @@ public class GoogleDocsServiceImpl
 
     public void unlockNode(NodeRef nodeRef)
     {
+        log.debug("Unlock Node " + nodeRef + " from Google Docs Editing");
         behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
         try
         {
@@ -1162,6 +1209,8 @@ public class GoogleDocsServiceImpl
                 locked = true;
             }
         }
+
+        log.debug("Node " + nodeRef + " locked by Google Docs");
 
         return locked;
     }
@@ -1218,6 +1267,7 @@ public class GoogleDocsServiceImpl
 
         }
 
+        log.debug("NodeRef of most recent duplicate named file: " + (lastDup != null ? lastDup : " no duplicate named files"));
         return lastDup;
     }
 
@@ -1237,7 +1287,7 @@ public class GoogleDocsServiceImpl
 
 
     /**
-     * When the file format has changed or a new document is created we need to either change to extension or add an extesion
+     * When the file format has changed or a new document is created we need to either change the extension or add an extension
      * 
      * @param name
      * @param office2007Pattern
@@ -1346,6 +1396,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsServiceException,
             IOException
     {
+        log.debug("Check for Concurrent Editors (Edits that have occured in the last " + idleThreshold + " seconds)");
         DocsService docsService = getDocsService(getConnection());
 
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
@@ -1362,6 +1413,7 @@ public class GoogleDocsServiceImpl
 
             if (revisionList.size() > 1)
             {
+                log.debug("Revisions Found");
                 Collections.sort(revisionList, new RevisionEntryComparator());
 
                 // Find any revisions occuring within the last 'idleThreshold'
@@ -1388,7 +1440,7 @@ public class GoogleDocsServiceImpl
                 // 'idleThreshold' seconds of time....
                 if (workingList.size() > 0)
                 {
-
+                    log.debug("Revisions within threshhold found");
                     // Filter the current user from the list
                     for (int i = workingList.size() - 1; i >= 0; i--)
                     {
@@ -1415,6 +1467,7 @@ public class GoogleDocsServiceImpl
                 // 'idleThreshold' seconds
                 if (workingList.size() > 0)
                 {
+                    log.debug("Revisions not made by current user found.");
                     concurrentChange = true;
                 }
 
@@ -1435,6 +1488,7 @@ public class GoogleDocsServiceImpl
 
                         if (new Date(revisionList.get(0).getUpdated().getValue()).before(new Date(bufferTime.getTimeInMillis())))
                         {
+                            log.debug("Revisions not made by current user found.");
                             concurrentChange = true;
                         }
                     }
@@ -1451,6 +1505,7 @@ public class GoogleDocsServiceImpl
             throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
         }
 
+        log.debug("Concurrent Edits: " + concurrentChange);
         return concurrentChange;
     }
 
@@ -1461,6 +1516,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException
     {
+        log.debug("Get Document list entry for resource " + resourceID);
         DocsService docsService = getDocsService(getConnection());
 
         DocumentListEntry documentListEntry = null;
@@ -1488,6 +1544,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsServiceException,
             IOException
     {
+        log.debug("Get Google Docs user metadata");
         DocsService docsService = getDocsService(getConnection());
 
         MetadataEntry metadataEntry = null;
@@ -1512,6 +1569,7 @@ public class GoogleDocsServiceImpl
     private void postActivity(NodeRef nodeRef)
         throws JSONException
     {
+        log.debug("Create Activity Stream Entry");
         try
         {
             String activityType = FILE_UPDATED;
@@ -1541,6 +1599,7 @@ public class GoogleDocsServiceImpl
             }
 
             activityService.postActivity(activityType, siteId, GoogleDocsService.class.getSimpleName(), jsonActivityData.toString());
+            log.debug("Post Activity Stream Entry -- type:" + activityType + "; site: " + siteId + "; Data: " + jsonActivityData);
         }
         catch (JSONException jsonException)
         {
@@ -1553,4 +1612,6 @@ public class GoogleDocsServiceImpl
     {
         return new PersonInfo(nodeRef, AuthenticationUtil.getRunAsUser(), nodeService.getProperty(nodeRef, ContentModel.PROP_FIRSTNAME).toString(), nodeService.getProperty(nodeRef, ContentModel.PROP_LASTNAME).toString());
     }
+    
+   
 }
