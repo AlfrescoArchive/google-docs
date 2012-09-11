@@ -218,6 +218,9 @@
          <map>
             <entry key="document">
                <map>
+                  <entry key="application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                  	 <value>docx</value>
+                  </entry>
                   <entry key="application/msword">
                      <value>doc</value>
                   </entry>
@@ -243,6 +246,9 @@
                   <!-- GOOGLEDOCS-71 Work around Alfresco only supporting this mimetype for ODS OpenOffice SpreadSheets -->
                   <entry key="application/vnd.oasis.opendocument.spreadsheet">
                      <value>ods</value>
+                  </entry>
+                  <entry key="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+                  	 <value>xlsx</value>
                   </entry>                  
                   <entry key="application/vnd.ms-excel">
                      <value>xls</value>
@@ -271,18 +277,6 @@
          <map>
             <entry key="application/vnd.sun.xml.writer">
                <value>application/vnd.oasis.opendocument.text</value>
-            </entry>
-         </map>
-      </property>
-      <property name="downgradeMappings">
-         <map>
-            <entry
-               key="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-               <value>application/vnd.ms-excel</value>
-            </entry>
-            <entry
-               key="application/vnd.openxmlformats-officedocument.wordprocessingml.document">
-               <value>application/msword</value>
             </entry>
          </map>
       </property>
