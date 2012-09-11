@@ -26,7 +26,6 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.extensions.webscripts.Cache;
-import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -36,7 +35,7 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
  * @author Jared Ottley <jared.ottley@alfresco.com>
  */
 public class Exportable
-    extends DeclarativeWebScript
+    extends GoogleDocsWebScripts
 {
     private static final Log    log                = LogFactory.getLog(Exportable.class);
 
@@ -59,6 +58,8 @@ public class Exportable
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
+        getGoogleDocsServiceSubsystem();
+
         Map<String, Object> model = new HashMap<String, Object>();
 
         try

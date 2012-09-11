@@ -78,12 +78,34 @@
             scope : this
          },
          failureCallback: {
-            fn: function() {
-               Alfresco.GoogleDocs.showMessage({
-                  text: this.msg("create-content.googledocs." + contentType + ".failure"), 
-                  displayTime: 2.5,
-                  showSpinner: false
-               });
+            fn: function(response) {
+                if (response.serverResponse.status == 503) {
+                   Alfresco.util.PopupManager.displayPrompt(
+             	   {   
+             	       title: this.msg("googledocs.disabled.title"),
+             	       text: this.msg("googledocs.disabled.text"),
+             	       noEscape: true,
+             	       buttons: [
+             	       {
+             	          text: this.msg("button.ok"),
+             	          handler: function submitDiscard()
+             	          {
+             	  		     // Close the confirmation pop-up
+             	  			 Alfresco.GoogleDocs.hideMessage();
+             	  			 this.destroy();
+             	  		   },
+             	  		   isDefault: true
+             	  		}]
+             	    });
+                }
+                else 
+                {           	
+            	   Alfresco.GoogleDocs.showMessage({
+                     text: this.msg("create-content.googledocs." + contentType + ".failure"), 
+                     displayTime: 2.5,
+                     showSpinner: false
+                   });
+                }
             },
             scope: this
          }
@@ -170,13 +192,36 @@
                },
                failureCallback:
                {
-                  fn: function()
+                  fn: function(response)
                   {
-                     Alfresco.GoogleDocs.showMessage({
-                        text: this.msg("googledocs.actions.editing.failure"), 
-                        displayTime: 2.5,
-                        showSpinner: false
-                     });
+                     if (response.serverResponse.status == 503)
+                     {
+                        Alfresco.util.PopupManager.displayPrompt(
+                        {   
+                           title: this.msg("googledocs.disabled.title"),
+                   	       text: this.msg("googledocs.disabled.text"),
+                   	       noEscape: true,
+                   	       buttons: [
+                   	       {
+                              text: this.msg("button.ok"),
+                   	          handler: function submitDiscard()
+                   	          {
+                   	  		     // Close the confirmation pop-up
+                   	  			 Alfresco.GoogleDocs.hideMessage();
+                   	  			 this.destroy();
+                   	  		   },
+                   	  		   isDefault: true
+                   	  		}]
+                   	    }); 
+                     }
+                     else
+                     {
+                	    Alfresco.GoogleDocs.showMessage({
+                           text: this.msg("googledocs.actions.editing.failure"), 
+                           displayTime: 2.5,
+                           showSpinner: false
+                        });
+                     }
                   },
                   scope: this
                }
@@ -234,11 +279,34 @@
             {
                fn : function(response)
                {
-                  Alfresco.GoogleDocs.showMessage({
+                  if (response.serverResponse.status == 503)
+                  {
+                	  Alfresco.util.PopupManager.displayPrompt(
+                      {   
+                         title: this.msg("googledocs.disabled.title"),
+                         text: this.msg("googledocs.disabled.text"),
+                         noEscape: true,
+                         buttons: [
+                         {
+                            text: this.msg("button.ok"),
+                        	handler: function submitDiscard()
+                        	{
+                        	   // Close the confirmation pop-up
+                        	   Alfresco.GoogleDocs.hideMessage();
+                        	   this.destroy();
+                        	},
+                        	isDefault: true
+                         }]
+                      });
+                  }
+                  else
+                  {
+            	   Alfresco.GoogleDocs.showMessage({
                      text: this.msg("googledocs.actions.exportable.check.failure"), 
                      displayTime: 2.5,
                      showSpinner: false
                   });
+                  }
                },
                scope : this
             };

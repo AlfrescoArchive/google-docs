@@ -67,7 +67,13 @@ public interface GoogleDocsService
     public boolean completeAuthentication(String access_token)
         throws GoogleDocsServiceException;
 
-
+    /**
+     * Is the Google Docs Integration enabled
+     * @return
+     */
+    @Auditable
+    public boolean isEnabled();
+    
     @Auditable
     public MetadataEntry getUserMetadata()
         throws GoogleDocsAuthenticationException,

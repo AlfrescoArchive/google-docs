@@ -44,7 +44,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.extensions.surf.util.Content;
 import org.springframework.extensions.webscripts.Cache;
-import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -53,7 +52,7 @@ import com.google.gdata.data.docs.DocumentListEntry;
 
 
 public class DiscardContent
-    extends DeclarativeWebScript
+    extends GoogleDocsWebScripts
 {
     private static final Log    log               = LogFactory.getLog(DiscardContent.class);
 
@@ -95,6 +94,8 @@ public class DiscardContent
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
+        getGoogleDocsServiceSubsystem();
+
         Map<String, Object> model = new HashMap<String, Object>();
 
         Map<String, Serializable> map = parseContent(req);

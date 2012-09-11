@@ -146,6 +146,8 @@ public class GoogleDocsServiceImpl
     // concurrent
     private int                              idleThreshold     = 0;
 
+    private boolean                          enabled           = true;
+
     // Activities
     private static final String              FILE_ADDED        = "org.alfresco.documentlibrary.file-added";
     private static final String              FILE_UPDATED      = "org.alfresco.documentlibrary.file-updated";
@@ -281,6 +283,18 @@ public class GoogleDocsServiceImpl
     public void setIdleThreshold(int idleThreshold)
     {
         this.idleThreshold = idleThreshold;
+    }
+
+
+    public void setEnabled(boolean enabled)
+    {
+        this.enabled = enabled;
+    }
+
+
+    public boolean isEnabled()
+    {
+        return enabled;
     }
 
 
@@ -876,7 +890,7 @@ public class GoogleDocsServiceImpl
 
             DocumentListEntry documentListEntry = getDocumentListEntry(resourceID);
 
-           renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
+            renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
 
             deleteContent(nodeRef, documentListEntry);
 
@@ -1612,6 +1626,6 @@ public class GoogleDocsServiceImpl
     {
         return new PersonInfo(nodeRef, AuthenticationUtil.getRunAsUser(), nodeService.getProperty(nodeRef, ContentModel.PROP_FIRSTNAME).toString(), nodeService.getProperty(nodeRef, ContentModel.PROP_LASTNAME).toString());
     }
-    
-   
+
+
 }

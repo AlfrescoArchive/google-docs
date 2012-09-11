@@ -47,7 +47,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.extensions.surf.util.Content;
 import org.springframework.extensions.webscripts.Cache;
-import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -57,7 +56,7 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
  * @author Jared Ottley <jared.ottley@alfresco.com>
  */
 public class SaveContent
-    extends DeclarativeWebScript
+    extends GoogleDocsWebScripts
 {
     private static final Log    log                   = LogFactory.getLog(SaveContent.class);
 
@@ -108,6 +107,8 @@ public class SaveContent
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
+        getGoogleDocsServiceSubsystem();
+
         Map<String, Object> model = new HashMap<String, Object>();
 
         boolean success = false;
@@ -194,7 +195,7 @@ public class SaveContent
                     nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION_PROPS, true);
                 }
 
-                log.debug("Version Node:" +nodeRef + "; Version Properties: "+ versionProperties);
+                log.debug("Version Node:" + nodeRef + "; Version Properties: " + versionProperties);
                 versionService.createVersion(nodeRef, versionProperties);
             }
             else
@@ -238,7 +239,7 @@ public class SaveContent
             {
                 public void afterRollback()
                 {
-                    log.debug("Rollback Save to node: "+ nodeRef);
+                    log.debug("Rollback Save to node: " + nodeRef);
                     transactionService.getRetryingTransactionHelper().doInTransaction(new RetryingTransactionCallback<Object>()
                     {
                         public Object execute()

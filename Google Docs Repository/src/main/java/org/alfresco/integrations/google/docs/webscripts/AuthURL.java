@@ -23,7 +23,6 @@ import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.extensions.webscripts.Cache;
-import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptRequest;
 
@@ -32,7 +31,7 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
  * @author Jared Ottley <jared.ottley@alfresco.com>
  */
 public class AuthURL
-    extends DeclarativeWebScript
+    extends GoogleDocsWebScripts
 {
     private static final Log    log                 = LogFactory.getLog(AuthURL.class);
 
@@ -54,6 +53,8 @@ public class AuthURL
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
+        getGoogleDocsServiceSubsystem();
+
         Map<String, Object> model = new HashMap<String, Object>();
 
         boolean authenticated = false;

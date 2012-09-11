@@ -35,7 +35,6 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.extensions.webscripts.Cache;
-import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -47,7 +46,7 @@ import com.google.gdata.data.docs.DocumentListEntry;
  * @author Jared Ottley <jared.ottley@alfresco.com>
  */
 public class UploadContent
-    extends DeclarativeWebScript
+    extends GoogleDocsWebScripts
 {
     private static final Log    log           = LogFactory.getLog(UploadContent.class);
 
@@ -80,8 +79,13 @@ public class UploadContent
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
+        getGoogleDocsServiceSubsystem();
+
         Map<String, Object> model = new HashMap<String, Object>();
 
+        if (googledocsService.isEnabled())
+        {
+        
         String param_nodeRef = req.getParameter(PARAM_NODEREF);
         NodeRef nodeRef = new NodeRef(param_nodeRef);
 
@@ -105,7 +109,7 @@ public class UploadContent
                 nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION, true);
                 nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION_PROPS, true);
 
-                log.debug("Version Node:" +nodeRef + "; Version Properties: "+ versionProperties);
+                log.debug("Version Node:" + nodeRef + "; Version Properties: " + versionProperties);
                 versionService.createVersion(nodeRef, versionProperties);
             }
 
@@ -137,6 +141,12 @@ public class UploadContent
         }
 
         model.put(MODEL_NODEREF, nodeRef.toString());
+        
+        }
+        else
+        {
+            throw new WebScriptException(HttpStatus.SC_SERVICE_UNAVAILABLE, "Google Docs Disabled");
+        }
 
         return model;
     }

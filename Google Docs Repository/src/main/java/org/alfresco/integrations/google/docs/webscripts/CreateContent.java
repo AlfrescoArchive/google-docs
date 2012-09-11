@@ -33,6 +33,7 @@ import org.alfresco.model.ContentModel;
 import org.alfresco.query.CannedQueryPageDetails;
 import org.alfresco.query.PagingRequest;
 import org.alfresco.query.PagingResults;
+import org.alfresco.repo.management.subsystems.ApplicationContextFactory;
 import org.alfresco.service.cmr.model.FileFolderService;
 import org.alfresco.service.cmr.model.FileInfo;
 import org.alfresco.service.cmr.repository.NodeRef;
@@ -41,8 +42,8 @@ import org.alfresco.util.Pair;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.extensions.webscripts.Cache;
-import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -54,7 +55,7 @@ import com.google.gdata.data.docs.DocumentListEntry;
  * @author Jared Ottley <jared.ottley@alfresco.com>
  */
 public class CreateContent
-    extends DeclarativeWebScript
+    extends GoogleDocsWebScripts
 {
     private static final Log    log           = LogFactory.getLog(CreateContent.class);
 
@@ -90,81 +91,93 @@ public class CreateContent
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
+        // Set Service Beans
+        this.getGoogleDocsServiceSubsystem();
+
         Map<String, Object> model = new HashMap<String, Object>();
 
-        String contentType = req.getParameter(PARAM_TYPE);
-        NodeRef parentNodeRef = new NodeRef(req.getParameter(PARAM_PARENT));
-
-        log.debug("ContentType: " + contentType + "; Parent: " + parentNodeRef);
-
-        FileInfo fileInfo = null;
-        DocumentListEntry documentEntry = null;
-        try
+        if (googledocsService.isEnabled())
         {
-            if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
+
+            String contentType = req.getParameter(PARAM_TYPE);
+            NodeRef parentNodeRef = new NodeRef(req.getParameter(PARAM_PARENT));
+
+            log.debug("ContentType: " + contentType + "; Parent: " + parentNodeRef);
+
+            FileInfo fileInfo = null;
+            DocumentListEntry documentEntry = null;
+            try
             {
-                String name = filenameHandler(contentType, parentNodeRef);
-                fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
+                if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
+                {
+                    String name = filenameHandler(contentType, parentNodeRef);
+                    fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
 
-                documentEntry = googledocsService.createDocument(fileInfo.getNodeRef());
+                    documentEntry = googledocsService.createDocument(fileInfo.getNodeRef());
 
-                googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+                    googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+                }
+                else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
+                {
+                    String name = filenameHandler(contentType, parentNodeRef);
+                    fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
+
+                    documentEntry = googledocsService.createSpreadSheet(fileInfo.getNodeRef());
+
+                    googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+                }
+                else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
+                {
+                    String name = filenameHandler(contentType, parentNodeRef);
+                    fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
+
+                    documentEntry = googledocsService.createPresentation(fileInfo.getNodeRef());
+
+                    googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+                }
+                else
+                {
+                    throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, "Content Type Not Found.");
+                }
+
             }
-            else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
+            catch (GoogleDocsServiceException gdse)
             {
-                String name = filenameHandler(contentType, parentNodeRef);
-                fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
-
-                documentEntry = googledocsService.createSpreadSheet(fileInfo.getNodeRef());
-
-                googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+                if (gdse.getPassedStatusCode() > -1)
+                {
+                    throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage());
+                }
+                else
+                {
+                    throw new WebScriptException(gdse.getMessage());
+                }
             }
-            else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
+            catch (GoogleDocsTypeException gdte)
             {
-                String name = filenameHandler(contentType, parentNodeRef);
-                fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
-
-                documentEntry = googledocsService.createPresentation(fileInfo.getNodeRef());
-
-                googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+                throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, gdte.getMessage());
             }
-            else
+            catch (GoogleDocsAuthenticationException gdae)
             {
-                throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, "Content Type Not Found.");
+                throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdae.getMessage());
             }
+            catch (GoogleDocsRefreshTokenException gdrte)
+            {
+                throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage());
+            }
+            catch (IOException ioe)
+            {
+                throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
+            }
+
+            googledocsService.lockNode(fileInfo.getNodeRef());
+
+            model.put(MODEL_NODEREF, fileInfo.getNodeRef().toString());
 
         }
-        catch (GoogleDocsServiceException gdse)
+        else
         {
-            if (gdse.getPassedStatusCode() > -1)
-            {
-                throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage());
-            }
-            else
-            {
-                throw new WebScriptException(gdse.getMessage());
-            }
+            throw new WebScriptException(HttpStatus.SC_SERVICE_UNAVAILABLE, "Google Docs Disabled");
         }
-        catch (GoogleDocsTypeException gdte)
-        {
-            throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, gdte.getMessage());
-        }
-        catch (GoogleDocsAuthenticationException gdae)
-        {
-            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdae.getMessage());
-        }
-        catch (GoogleDocsRefreshTokenException gdrte)
-        {
-            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage());
-        }
-        catch (IOException ioe)
-        {
-            throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
-        }
-
-        googledocsService.lockNode(fileInfo.getNodeRef());
-
-        model.put(MODEL_NODEREF, fileInfo.getNodeRef().toString());
 
         return model;
     }
@@ -246,5 +259,14 @@ public class CreateContent
         }
 
         return name;
+    }
+
+
+    protected void getGoogleDocsServiceSubsystem()
+    {
+        ApplicationContextFactory subsystem = (ApplicationContextFactory)applicationContext.getBean("v2");
+        ConfigurableApplicationContext childContext = (ConfigurableApplicationContext)subsystem.getApplicationContext();
+        setGoogledocsService((GoogleDocsService)childContext.getBean("googledocsService"));
+        setFileNameUtil((FileNameUtil)childContext.getBean("fileNameUtil"));
     }
 }
