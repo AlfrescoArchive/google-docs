@@ -59,6 +59,8 @@ public class CreateContent
 {
     private static final Log    log           = LogFactory.getLog(CreateContent.class);
 
+    private final static String FILENAMEUTIL  = "fileNameUtil";
+
     private GoogleDocsService   googledocsService;
     private FileFolderService   fileFolderService;
 
@@ -264,9 +266,9 @@ public class CreateContent
 
     protected void getGoogleDocsServiceSubsystem()
     {
-        ApplicationContextFactory subsystem = (ApplicationContextFactory)applicationContext.getBean("v2");
+        ApplicationContextFactory subsystem = (ApplicationContextFactory)applicationContext.getBean(GOOGLEDOCS_V2_SUBSYSTEM);
         ConfigurableApplicationContext childContext = (ConfigurableApplicationContext)subsystem.getApplicationContext();
-        setGoogledocsService((GoogleDocsService)childContext.getBean("googledocsService"));
-        setFileNameUtil((FileNameUtil)childContext.getBean("fileNameUtil"));
+        setGoogledocsService((GoogleDocsService)childContext.getBean(GOOGLEDOCSSERVICE));
+        setFileNameUtil((FileNameUtil)childContext.getBean(FILENAMEUTIL));
     }
 }
