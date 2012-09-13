@@ -110,7 +110,7 @@
             "continue=https%3A%2F%2Fwww.google.com%2Fintl%2Fen%2Fimages%2Flogos%2Faccounts_logo.png&" + 
             "followup=https%3A%2F%2Fwww.google.com%2Fintl%2Fen%2Fimages%2Flogos%2Faccounts_logo.png&" + 
             "chtml=LoginDoneHtml&checkedDomains=youtube&checkConnection=youtube%3A291%3A1&" + 
-            "ts=" + Date.now());
+            "ts=" + new Date().getTime());
       Dom.setStyle(imgEl, "display", "none");
       Event.addListener(imgEl, "load", config.onLoad.fn, config.onLoad.scope, true);
       Event.addListener(imgEl, "error", config.onError.fn, config.onError.scope, true);
