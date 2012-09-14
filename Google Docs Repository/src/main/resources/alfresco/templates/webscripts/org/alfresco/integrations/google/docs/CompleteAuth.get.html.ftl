@@ -45,7 +45,7 @@ div.panel
       <br/>
       <#if authenticated>
        <script type="text/javascript">
-         if (typeof window.opener.window.Alfresco.GoogleDocs == "object" && typeof window.opener.window.Alfresco.GoogleDocs.onOAuthReturn == "function")
+         if (typeof window.opener.window.Alfresco.GoogleDocs == "object" && typeof window.opener.window.Alfresco.GoogleDocs.onOAuthReturn != "undefined")
          {
             window.opener.window.Alfresco.GoogleDocs.onOAuthReturn(true);
             self.close();
