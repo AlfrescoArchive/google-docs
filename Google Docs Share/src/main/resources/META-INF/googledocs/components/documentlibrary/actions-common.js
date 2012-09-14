@@ -207,7 +207,13 @@
                
                Alfresco.GoogleDocs.onOAuthReturn = returnFn;
                
-               if (typeof window.showModalDialog == "function")
+               /*
+                * Modal dialogs do not work properly in IE, they are unable to navigate to cross-domain URL such as the return page,
+                * causing a second popup window to be opened which then does not close
+                * 
+                * See https://issues.alfresco.com/jira/browse/GOOGLEDOCS-100
+                */
+               if (typeof window.showModalDialog == "function" && !YAHOO.env.ua.ie)
                {
                   var returnVal = window.showModalDialog(authURL, {onOAuthReturn: returnFn}, "dialogwidth:" + OAUTH_WINDOW_WIDTH + ";dialogheight:" + OAUTH_WINDOW_HEIGHT); // only returns on popup close
                }
