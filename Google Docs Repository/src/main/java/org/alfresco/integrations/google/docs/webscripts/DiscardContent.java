@@ -3,18 +3,14 @@
  * 
  * This file is part of Alfresco
  * 
- * Alfresco is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ * Alfresco is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  * 
- * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License along with Alfresco. If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
 package org.alfresco.integrations.google.docs.webscripts;
@@ -31,15 +27,23 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenEx
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.model.ContentModel;
+import org.alfresco.repo.security.authentication.AuthenticationUtil;
+import org.alfresco.repo.security.permissions.AccessDeniedException;
+import org.alfresco.repo.transaction.AlfrescoTransactionSupport;
+import org.alfresco.repo.transaction.TransactionListenerAdapter;
+import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransactionCallback;
 import org.alfresco.service.cmr.repository.InvalidNodeRefException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.site.SiteService;
+import org.alfresco.service.transaction.TransactionService;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.extensions.surf.util.Content;
 import org.springframework.extensions.webscripts.Cache;
-import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
@@ -48,10 +52,14 @@ import com.google.gdata.data.docs.DocumentListEntry;
 
 
 public class DiscardContent
-    extends DeclarativeWebScript
+    extends GoogleDocsWebScripts
 {
+    private static final Log    log               = LogFactory.getLog(DiscardContent.class);
+
     private GoogleDocsService   googledocsService;
     private NodeService         nodeService;
+    private TransactionService  transactionService;
+    private SiteService         siteService;
 
     private static final String JSON_KEY_NODEREF  = "nodeRef";
     private static final String JSON_KEY_OVERRIDE = "override";
@@ -71,45 +79,52 @@ public class DiscardContent
     }
 
 
+    public void setTransactionService(TransactionService transactionService)
+    {
+        this.transactionService = transactionService;
+    }
+
+
+    public void setSiteService(SiteService siteService)
+    {
+        this.siteService = siteService;
+    }
+
+
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
+        getGoogleDocsServiceSubsystem();
+
         Map<String, Object> model = new HashMap<String, Object>();
 
         Map<String, Serializable> map = parseContent(req);
-        NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
+        final NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
 
         if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
         {
-            DocumentListEntry documentListEntry;
             try
             {
                 boolean deleted = false;
 
                 if (!Boolean.valueOf(map.get(JSON_KEY_OVERRIDE).toString()))
                 {
-                    if (googledocsService.hasConcurrentEditors(nodeRef))
+                    if (siteService.isMember(siteService.getSite(nodeRef).getShortName(), AuthenticationUtil.getRunAsUser()))
                     {
-                        throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString()
-                                                                             + " has concurrent editors.");
+
+                        if (googledocsService.hasConcurrentEditors(nodeRef))
+                        {
+                            throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString()
+                                                                                 + " has concurrent editors.");
+                        }
+                    }
+                    else
+                    {
+                        throw new AccessDeniedException("Access Denied.  You do not have the appropriate permissions to perform this operation.");
                     }
                 }
 
-                documentListEntry = googledocsService.getDocumentListEntry(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString());
-                googledocsService.unlockNode(nodeRef);
-                deleted = googledocsService.deleteContent(nodeRef, documentListEntry);
-
-                if (deleted)
-                {
-                    if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
-                    {
-                        nodeService.deleteNode(nodeRef);
-                    }
-                }
-                else
-                {
-                    throw new WebScriptException(HttpStatus.SC_METHOD_FAILURE, "Unable to Delete Document from Google Docs.");
-                }
+                deleted = delete(nodeRef);
 
                 model.put(MODEL_SUCCESS, deleted);
 
@@ -141,6 +156,48 @@ public class DiscardContent
                     throw new WebScriptException(gdse.getMessage());
                 }
             }
+            catch (AccessDeniedException ade)
+            {
+                // This code will make changes after the rollback has occurred to clean up the node: remove the lock and the Google
+                // Docs aspect. If it has the temporary aspect it will also remove the node from Alfresco
+                AlfrescoTransactionSupport.bindListener(new TransactionListenerAdapter()
+                {
+                    public void afterRollback()
+                    {
+                        transactionService.getRetryingTransactionHelper().doInTransaction(new RetryingTransactionCallback<Object>()
+                        {
+                            public Object execute()
+                                throws Throwable
+                            {
+                                DocumentListEntry documentListEntry = googledocsService.getDocumentListEntry(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString());
+                                googledocsService.unlockNode(nodeRef);
+                                boolean deleted = googledocsService.deleteContent(nodeRef, documentListEntry);
+
+                                if (deleted)
+                                {
+                                    AuthenticationUtil.runAsSystem(new AuthenticationUtil.RunAsWork<Object>()
+                                    {
+                                        public Object doWork()
+                                            throws Exception
+                                        {
+                                            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+                                            {
+                                                nodeService.deleteNode(nodeRef);
+                                            }
+
+                                            return null;
+                                        }
+                                    });
+                                }
+
+                                return null;
+                            }
+                        }, false, true);
+                    }
+                });
+
+                throw new WebScriptException(HttpStatus.SC_FORBIDDEN, ade.getMessage(), ade);
+            }
         }
         else
         {
@@ -148,6 +205,40 @@ public class DiscardContent
         }
 
         return model;
+    }
+
+
+    /**
+     * Delete the node from Google. If the node has the temporary aspect it is also removed from Alfresco.
+     * 
+     * @param nodeRef
+     * @return
+     * @throws InvalidNodeRefException
+     * @throws IOException
+     * @throws GoogleDocsServiceException
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     */
+    private boolean delete(NodeRef nodeRef)
+        throws InvalidNodeRefException,
+            IOException,
+            GoogleDocsServiceException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException
+    {
+        DocumentListEntry documentListEntry = googledocsService.getDocumentListEntry(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString());
+        googledocsService.unlockNode(nodeRef);
+        boolean deleted = googledocsService.deleteContent(nodeRef, documentListEntry);
+
+        if (deleted)
+        {
+            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+            {
+                nodeService.deleteNode(nodeRef);
+            }
+        }
+
+        return deleted;
     }
 
 
@@ -166,6 +257,7 @@ public class DiscardContent
             }
 
             jsonStr = content.getContent();
+            log.debug("Parsed JSON: " + jsonStr);
 
             if (jsonStr == null || jsonStr.trim().length() == 0)
             {

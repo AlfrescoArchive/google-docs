@@ -3,25 +3,21 @@
  * 
  * This file is part of Alfresco
  * 
- * Alfresco is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ * Alfresco is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
  * 
- * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License along with Alfresco. If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
 package org.alfresco.integrations.google.docs.service;
 
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Map;
 
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
@@ -30,6 +26,7 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsTypeException;
 import org.alfresco.integrations.google.docs.exceptions.MustDowngradeFormatException;
 import org.alfresco.integrations.google.docs.exceptions.MustUpgradeFormatException;
 import org.alfresco.service.Auditable;
+import org.alfresco.service.cmr.dictionary.ConstraintException;
 import org.alfresco.service.cmr.repository.NodeRef;
 
 import com.google.gdata.data.docs.DocumentListEntry;
@@ -51,8 +48,7 @@ public interface GoogleDocsService
 
 
     /**
-     * Build the OAuth2 URL needed to authenticate the current user against
-     * Google Docs
+     * Build the OAuth2 URL needed to authenticate the current user against Google Docs
      * 
      * @param state
      * @return
@@ -62,8 +58,7 @@ public interface GoogleDocsService
 
 
     /**
-     * Complete the OAuth2 Dance for the current user, persisting the OAuth2
-     * Tokens.
+     * Complete the OAuth2 Dance for the current user, persisting the OAuth2 Tokens.
      * 
      * @param access_token
      * @return
@@ -72,11 +67,18 @@ public interface GoogleDocsService
     public boolean completeAuthentication(String access_token)
         throws GoogleDocsServiceException;
 
-
+    /**
+     * Is the Google Docs Integration enabled
+     * @return
+     */
+    @Auditable
+    public boolean isEnabled();
+    
     @Auditable
     public MetadataEntry getUserMetadata()
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException,
             IOException;
 
 
@@ -136,14 +138,20 @@ public interface GoogleDocsService
 
 
     /**
+     * Remove Google Docs Aspect
+     * 
+     * @param nodeRef
+     */
+    public void unDecorateNode(NodeRef nodeRef);
+
+
+    /**
      * Can the mimetype be exported from Google Docs?
      * 
      * @param mimetype
      * @return
-     * @throws MustUpgradeFormatException Thrown if the mimetype must be changed
-     * to a newer mimetype (ex. sxw -> odt)
-     * @throws MustDowngradeFormatException Thrown if the mimetype must be
-     * changed to an older mimetype (ex. docx -> doc)
+     * @throws MustUpgradeFormatException Thrown if the mimetype must be changed to a newer mimetype (ex. sxw -> odt)
+     * @throws MustDowngradeFormatException Thrown if the mimetype must be changed to an older mimetype (ex. docx -> doc)
      */
     public boolean isExportable(String mimetype)
         throws MustUpgradeFormatException,
@@ -158,18 +166,18 @@ public interface GoogleDocsService
      */
     public boolean isImportable(String mimetype);
 
-
+    
     /**
-     * List of mimetypes that can be imported into Google Docs.
+     * List of mimetypes that can be imported into Google Docs and the Google Doc Type
      * 
      * @return
      */
-    public ArrayList<String> getImportFormatsList();
+    public Map<String, String> getImportFormats();
 
 
     /**
-     * Get the Google Doc Content type. A content type is a mapping of mimetype
-     * to Google Doc Type (document, spreadsheet or presentation)
+     * Get the Google Doc Content type. A content type is a mapping of mimetype to Google Doc Type (document, spreadsheet or
+     * presentation)
      * 
      * @param nodeRef
      * @return
@@ -178,8 +186,7 @@ public interface GoogleDocsService
 
 
     /**
-     * Retrieve the Google Doc Document associated to this node from Google Docs
-     * into the repository
+     * Retrieve the Google Doc Document associated to this node from Google Docs into the repository
      * 
      * @param nodeRef
      */
@@ -188,12 +195,12 @@ public interface GoogleDocsService
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
-            IOException;
+            IOException,
+            ConstraintException;
 
 
     /**
-     * Retrieve the Google Doc Spreadsheet associated to this node from Google
-     * Docs into the repository
+     * Retrieve the Google Doc Spreadsheet associated to this node from Google Docs into the repository
      * 
      * @param nodeRef
      */
@@ -202,12 +209,12 @@ public interface GoogleDocsService
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
-            IOException;
+            IOException,
+            ConstraintException;
 
 
     /**
-     * Retrieve the Google Doc Presentation associated to this node from Google
-     * Docs into the repository
+     * Retrieve the Google Doc Presentation associated to this node from Google Docs into the repository
      * 
      * @param nodeRef
      */
@@ -216,7 +223,8 @@ public interface GoogleDocsService
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
-            IOException;
+            IOException,
+            ConstraintException;
 
 
     /**
@@ -276,6 +284,7 @@ public interface GoogleDocsService
     public boolean hasConcurrentEditors(NodeRef nodeRef)
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException,
             IOException;
 
 
