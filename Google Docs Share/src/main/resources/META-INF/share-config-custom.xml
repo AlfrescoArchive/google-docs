@@ -8,14 +8,14 @@
 	
 	<config evaluator="string-compare" condition="DocLibActions">
 		<actions>
-			<action id="google-docs-edit-action-link" type="javascript" icon="googledocs" label="googledocs.actions.edit">
+			<action id="google-docs-edit-action-link" type="javascript" icon="google-edit" label="googledocs.actions.edit">
 				<param name="function">onGoogledocsActionEdit</param>
 				<evaluator>evaluator.doclib.google.docs.edit</evaluator>
 				<permissions>
 					<permission allow="true">Write</permission>
 				</permissions>
 			</action>
-         <action id="google-docs-resume-action-link" type="javascript" icon="googledocs" label="googledocs.actions.resume">
+         <action id="google-docs-resume-action-link" type="javascript" icon="google-edit" label="googledocs.actions.resume">
             <param name="function">onGoogledocsActionResume</param>
             <evaluator>evaluator.doclib.google.docs.resume</evaluator>
          </action>
