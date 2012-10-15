@@ -51,19 +51,19 @@
       <dependency>
          <groupId>org.alfresco.enterprise</groupId>
          <artifactId>alfresco-repository</artifactId>
-         <version>4.1.0-RC</version>
+         <version>4.1.1</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
          <groupId>org.alfresco.enterprise</groupId>
          <artifactId>alfresco-core</artifactId>
-         <version>4.1.0-RC</version>
+         <version>4.1.1</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
          <groupId>org.alfresco.enterprise</groupId>
          <artifactId>alfresco-data-model</artifactId>
-         <version>4.1.0-RC</version>
+         <version>4.1.1</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
