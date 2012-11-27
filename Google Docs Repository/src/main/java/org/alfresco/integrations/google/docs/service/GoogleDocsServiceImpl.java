@@ -240,7 +240,6 @@ public class GoogleDocsServiceImpl
     public void setPersonService(PersonService personService)
     {
         this.personService = personService;
-        personService.setCreateMissingPeople(false);
     }
 
 
@@ -1584,40 +1583,46 @@ public class GoogleDocsServiceImpl
         throws JSONException
     {
         log.debug("Create Activity Stream Entry");
-        try
+        if (personService.personExists(AuthenticationUtil.getRunAsUser()))
         {
-            String activityType = FILE_UPDATED;
-            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+            try
             {
-                activityType = FILE_ADDED;
+                String activityType = FILE_UPDATED;
+                if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+                {
+                    activityType = FILE_ADDED;
+                }
+
+                String siteId = siteService.getSite(nodeRef).getShortName();
+
+                JSONObject jsonActivityData = new JSONObject();
+
+                // Using local getPerson ... not cloud
+                // personservice.getPerson(nodeRef) which returns personInfo object
+                PersonInfo personInfo = getPerson(personService.getPerson(AuthenticationUtil.getRunAsUser(), false));
+
+                jsonActivityData.put("firstName", personInfo.getFirstName());
+                jsonActivityData.put("lastName", personInfo.getLastName());
+                jsonActivityData.put("title", fileFolderService.getFileInfo(nodeRef).getName());
+                jsonActivityData.put("page", "document-details?nodeRef=" + nodeRef.toString());
+                jsonActivityData.put("nodeRef", nodeRef.toString());
+
+                if (AuthenticationUtil.isMtEnabled())
+                {
+                    // MT share - add tenantDomain
+                    jsonActivityData.put("tenantDomain", tenantService.getCurrentUserDomain());
+                }
+
+                activityService.postActivity(activityType, siteId, GoogleDocsService.class.getSimpleName(), jsonActivityData.toString());
+                log.debug("Post Activity Stream Entry -- type:" + activityType + "; site: " + siteId + "; Data: "
+                          + jsonActivityData);
             }
-
-            String siteId = siteService.getSite(nodeRef).getShortName();
-
-            JSONObject jsonActivityData = new JSONObject();
-
-            // Using local getPerson ... not cloud
-            // personservice.getPerson(nodeRef) which returns personInfo object
-            PersonInfo personInfo = getPerson(personService.getPerson(AuthenticationUtil.getRunAsUser()));
-
-            jsonActivityData.put("firstName", personInfo.getFirstName());
-            jsonActivityData.put("lastName", personInfo.getLastName());
-            jsonActivityData.put("title", fileFolderService.getFileInfo(nodeRef).getName());
-            jsonActivityData.put("page", "document-details?nodeRef=" + nodeRef.toString());
-            jsonActivityData.put("nodeRef", nodeRef.toString());
-
-            if (AuthenticationUtil.isMtEnabled())
+            catch (JSONException jsonException)
             {
-                // MT share - add tenantDomain
-                jsonActivityData.put("tenantDomain", tenantService.getCurrentUserDomain());
+                throw jsonException;
             }
-
-            activityService.postActivity(activityType, siteId, GoogleDocsService.class.getSimpleName(), jsonActivityData.toString());
-            log.debug("Post Activity Stream Entry -- type:" + activityType + "; site: " + siteId + "; Data: " + jsonActivityData);
-        }
-        catch (JSONException jsonException)
-        {
-            throw jsonException;
+        } else {
+            log.debug("Activity stream entry not created -- user does not exist.");
         }
     }
 
