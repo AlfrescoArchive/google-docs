@@ -13,8 +13,16 @@
 
    <repositories>
       <repository>
-         <id>alfresco-internal</id>
-         <url>https://artifacts.alfresco.com/nexus/content/groups/internal</url>
+         <id>alfresco-public</id>
+         <url>https://artifacts.alfresco.com/nexus/content/repositories/public</url>
+      </repository>
+      <repository>
+         <id>alfresco-public-snapshots</id>
+         <url>https://artifacts.alfresco.com/nexus/content/groups/public-snapshots/</url>
+         <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>daily</updatePolicy>
+         </snapshots>
       </repository>
       <repository>
          <id>alfresco-3rd-party</id>
@@ -24,11 +32,11 @@
    <pluginRepositories>
       <pluginRepository>
          <id>alfresco-public</id>
-         <url>http://artifacts.alfresco.com/nexus/content/groups/public</url>
+         <url>https://artifacts.alfresco.com/nexus/content/groups/public</url>
       </pluginRepository>
       <pluginRepository>
          <id>alfresco-public-snapshots</id>
-         <url>http://artifacts.alfresco.com/nexus/content/groups/public-snapshots</url>
+         <url>https://artifacts.alfresco.com/nexus/content/groups/public-snapshots</url>
          <snapshots>
             <enabled>true</enabled>
             <updatePolicy>daily</updatePolicy>
@@ -49,21 +57,21 @@
          <version>1.1.2-RELEASE</version>
       </dependency>
       <dependency>
-         <groupId>org.alfresco.enterprise</groupId>
+         <groupId>org.alfresco</groupId>
          <artifactId>alfresco-repository</artifactId>
-         <version>4.1.0-RC</version>
+         <version>4.2.c-SNAPSHOT</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
-         <groupId>org.alfresco.enterprise</groupId>
+         <groupId>org.alfresco</groupId>
          <artifactId>alfresco-core</artifactId>
-         <version>4.1.0-RC</version>
+         <version>4.2.c-SNAPSHOT</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
-         <groupId>org.alfresco.enterprise</groupId>
+         <groupId>org.alfresco</groupId>
          <artifactId>alfresco-data-model</artifactId>
-         <version>4.1.0-RC</version>
+         <version>4.2.c-SNAPSHOT</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
