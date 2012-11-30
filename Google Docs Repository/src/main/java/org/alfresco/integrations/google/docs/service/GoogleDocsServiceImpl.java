@@ -557,7 +557,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             GoogleDocsServiceException
     {
-        log.debug("Refreshing Access Token");
+        log.debug("Refreshing Access Token for " + AuthenticationUtil.getRunAsUser());
         OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
 
         if (credentialInfo.getOAuthRefreshToken() != null)
@@ -625,7 +625,7 @@ public class GoogleDocsServiceImpl
         }
         else
         {
-            throw new GoogleDocsRefreshTokenException("No Refresh Token Provided");
+            throw new GoogleDocsRefreshTokenException("No Refresh Token Provided for " + AuthenticationUtil.getRunAsUser());
         }
     }
 
