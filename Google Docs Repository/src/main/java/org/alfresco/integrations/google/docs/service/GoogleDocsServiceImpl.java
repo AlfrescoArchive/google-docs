@@ -110,10 +110,6 @@ import com.google.gdata.util.ServiceException;
 /**
  * @author Jared Ottley <jared.ottley@alfresco.com>
  */
-/**
- * @author jottley
- *
- */
 public class GoogleDocsServiceImpl
     implements GoogleDocsService
 {
@@ -1339,7 +1335,7 @@ public class GoogleDocsServiceImpl
      * @param name
      * @param office2007Pattern
      * @param office1997Pattern
-     * @param office1997extension
+     * @param office2007extension
      * @return
      */
     private String MSofficeExtensionHandler(String name, String office2007Pattern, String office1997Pattern,
@@ -1657,7 +1653,9 @@ public class GoogleDocsServiceImpl
             {
                 throw jsonException;
             }
-        } else {
+        }
+        else
+        {
             log.debug("Activity stream entry not created -- user does not exist.");
         }
     }
