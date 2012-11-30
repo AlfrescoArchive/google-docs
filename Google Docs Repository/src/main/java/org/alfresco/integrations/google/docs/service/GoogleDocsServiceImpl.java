@@ -110,6 +110,10 @@ import com.google.gdata.util.ServiceException;
 /**
  * @author Jared Ottley <jared.ottley@alfresco.com>
  */
+/**
+ * @author jottley
+ *
+ */
 public class GoogleDocsServiceImpl
     implements GoogleDocsService
 {
@@ -381,6 +385,10 @@ public class GoogleDocsServiceImpl
     }
 
 
+    /**
+     * @param mimeType Mimetype of the Node
+     * @return If the Document must be returned in as a different type, returns the new type
+     */
     private String validateMimeType(String mimeType)
     {
 
@@ -641,6 +649,16 @@ public class GoogleDocsServiceImpl
     }
 
 
+    /**
+     * @param type Document Type.  Must be document, spreadsheet or presentation
+     * @param name Document File Name.  If null, name is generated based on document type. Ex type is document, file name is Untitled Document
+     * @return Google Document List Entry
+     * @throws GoogleDocsServiceException
+     * @throws GoogleDocsTypeException
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     * @throws IOException
+     */
     private DocumentListEntry createContent(String type, String name)
         throws GoogleDocsServiceException,
             GoogleDocsTypeException,
@@ -652,6 +670,7 @@ public class GoogleDocsServiceImpl
         DocsService docsService = getDocsService(getConnection());
 
         DocumentListEntry entry = null;
+        //Create Document List Entry based on type and get default name if null
         if (type.equals(GoogleDocsConstants.DOCUMENT_TYPE))
         {
             if (name == null)
@@ -679,11 +698,14 @@ public class GoogleDocsServiceImpl
 
         if (entry != null)
         {
+            //Set the title of entry
             entry.setTitle(new PlainTextConstruct(name));
+            //Make the Document Hidden.  This does not work with Google Drive. See GOOGLEDOCS-91
             entry.setHidden(true);
 
             try
             {
+                //Upload Content to Google
                 return docsService.insert(new URL(GoogleDocsConstants.URL_BASE_FEED), entry);
             }
             catch (IOException ioe)
@@ -697,11 +719,14 @@ public class GoogleDocsServiceImpl
         }
         else
         {
-            throw new GoogleDocsTypeException("Type Unknown: " + type + ". Must be document, spreadsheet, presentation or folder.");
+            throw new GoogleDocsTypeException("Type Unknown: " + type + ". Must be document, spreadsheet or presentation.");
         }
     }
 
 
+    /* (non-Javadoc)
+     * @see org.alfresco.integrations.google.docs.service.GoogleDocsService#createDocument(org.alfresco.service.cmr.repository.NodeRef)
+     */
     public DocumentListEntry createDocument(NodeRef nodeRef)
         throws GoogleDocsServiceException,
             GoogleDocsTypeException,
@@ -714,8 +739,9 @@ public class GoogleDocsServiceImpl
 
         try
         {
+            //Add temporary Node (with Content)
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
-            writer.setMimetype("application/msword");
+            writer.setMimetype("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
             writer.putContent(newDocument.getInputStream());
 
         }
@@ -728,6 +754,9 @@ public class GoogleDocsServiceImpl
     }
 
 
+    /* (non-Javadoc)
+     * @see org.alfresco.integrations.google.docs.service.GoogleDocsService#createSpreadSheet(org.alfresco.service.cmr.repository.NodeRef)
+     */
     public DocumentListEntry createSpreadSheet(NodeRef nodeRef)
         throws GoogleDocsServiceException,
             GoogleDocsTypeException,
@@ -740,8 +769,9 @@ public class GoogleDocsServiceImpl
 
         try
         {
+            //Add temporary Node (with Content)
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
-            writer.setMimetype("application/vnd.ms-excel");
+            writer.setMimetype("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             writer.putContent(newSpreadsheet.getInputStream());
 
         }
@@ -754,6 +784,9 @@ public class GoogleDocsServiceImpl
     }
 
 
+    /* (non-Javadoc)
+     * @see org.alfresco.integrations.google.docs.service.GoogleDocsService#createPresentation(org.alfresco.service.cmr.repository.NodeRef)
+     */
     public DocumentListEntry createPresentation(NodeRef nodeRef)
         throws GoogleDocsServiceException,
             GoogleDocsTypeException,
@@ -766,8 +799,9 @@ public class GoogleDocsServiceImpl
 
         try
         {
+            //Add temporary Node (with Content)
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
-            writer.setMimetype("application/vnd.ms-powerpoint");
+            writer.setMimetype("application/vnd.openxmlformats-officedocument.presentationml.presentation");
             writer.putContent(newPresentation.getInputStream());
 
         }
@@ -1309,9 +1343,9 @@ public class GoogleDocsServiceImpl
      * @return
      */
     private String MSofficeExtensionHandler(String name, String office2007Pattern, String office1997Pattern,
-            String office1997extension)
+            String office2007extension)
     {
-        Pattern pattern = Pattern.compile(office2007Pattern);
+        Pattern pattern = Pattern.compile(office1997Pattern);
         Matcher matcher = pattern.matcher(name);
 
         if (matcher.find())
@@ -1320,12 +1354,12 @@ public class GoogleDocsServiceImpl
         }
         else
         {
-            Pattern _pattern = Pattern.compile(office1997Pattern);
+            Pattern _pattern = Pattern.compile(office2007Pattern);
             Matcher _matcher = _pattern.matcher(name);
 
             if (!_matcher.find())
             {
-                name = name.concat(office1997extension);
+                name = name.concat(office2007extension);
             }
         }
 
@@ -1334,7 +1368,7 @@ public class GoogleDocsServiceImpl
 
 
     /**
-     * Modify the file extension is the file mimetype has changed. If the name was changed while being edited in google docs updated
+     * Modify the file extension if the file mimetype has changed. If the name was changed while being edited in google docs update
      * the name in Alfresco. If the name is already in use in the current folder, append -{number} to the name or if it already has
      * a -{number} increment the number for the new file
      * 
@@ -1354,17 +1388,17 @@ public class GoogleDocsServiceImpl
         FileInfo fileInfo = fileFolderService.getFileInfo(nodeRef);
         String mimetype = fileInfo.getContentData().getMimetype();
 
-        if (mimetype.equals("application/msword"))
+        if (mimetype.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
         {
-            name = MSofficeExtensionHandler(name, "\\.docx$", "\\.doc$", ".doc");
+            name = MSofficeExtensionHandler(name, "\\.docx$", "\\.doc$", ".docx");
         }
-        else if (mimetype.equals("application/vnd.ms-excel"))
+        else if (mimetype.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
         {
-            name = MSofficeExtensionHandler(name, "\\.xlsx$", "\\.xls$", ".xls");
+            name = MSofficeExtensionHandler(name, "\\.xlsx$", "\\.xls$", ".xlsx");
         }
-        else if (mimetype.equals("application/vnd.ms-powerpoint"))
+        else if (mimetype.equals("application/vnd.openxmlformats-officedocument.presentationml.presentation"))
         {
-            name = MSofficeExtensionHandler(name, "\\.pptx$", "\\.ppt$", ".ppt");
+            name = MSofficeExtensionHandler(name, "\\.pptx$", "\\.ppt$", ".pptx");
         }
         else if (mimetype.equals("application/vnd.oasis.opendocument.text"))
         {
@@ -1384,10 +1418,12 @@ public class GoogleDocsServiceImpl
             }
         }
 
+        //Get the last known node with the same name (+number) in the same folder
         NodeRef lastDup = findLastDuplicate(nodeRef, name);
 
         if (lastDup != null)
         {
+            //if it is not the same file increment (or add number to) the filename
             if (!lastDup.equals(fileInfo.getNodeRef()))
             {
                 name = filenameUtil.incrementFileName(fileFolderService.getFileInfo(lastDup).getName(), fileInfo.getContentData().getMimetype());
