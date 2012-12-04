@@ -107,7 +107,8 @@ public class UploadContent
                 versionProperties.put(Version2Model.PROP_VERSION_TYPE, VersionType.MAJOR);
 
                 nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION, true);
-                nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION_PROPS, true);
+                // autoVersionOnUpdateProps now set to false to follow Share upload scripts (fixes GOOGLEDOCS-111)
+                nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION_PROPS, false);
 
                 log.debug("Version Node:" + nodeRef + "; Version Properties: " + versionProperties);
                 versionService.createVersion(nodeRef, versionProperties);
