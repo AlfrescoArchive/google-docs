@@ -1,31 +1,31 @@
 <import resource="classpath:/alfresco/templates/org/alfresco/import/alfresco-util.js">
 
-/*
- * Is the node versioned?
+/**
+ * Check to see if the node we are editing has the versionable aspect applied
+ * 
+ * @method isVersioned
+ * @param documentDetails {object}  Document information as returned by AlfrescoUtil.getNodeDetails()
+ * @returns {boolean} true if the document has the cm:versionable aspect applied to it, false otherwise
  */
-function isVersioned()
+function isVersioned(documentDetails)
 {
-   AlfrescoUtil.param('nodeRef');
-   var documentDetails = AlfrescoUtil.getNodeDetails(model.nodeRef, null);
-   // documentDetails may be null if user not logged in
-   if (documentDetails)
+   var aspects = documentDetails.item.node.aspects;
+   for (var i = 0; i < aspects.length; i++)
    {
-      var aspects = documentDetails.item.node.aspects;
-      for (var i = 0; i < aspects.length; i++)
+      if (aspects[i] == "cm:versionable")
       {
-         if (aspects[i] == "cm:versionable")
-         {
-            return true;
-         }
+         return true;
       }
-      return false;
    }
+   return false;
 }
 
+/**
+ * Main script entry point
+ * @method main
+ */
 function main()
 {
-   model.isVersioned = isVersioned();
-   
    AlfrescoUtil.param('nodeRef');
    AlfrescoUtil.param('site');
    var metadata = AlfrescoUtil.getNodeDetails(model.nodeRef, model.site);
@@ -34,6 +34,7 @@ function main()
    {
       model.editorURL = metadata.item.node.properties["gd2:editorURL"];
       model.version = metadata.item.version;
+      model.isVersioned = isVersioned(metadata);
    }
    
 }

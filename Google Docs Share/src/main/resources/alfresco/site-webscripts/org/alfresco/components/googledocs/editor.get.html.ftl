@@ -1,4 +1,5 @@
 <#assign el=args.htmlid?html>
+<#if nodeRef?? && editorURL??>
 <div id="${el}-gdocs-wrapper" class="gdocs-wrapper"></div>
 <script type="text/javascript">//<![CDATA[
 new Alfresco.GoogleDocs.Editor("${el}").setOptions({
@@ -8,3 +9,4 @@ new Alfresco.GoogleDocs.Editor("${el}").setOptions({
    ${messages}
 );
 //]]></script>
+</#if>
