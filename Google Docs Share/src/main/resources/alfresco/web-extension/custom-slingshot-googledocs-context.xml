@@ -12,7 +12,6 @@
    </bean>
    
    <bean id="evaluator.doclib.metadata.isMimetype" class="org.alfresco.integrations.web.evaluator.IsMimetypeEvaluator"/>
-   <bean id="evaluator.doclib.metadata.doesNotHaveAspect" class="org.alfresco.integrations.web.evaluator.DoesNotHaveAspectEvaluator"/>
    <bean id="evaluator.doclib.metadata.sizeLimit" class="org.alfresco.integrations.web.evaluator.SizeLimitEvaluator">
       <property name="maxDocumentSize" value="2097152"/>
       <property name="maxSpreadsheetSize" value="20971520"/>
@@ -37,12 +36,13 @@
    
    </bean>
    
-   <bean id="evaluator.doclib.google.docs.doesnothaveaspect" parent="evaluator.doclib.metadata.doesNotHaveAspect">
+   <bean id="evaluator.doclib.google.docs.doesnothaveaspect" class="org.alfresco.web.evaluator.HasAspectEvaluator">
       <property name="aspects">
          <list>
             <value>gd2:editingInGoogle</value>
          </list>
       </property>
+      <property name="negateOutput" value="true" />
    </bean>
    
    <bean id="evaluator.doclib.google.docs.aspect" class="org.alfresco.web.evaluator.HasAspectEvaluator">
