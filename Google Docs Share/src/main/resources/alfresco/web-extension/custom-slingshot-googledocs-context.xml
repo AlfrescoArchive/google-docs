@@ -53,10 +53,15 @@
       </property>
    </bean>
    
+   <bean id="evaluator.doclib.google.docs.checkedout" parent="evaluator.doclib.metadata.hasLockBanner">
+      <property name="negateOutput" value="true" />
+   </bean>
+   
    <bean id="evaluator.doclib.google.docs.edit" parent="evaluator.doclib.action.chainedMatchAll">
       <property name="evaluators">
          <list>
          	<ref bean="evaluator.doclib.google.docs.enabled"/>
+         	<ref bean="evaluator.doclib.google.docs.checkedout" />
             <ref bean="evaluator.doclib.google.docs.mimetype" />
             <ref bean="evaluator.doclib.google.docs.doesnothaveaspect" />
             <ref bean="evaluator.doclib.google.docs.maxsize" />
