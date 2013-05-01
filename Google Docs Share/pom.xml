@@ -21,13 +21,13 @@
 
    <dependencies>
       <dependency>
-         <groupId>org.alfresco-enterprise</groupId>
+         <groupId>org.alfresco</groupId>
          <artifactId>alfresco-core</artifactId>
          <version>${alfresco.version}</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
-         <groupId>org.alfresco-enterprise</groupId>
+         <groupId>org.alfresco</groupId>
          <artifactId>alfresco-share</artifactId>
          <version>${alfresco.version}</version>
          <scope>provided</scope>

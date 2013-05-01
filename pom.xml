@@ -10,12 +10,15 @@
    <properties>
       <buildnumber>SNAPSHOT</buildnumber>
       <alfresco.groupId>org.alfresco</alfresco.groupId>
-      <alfresco.version>Cloud1-SNAPSHOT</alfresco.version>
+      <alfresco.version>4.2.d-SNAPSHOT</alfresco.version>
       <app.log.root.level>WARN</app.log.root.level>
+      <alfresco.db.url>jdbc:h2:./${alfresco.data.location}/h2_data/${alfresco.db.name};${alfresco.db.params}</alfresco.db.url>
+      <!--
       <alfresco.data.location>${project.basedir}/../../data</alfresco.data.location>
       <alfresco.db.url>jdbc:mysql://localhost/gdocs21?useUnicode=yes</alfresco.db.url>
       <alfresco.db.driver>org.gjt.mm.mysql.Driver</alfresco.db.driver>
       <alfresco.db.datasource.class>com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource</alfresco.db.datasource.class>
+      -->
       <mysql-connector.version>5.1.18</mysql-connector.version>
       <alfresco.jetty.host>localhost</alfresco.jetty.host>
       <alfresco.jetty.port>8080</alfresco.jetty.port>
@@ -44,6 +47,7 @@
          <name>Spring Social Google</name>
          <url>https://github.com/GabiAxel/maven/raw/master/</url>
       </repository>-->
+      <!--
       <repository>
          <id>alfresco-cloud</id>
          <url>https://artifacts.alfresco.com/nexus/content/repositories/cloud-snapshots</url>
@@ -52,6 +56,7 @@
             <updatePolicy>daily</updatePolicy>
          </snapshots>
       </repository>
+      -->
       <repository>
          <id>alfresco-3rd-party</id>
          <url>https://artifacts.alfresco.com/nexus/content/repositories/thirdparty</url>

@@ -29,19 +29,19 @@
          <version>1.0.0.M2.alfresco2</version>
       </dependency>
       <dependency>
-         <groupId>org.alfresco.enterprise</groupId>
+         <groupId>org.alfresco</groupId>
          <artifactId>alfresco-repository</artifactId>
          <version>${alfresco.version}</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
-         <groupId>org.alfresco.enterprise</groupId>
+         <groupId>org.alfresco</groupId>
          <artifactId>alfresco-core</artifactId>
          <version>${alfresco.version}</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
-         <groupId>org.alfresco.enterprise</groupId>
+         <groupId>org.alfresco</groupId>
          <artifactId>alfresco-data-model</artifactId>
          <version>${alfresco.version}</version>
          <scope>provided</scope>
@@ -127,14 +127,6 @@
                <contextPath>${jetty.context}</contextPath>
                <jettyConfig>${project.build.directory}/jetty.xml</jettyConfig>
             </configuration>
-            <dependencies>
-               <!-- Cloud requires a MySQL DB -->
-               <dependency>
-                  <groupId>mysql</groupId>
-                  <artifactId>mysql-connector-java</artifactId>
-                  <version>${mysql-connector.version}</version>
-               </dependency>
-            </dependencies>
          </plugin>
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
@@ -149,158 +141,5 @@
          </plugin>
       </plugins>
    </build>
-
-   <!--
-      Define a custom amp-to-war-solr profile, based on amp-to-war, in order to deploy both the overlaid alfresco webapp, and Solr
-   -->
-   <profiles>
-    <profile>
-      <id>amp-to-war-solr</id>
-      <build>
-         <plugins>
-          <!-- Fetch and unpack Alfresco Repository / Share in the target / folder -->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>unpack-alfresco</id>
-                <phase>prepare-package</phase>
-                <goals><goal>unpack</goal></goals>
-                <configuration>
-                  <outputDirectory>${alfresco.client.war.folder}</outputDirectory>
-                  <artifactItems>
-                    <artifactItem>
-                      <groupId>${alfresco.groupId}</groupId>
-                      <artifactId>${alfresco.client.war}</artifactId>
-                      <type>war</type>
-                      <version>${alfresco.version}</version>
-                    </artifactItem>
-                  </artifactItems>
-                </configuration>
-              </execution>
-              <!-- ADDED for Google Docs AMPs to copy the Solr WAR into the project -->
-              <execution>
-                <id>copy-alfresco-community-lib</id>
-                <goals><goal>unpack</goal></goals>
-                <phase>generate-resources</phase>
-                <configuration>
-                  <outputDirectory>${alfresco.solr.dir}</outputDirectory>
-                  <artifactItems>
-                    <artifactItem>
-                      <artifactId>alfresco-solr</artifactId>
-                      <groupId>${alfresco.groupId}</groupId>
-                      <version>${alfresco.version}</version>
-                      <type>zip</type>
-                    </artifactItem>
-                  </artifactItems>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <!-- When the AMP runs locally, src/test/webapp and src/test/resources will contain -->
-          <!-- the location of the configuration files -->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-resources-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>copy-alfresco-test-resources</id>
-                <phase>prepare-package</phase>
-                <goals><goal>copy-resources</goal></goals>
-                <configuration>
-                  <outputDirectory>${alfresco.client.war.folder}</outputDirectory>
-                  <resources>
-                    <resource>
-                      <directory>src/test/webapp</directory>
-                    </resource>
-                    <resource>
-                      <directory>${project.build.testOutputDirectory}</directory>
-                      <targetPath>WEB-INF/classes</targetPath>
-                      <filtering>${app.filtering.enabled}</filtering>
-                    </resource>
-                  </resources>
-                </configuration>
-              </execution>
-              <!-- ADDED for Google Docs AMPs to add the Solr index configuration -->
-              <execution>
-                <id>copy-lib</id>
-                <phase>package</phase>
-                <goals><goal>copy-resources</goal></goals>
-                <configuration>
-                  <outputDirectory>${alfresco.solr.dir}</outputDirectory>
-                  <resources>
-                    <resource>
-                      <directory>src/test/solr-properties/archive</directory>
-                      <filtering>true</filtering>
-                      <targetPath>${alfresco.solr.dir}/archive-SpacesStore/conf</targetPath>
-                    </resource>
-                    <resource>
-                      <directory>src/test/solr-properties/workspace</directory>
-                      <filtering>true</filtering>
-                      <targetPath>${alfresco.solr.dir}/workspace-SpacesStore/conf</targetPath>
-                    </resource>
-                  </resources>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <!-- The current AMP artifact is installed into the Alfresco
-          folder using alfresco-maven-plugin -->
-          <plugin>
-            <groupId>org.alfresco.maven.plugin</groupId>
-            <artifactId>alfresco-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>amps-to-war-overlay</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>install</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <!-- If the integration-test phase is called, the integrated WAR + AMP is actually ran in Jetty -->
-          <!-- OVERRIDDEN for Google Docs AMPs to deploy Solr webapp as well as the repo -->
-          <plugin>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>maven-jetty-plugin</artifactId>
-            <executions>
-                <execution>
-                    <id>run-amp-to-war</id>
-                    <goals>
-                        <goal>run</goal>
-                    </goals>
-                    <phase>pre-integration-test</phase>
-                </execution>
-            </executions>
-            <configuration>
-                <!-- Following 3 properties set an empty ROOT context,
-                which is mandatory to run jetty:run plugin -->
-                <contextPath>/</contextPath>
-                <webAppSourceDirectory>.</webAppSourceDirectory>
-                <webXml>jetty/root-web.xml</webXml>
-                <contextHandlers>
-                    <contextHandler implementation="org.mortbay.jetty.webapp.WebAppContext">
-                        <war>${alfresco.client.war.folder}</war>
-                        <contextPath>/alfresco</contextPath>
-                    </contextHandler>
-                    <contextHandler implementation="org.mortbay.jetty.webapp.WebAppContext">
-                        <war>${alfresco.solr.dir}/${alfresco.solr.war}</war>
-                        <contextPath>/solr</contextPath>
-                    </contextHandler>
-                </contextHandlers>
-                <systemProperties>
-                    <systemProperty>
-                        <name>solr.solr.home</name>
-                        <value>${alfresco.solr.dir}</value>
-                    </systemProperty>
-                </systemProperties>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-   </profiles>
 
 </project>
