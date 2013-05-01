@@ -1,0 +1,60 @@
+.alfresco-share .resume-sharing.yui-panel .bd .yui-u
+{
+   padding: 2px 0;
+}
+.alfresco-share .resume-sharing.yui-panel .bd .permissions-headings
+{
+   padding-bottom: 3px;
+}
+.alfresco-share .resume-sharing.yui-panel .bd .permissions-items
+{
+   max-height: 12em;
+   overflow-y: auto;
+   overflow-x: hidden;
+}
+.alfresco-share .resume-sharing.yui-panel .bd .yui-u.first
+{
+   text-align: left;
+}
+.alfresco-share .resume-sharing.yui-panel .bd .permissions-list-item .yui-u.first
+{
+   padding: 0.5em 0;
+}
+.alfresco-share .resume-sharing.yui-panel .bd .permissions-list-item.external
+{
+   background-color: #f5cccc;
+}
+.alfresco-share .resume-sharing.yui-panel .bd .permissions-list-item .yui-u.first input
+{
+   margin-left: 0.3em;
+}
+.alfresco-share .resume-sharing.yui-panel .bd div.bdft
+{
+   padding: 0.3em 0.3em 0.3em 0;
+}
+.alfresco-share .resume-sharing.yui-panel .bd > form > .bd
+{
+   padding: 0.5em;
+}
+.alfresco-share .resume-sharing.yui-panel .bd .yui-menu-button.yui-button-disabled button
+{
+   color: #999;
+}
+.alfresco-share .resume-sharing .warning-banner
+{
+   background-color: #ffffe0;
+   background-image: url(../../../components/documentlibrary/images/warning-16.png);
+   background-position: 6px 4px;
+   background-repeat: no-repeat;
+   border: 1px solid #ffca7a;
+   clear: left;
+   font-weight: bold;
+   margin-bottom: 4px;
+   padding: 5px 5px 3px 28px;
+}
+.resume-options
+{
+   border-top: 1px solid #e0e0e0;
+   padding: 0.5em 0;
+   margin: 1em 0 0 0;
+}

@@ -16,7 +16,6 @@
 package org.alfresco.integrations.google.docs.webscripts;
 
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -83,9 +82,9 @@ public class HasConcurrentEditors
                 throw new WebScriptException(gdse.getMessage());
             }
         }
-        catch (IOException ioe)
+        catch (Exception e)
         {
-            throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
+            throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage(), e);
         }
 
         return model;

@@ -1,0 +1,5 @@
+<webscript>
+    <shortname>Google Docs Resume Sharing</shortname>
+    <description>Dialog to allow a user to pick users to resume sharing a document with when editing in Google Docs</description>
+    <url>/modules/googledocs/resume-sharing</url>
+</webscript>

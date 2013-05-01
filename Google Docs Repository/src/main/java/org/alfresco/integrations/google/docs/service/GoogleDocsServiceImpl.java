@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * Copyright (C) 2005-2013 Alfresco Software Limited.
  * 
  * This file is part of Alfresco
  * 
@@ -16,8 +16,10 @@
 package org.alfresco.integrations.google.docs.service;
 
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
@@ -41,13 +43,15 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsTypeException;
 import org.alfresco.integrations.google.docs.exceptions.MustDowngradeFormatException;
 import org.alfresco.integrations.google.docs.exceptions.MustUpgradeFormatException;
 import org.alfresco.integrations.google.docs.utils.FileNameUtil;
-import org.alfresco.integrations.google.docs.utils.RevisionEntryComparator;
+import org.alfresco.integrations.google.docs.utils.FileRevisionComparator;
 import org.alfresco.model.ContentModel;
 import org.alfresco.query.CannedQueryPageDetails;
 import org.alfresco.query.PagingRequest;
 import org.alfresco.query.PagingResults;
+import org.alfresco.repo.content.MimetypeMap;
 import org.alfresco.repo.policy.BehaviourFilter;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
+import org.alfresco.repo.site.SiteServiceImpl;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.service.cmr.activities.ActivityService;
 import org.alfresco.service.cmr.dictionary.ConstraintDefinition;
@@ -66,44 +70,57 @@ import org.alfresco.service.cmr.repository.ContentWriter;
 import org.alfresco.service.cmr.repository.MimetypeService;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.cmr.security.PersonService.PersonInfo;
+import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.Pair;
 import org.alfresco.util.TempFileProvider;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.social.ApiException;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.social.connect.Connection;
-import org.springframework.social.google.docs.api.GoogleDocs;
-import org.springframework.social.google.docs.connect.GoogleDocsConnectionFactory;
+import org.springframework.social.google.api.Google;
+import org.springframework.social.google.api.drive.AdditionalRole;
+import org.springframework.social.google.api.drive.DriveFile;
+import org.springframework.social.google.api.drive.DriveFilesPage;
+import org.springframework.social.google.api.drive.DriveOperations;
+import org.springframework.social.google.api.drive.FileRevision;
+import org.springframework.social.google.api.drive.PermissionRole;
+import org.springframework.social.google.api.drive.PermissionType;
+import org.springframework.social.google.api.drive.UploadParameters;
+import org.springframework.social.google.api.drive.UserPermission;
+import org.springframework.social.google.api.userinfo.GoogleUserProfile;
+import org.springframework.social.google.api.userinfo.UserInfoOperations;
+import org.springframework.social.google.connect.GoogleConnectionFactory;
 import org.springframework.social.oauth2.AccessGrant;
 import org.springframework.social.oauth2.GrantType;
 import org.springframework.social.oauth2.OAuth2Parameters;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
 
 import com.google.gdata.client.docs.DocsService;
-import com.google.gdata.client.media.ResumableGDataFileUploader;
-import com.google.gdata.client.uploader.ResumableHttpFileUploader.UploadState;
-import com.google.gdata.data.MediaContent;
-import com.google.gdata.data.PlainTextConstruct;
-import com.google.gdata.data.docs.DocumentEntry;
+import com.google.gdata.data.acl.AclEntry;
+import com.google.gdata.data.acl.AclFeed;
+import com.google.gdata.data.acl.AclRole;
+import com.google.gdata.data.acl.AclScope.Type;
 import com.google.gdata.data.docs.DocumentListEntry;
-import com.google.gdata.data.docs.MetadataEntry;
-import com.google.gdata.data.docs.PresentationEntry;
-import com.google.gdata.data.docs.RevisionEntry;
-import com.google.gdata.data.docs.RevisionFeed;
-import com.google.gdata.data.docs.SpreadsheetEntry;
-import com.google.gdata.data.media.MediaFileSource;
-import com.google.gdata.data.media.MediaSource;
 import com.google.gdata.util.ServiceException;
 
 
@@ -117,11 +134,11 @@ import com.google.gdata.util.ServiceException;
 public class GoogleDocsServiceImpl
     implements GoogleDocsService
 {
-    private static final Log                 log               = LogFactory.getLog(GoogleDocsServiceImpl.class);
+    private static final Log                 log                       = LogFactory.getLog(GoogleDocsServiceImpl.class);
 
     // Services
     private OAuth2CredentialsStoreService    oauth2CredentialsStoreService;
-    private GoogleDocsConnectionFactory      connectionFactory;
+    private GoogleConnectionFactory          connectionFactory;
     private FileFolderService                fileFolderService;
     private NodeService                      nodeService;
     private LockService                      lockservice;
@@ -131,15 +148,16 @@ public class GoogleDocsServiceImpl
     private SiteService                      siteService;
     private TenantService                    tenantService;
     private PersonService                    personService;
+    private AuthorityService                 authorityService;
 
     private DictionaryService                dictionaryService;
     private FileNameUtil                     filenameUtil;
 
     // Property Mappings
-    private Map<String, String>              importFormats     = new HashMap<String, String>();
-    private Map<String, Map<String, String>> exportFormats     = new HashMap<String, Map<String, String>>();
-    private Map<String, String>              upgradeMappings   = new HashMap<String, String>();
-    private Map<String, String>              downgradeMappings = new HashMap<String, String>();
+    private Map<String, String>              importFormats             = new HashMap<String, String>();
+    private Map<String, Map<String, String>> exportFormats             = new HashMap<String, Map<String, String>>();
+    private Map<String, String>              upgradeMappings           = new HashMap<String, String>();
+    private Map<String, String>              downgradeMappings         = new HashMap<String, String>();
 
     // New Content
     private Resource                         newDocument;
@@ -148,13 +166,25 @@ public class GoogleDocsServiceImpl
 
     // Time (in seconds) between last edit and now to consider edits as
     // concurrent
-    private int                              idleThreshold     = 0;
+    private int                              idleThreshold             = 0;
 
     private boolean                          enabled           = true;
 
     // Activities
-    private static final String              FILE_ADDED        = "org.alfresco.documentlibrary.file-added";
-    private static final String              FILE_UPDATED      = "org.alfresco.documentlibrary.file-updated";
+    private static final String              FILE_ADDED                = "org.alfresco.documentlibrary.file-added";
+    private static final String              FILE_UPDATED              = "org.alfresco.documentlibrary.file-updated";
+
+    // Permission roles
+    private static final String              PERMISSION_ROLE_READER    = "reader";
+    private static final String              PERMISSION_ROLE_WRITER    = "writer";
+    private static final String              PERMISSION_ROLE_OWNER     = "owner";
+    private static final String              PERMISSION_ROLE_COMMENTER = "commenter";
+
+    // Permission authority types
+    private static final String              PERMISSION_TYPE_USER      = "user";
+    private static final String              PERMISSION_TYPE_GROUP     = "group";
+    private static final String              PERMISSION_TYPE_DOMAIN    = "domain";
+    private static final String              PERMISSION_TYPE_ANYONE    = "anyone";
 
 
     public void setImportFormats(Map<String, String> importFormats)
@@ -187,7 +217,7 @@ public class GoogleDocsServiceImpl
     }
 
 
-    public void setConnectionFactory(GoogleDocsConnectionFactory connectionFactory)
+    public void setConnectionFactory(GoogleConnectionFactory connectionFactory)
     {
         this.connectionFactory = connectionFactory;
     }
@@ -247,6 +277,12 @@ public class GoogleDocsServiceImpl
     }
 
 
+    public void setAuthorityService(AuthorityService authorityService)
+    {
+        this.authorityService = authorityService;
+    }
+
+
     public void setDictionaryService(DictionaryService dictionaryService)
     {
         this.dictionaryService = dictionaryService;
@@ -301,18 +337,35 @@ public class GoogleDocsServiceImpl
     }
 
 
+    /**
+     * Can the mimetype be imported from Google Docs to Alfresco?
+     * 
+     * @param mimetype
+     * @return boolean
+     */
     public boolean isImportable(String mimetype)
     {
         return importFormats.containsKey(mimetype);
     }
 
 
+    /**
+     * Get the Google document type (Document, Spreadsheet, Presentation)
+     * 
+     * @param mimetype
+     * @return String
+     */
     private String getImportType(String mimetype)
     {
         return importFormats.get(mimetype);
     }
 
 
+    /**
+     * @param mimetype
+     * @return
+     * @throws
+     */
     public boolean isExportable(String mimetype)
         throws MustUpgradeFormatException,
             MustDowngradeFormatException
@@ -333,6 +386,12 @@ public class GoogleDocsServiceImpl
     }
 
 
+    /**
+     * Get a Set of all the mimetypes that can be exported for the Google Document type
+     * 
+     * @param type
+     * @return Set
+     */
     private Set<String> getExportableMimeTypes(String type)
     {
         Set<String> mimetypes = new HashSet<String>();
@@ -346,12 +405,24 @@ public class GoogleDocsServiceImpl
     }
 
 
+    /**
+     * Will the mimetype be upgraded if exported to Google Docs?
+     * 
+     * @param mimetype
+     * @return
+     */
     private boolean isUpgrade(String mimetype)
     {
         return upgradeMappings.containsKey(mimetype);
     }
 
 
+    /**
+     * Will the mimetype be downgraded if exported to Google Docs?
+     * 
+     * @param mimetype
+     * @return
+     */
     private boolean isDownGrade(String mimetype)
     {
         return downgradeMappings.containsKey(mimetype);
@@ -370,24 +441,9 @@ public class GoogleDocsServiceImpl
     }
 
 
-    private String getExportFormat(String contentType, String mimeType)
-    {
-        String exportFormat = null;
-
-        mimeType = validateMimeType(mimeType);
-
-        if (exportFormats.containsKey(contentType))
-        {
-            exportFormat = exportFormats.get(contentType).get(mimeType);
-        }
-
-        return exportFormat;
-    }
-
-
     /**
      * @param mimeType Mimetype of the Node
-     * @return If the Document must be returned in as a different type, returns the new type
+     * @return If the Document must be returned as a different type, returns the new type
      */
     private String validateMimeType(String mimeType)
     {
@@ -405,18 +461,28 @@ public class GoogleDocsServiceImpl
     }
 
 
-    private Connection<GoogleDocs> getConnection()
+    /**
+     * Get a connection to the Google APIs. Will attempt to refresh tokens if they are invalid. If unable to refresh return a
+     * GoogleDocsRefreshTokenException.
+     * 
+     * @return
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     * @throws GoogleDocsServiceException
+     */
+    private Connection<Google> getConnection()
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
             GoogleDocsServiceException
     {
-        Connection<GoogleDocs> connection = null;
+        Connection<Google> connection = null;
 
+        // OAuth credentials for the current user, if the exist
         OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
 
         if (credentialInfo != null)
         {
-            log.debug("OAuth Access Token Exists");
+            log.debug("OAuth Access Token Exists: " + credentialInfo.getOAuthAccessToken());
             AccessGrant accessGrant = new AccessGrant(credentialInfo.getOAuthAccessToken());
 
             try
@@ -424,28 +490,33 @@ public class GoogleDocsServiceImpl
                 log.debug("Attempt to create OAuth Connection");
                 connection = connectionFactory.createConnection(accessGrant);
             }
-            catch (ApiException apie)
+            catch (HttpClientErrorException hcee)
             {
-                if (apie.getCause() instanceof ServiceException)
+                log.debug(hcee.getResponseBodyAsString());
+                if (hcee.getStatusCode().value() == HttpStatus.SC_UNAUTHORIZED)
                 {
-                    ServiceException se = (ServiceException)apie.getCause();
-                    if (se.getHttpErrorCodeOverride() == HttpStatus.SC_UNAUTHORIZED)
+                    try
                     {
-                        try
-                        {
-                            accessGrant = refreshAccessToken();
-                            connection = connectionFactory.createConnection(accessGrant);
-                        }
-                        catch (GoogleDocsRefreshTokenException gdrte)
-                        {
-                            throw gdrte;
-                        }
-                        catch (GoogleDocsServiceException gdse)
-                        {
-                            throw gdse;
-                        }
+                        accessGrant = refreshAccessToken();
+                        connection = connectionFactory.createConnection(accessGrant);
+                    }
+                    catch (GoogleDocsRefreshTokenException gdrte)
+                    {
+                        throw gdrte;
+                    }
+                    catch (GoogleDocsServiceException gdse)
+                    {
+                        throw gdse;
                     }
                 }
+                else
+                {
+                    throw new GoogleDocsServiceException(hcee.getMessage(), hcee, hcee.getStatusCode().value());
+                }
+            }
+            catch (HttpServerErrorException hsee)
+            {
+                throw new GoogleDocsServiceException(hsee.getMessage(), hsee, hsee.getStatusCode().value());
             }
         }
 
@@ -454,6 +525,11 @@ public class GoogleDocsServiceImpl
     }
 
 
+    /**
+     * Has the current user authenticated to Google Drive?
+     * 
+     * @return
+     */
     public boolean isAuthenticated()
     {
         boolean authenticated = false;
@@ -470,25 +546,24 @@ public class GoogleDocsServiceImpl
     }
 
 
+    /**
+     * The oauth authentication url
+     * 
+     * @param state the value of the oauth state parameter to be passed in the authentication url
+     * @return The complete oauth authentication url
+     */
     public String getAuthenticateUrl(String state)
     {
         String authenticateUrl = null;
 
         if (state != null)
         {
-
-            /*
-             * When we change to spring social 1.0.2 OAuth2Parameters will need to be updated OAuth2Parameters parameters = new
-             * OAuth2Parameters(); parameters.setRedirectUri(REDIRECT_URI); parameters.setScope(SCOPE); parameters.setState(state);
-             */
-
             MultiValueMap<String, String> additionalParameters = new LinkedMultiValueMap<String, String>(1);
             additionalParameters.add("access_type", "offline");
 
             OAuth2Parameters parameters = new OAuth2Parameters(GoogleDocsConstants.REDIRECT_URI, GoogleDocsConstants.SCOPE, state, additionalParameters);
             parameters.getAdditionalParameters();
             authenticateUrl = connectionFactory.getOAuthOperations().buildAuthenticateUrl(GrantType.AUTHORIZATION_CODE, parameters);
-
         }
 
         log.debug("Authentication URL: " + authenticateUrl);
@@ -502,16 +577,6 @@ public class GoogleDocsServiceImpl
         boolean authenticationComplete = false;
 
         AccessGrant accessGrant = connectionFactory.getOAuthOperations().exchangeForAccess(access_token, GoogleDocsConstants.REDIRECT_URI, null);
-
-        Date expiresIn = null;
-
-        if (accessGrant.getExpireTime() != null)
-        {
-            if (accessGrant.getExpireTime() > 0L)
-            {
-                expiresIn = new Date(new Date().getTime() + accessGrant.getExpireTime());
-            }
-        }
 
         try
         {
@@ -537,7 +602,7 @@ public class GoogleDocsServiceImpl
                 }
             }
 
-            oauth2CredentialsStoreService.storePersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM, accessGrant.getAccessToken(), accessGrant.getRefreshToken(), expiresIn, new Date());
+            oauth2CredentialsStoreService.storePersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM, accessGrant.getAccessToken(), accessGrant.getRefreshToken(), new Date(accessGrant.getExpireTime()), new Date());
 
             authenticationComplete = true;
         }
@@ -567,18 +632,7 @@ public class GoogleDocsServiceImpl
             try
             {
 
-                accessGrant = connectionFactory.getOAuthOperations().refreshAccess(credentialInfo.getOAuthRefreshToken(), null, null);
-            }
-            catch (ApiException apie)
-            {
-                if (apie.getCause() instanceof ServiceException)
-                {
-                    ServiceException se = (ServiceException)apie.getCause();
-                    if (se.getHttpErrorCodeOverride() == HttpStatus.SC_UNAUTHORIZED)
-                    {
-                        throw new GoogleDocsAuthenticationException("Token Refresh Failed.");
-                    }
-                }
+                accessGrant = connectionFactory.getOAuthOperations().refreshAccess(credentialInfo.getOAuthRefreshToken(), GoogleDocsConstants.SCOPE, null);
             }
             catch (HttpClientErrorException hcee)
             {
@@ -586,9 +640,13 @@ public class GoogleDocsServiceImpl
                 {
                     throw new GoogleDocsAuthenticationException(hcee.getMessage());
                 }
+                else if (hcee.getStatusCode().value() == HttpStatus.SC_UNAUTHORIZED)
+                {
+                    throw new GoogleDocsAuthenticationException("Token Refresh Failed.");
+                }
                 else
                 {
-                    throw new GoogleDocsServiceException(hcee.getMessage(), hcee.getStatusCode().ordinal());
+                    throw new GoogleDocsServiceException(hcee.getMessage(), hcee.getStatusCode().value());
                 }
 
             }
@@ -630,118 +688,52 @@ public class GoogleDocsServiceImpl
     }
 
 
-    private DocsService getDocsService(Connection<GoogleDocs> connection)
+    private DriveOperations getDriveOperations(Connection<Google> connection)
     {
-        DocsService docsService = null;
-
-        try
-        {
-            docsService = connection.getApi().setAuthentication(new DocsService(GoogleDocsConstants.APPLICATION_NAME));
-        }
-        catch (ApiException apie)
-        {
-            throw apie;
-        }
-
-        log.debug("Google Docs Client initiated");
-        return docsService;
-
+        log.debug("Initiating Google Drive Client");
+        return connection.getApi().driveOperations();
     }
 
 
-    /**
-     * @param type Document Type.  Must be document, spreadsheet or presentation
-     * @param name Document File Name.  If null, name is generated based on document type. Ex type is document, file name is Untitled Document
-     * @return Google Document List Entry
-     * @throws GoogleDocsServiceException
-     * @throws GoogleDocsTypeException
-     * @throws GoogleDocsAuthenticationException
-     * @throws GoogleDocsRefreshTokenException
-     * @throws IOException
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.alfresco.integrations.google.docs.service.GoogleDocsService#createDocument(org.alfresco.service.cmr.repository.NodeRef)
      */
-    private DocumentListEntry createContent(String type, String name)
+    public DriveFile createDocument(NodeRef nodeRef)
         throws GoogleDocsServiceException,
             GoogleDocsTypeException,
             GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
             IOException
     {
-        log.debug("Create Content");
-        DocsService docsService = getDocsService(getConnection());
-
-        DocumentListEntry entry = null;
-        //Create Document List Entry based on type and get default name if null
-        if (type.equals(GoogleDocsConstants.DOCUMENT_TYPE))
-        {
-            if (name == null)
-            {
-                name = GoogleDocsConstants.NEW_DOCUMENT_NAME;
-            }
-            entry = new DocumentEntry();
-        }
-        else if (type.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
-        {
-            if (name == null)
-            {
-                name = GoogleDocsConstants.NEW_SPREADSHEET_NAME;
-            }
-            entry = new SpreadsheetEntry();
-        }
-        else if (type.equals(GoogleDocsConstants.PRESENTATION_TYPE))
-        {
-            if (name == null)
-            {
-                name = GoogleDocsConstants.NEW_PRESENTATION_NAME;
-            }
-            entry = new PresentationEntry();
-        }
-
-        if (entry != null)
-        {
-            //Set the title of entry
-            entry.setTitle(new PlainTextConstruct(name));
-            //Make the Document Hidden.  This does not work with Google Drive. See GOOGLEDOCS-91
-            entry.setHidden(true);
-
-            try
-            {
-                //Upload Content to Google
-                return docsService.insert(new URL(GoogleDocsConstants.URL_BASE_FEED), entry);
-            }
-            catch (IOException ioe)
-            {
-                throw ioe;
-            }
-            catch (ServiceException se)
-            {
-                throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
-            }
-        }
-        else
-        {
-            throw new GoogleDocsTypeException("Type Unknown: " + type + ". Must be document, spreadsheet or presentation.");
-        }
-    }
-
-
-    /* (non-Javadoc)
-     * @see org.alfresco.integrations.google.docs.service.GoogleDocsService#createDocument(org.alfresco.service.cmr.repository.NodeRef)
-     */
-    public DocumentListEntry createDocument(NodeRef nodeRef)
-        throws GoogleDocsServiceException,
-            GoogleDocsTypeException,
-            GoogleDocsAuthenticationException,
-            GoogleDocsRefreshTokenException,
-            IOException
-    {
+        DriveOperations driveOperations = getDriveOperations(getConnection());
         log.debug("Create Google Document for node " + nodeRef);
-        DocumentListEntry documentListEntry = createContent(GoogleDocsConstants.DOCUMENT_TYPE, fileFolderService.getFileInfo(nodeRef).getName());
+
+        DriveFile driveFile = null;
+        String name = fileFolderService.getFileInfo(nodeRef).getName();
+        // To be editable a new document must use the Google Document mimetype.
+        String mimetype = GoogleDocsConstants.DOCUMENT_MIMETYPE;
+
+        // If the node does not have a name, set a default for the type
+        if (name == null)
+        {
+            name = GoogleDocsConstants.NEW_DOCUMENT_NAME;
+        }
 
         try
         {
-            //Add temporary Node (with Content)
+            // Create the working Directory
+            DriveFile workingDir = createWorkingDirectory(nodeRef);
+
+            // Create the Google Document in the working directory
+            driveFile = new DriveFile.Builder().setParents(workingDir.getId()).setTitle(name).setHidden(true).setMimeType(mimetype).build();
+            driveFile = driveOperations.createFileMetadata(driveFile);
+
+            // Add temporary Node (with Content) to repository.
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
-            writer.setMimetype("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+            writer.setMimetype(MimetypeMap.MIMETYPE_OPENXML_WORDPROCESSING);
             writer.putContent(newDocument.getInputStream());
 
         }
@@ -750,28 +742,50 @@ public class GoogleDocsServiceImpl
             throw ioe;
         }
 
-        return documentListEntry;
+        return driveFile;
     }
 
 
-    /* (non-Javadoc)
-     * @see org.alfresco.integrations.google.docs.service.GoogleDocsService#createSpreadSheet(org.alfresco.service.cmr.repository.NodeRef)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.alfresco.integrations.google.docs.service.GoogleDocsService#createSpreadSheet(org.alfresco.service.cmr.repository.NodeRef
+     * )
      */
-    public DocumentListEntry createSpreadSheet(NodeRef nodeRef)
+    public DriveFile createSpreadSheet(NodeRef nodeRef)
         throws GoogleDocsServiceException,
             GoogleDocsTypeException,
             GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
             IOException
     {
+        DriveOperations driveOperations = getDriveOperations(getConnection());
         log.debug("Create Google Spreadsheet for node " + nodeRef);
-        DocumentListEntry documentListEntry = createContent(GoogleDocsConstants.SPREADSHEET_TYPE, fileFolderService.getFileInfo(nodeRef).getName());
+
+        DriveFile driveFile = null;
+        String name = fileFolderService.getFileInfo(nodeRef).getName();
+        // To be editable, a new spreadsheet must use the Google Spreadsheet mimetype.
+        String mimetype = GoogleDocsConstants.SPREADSHEET_MIMETYPE;
+
+        // If the node does not have a name, set a default for the type
+        if (name == null)
+        {
+            name = GoogleDocsConstants.NEW_SPREADSHEET_NAME;
+        }
 
         try
         {
-            //Add temporary Node (with Content)
+            // Create the working Directory
+            DriveFile workingDir = createWorkingDirectory(nodeRef);
+
+            // Create the Google Spreadsheet in the working directory
+            driveFile = new DriveFile.Builder().setParents(workingDir.getId()).setTitle(name).setHidden(true).setMimeType(mimetype).build();
+            driveFile = driveOperations.createFileMetadata(driveFile);
+
+            // Add temporary Node (with Content) to the repository
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
-            writer.setMimetype("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            writer.setMimetype(MimetypeMap.MIMETYPE_OPENXML_SPREADSHEET);
             writer.putContent(newSpreadsheet.getInputStream());
 
         }
@@ -780,28 +794,50 @@ public class GoogleDocsServiceImpl
             throw ioe;
         }
 
-        return documentListEntry;
+        return driveFile;
     }
 
 
-    /* (non-Javadoc)
-     * @see org.alfresco.integrations.google.docs.service.GoogleDocsService#createPresentation(org.alfresco.service.cmr.repository.NodeRef)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.alfresco.integrations.google.docs.service.GoogleDocsService#createPresentation(org.alfresco.service.cmr.repository.NodeRef
+     * )
      */
-    public DocumentListEntry createPresentation(NodeRef nodeRef)
+    public DriveFile createPresentation(NodeRef nodeRef)
         throws GoogleDocsServiceException,
             GoogleDocsTypeException,
             GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
             IOException
     {
+        DriveOperations driveOperations = getDriveOperations(getConnection());
         log.debug("Create Google Presentation for node " + nodeRef);
-        DocumentListEntry documentListEntry = createContent(GoogleDocsConstants.PRESENTATION_TYPE, fileFolderService.getFileInfo(nodeRef).getName());
+
+        DriveFile driveFile = null;
+        String name = fileFolderService.getFileInfo(nodeRef).getName();
+        // To be editable a new presentation must use the Google Presentation mimetype
+        String mimetype = GoogleDocsConstants.PRESENTATION_MIMETYPE;
+
+        // If the node does not have a name, set a default for the type
+        if (name == null)
+        {
+            name = GoogleDocsConstants.NEW_PRESENTATION_NAME;
+        }
 
         try
         {
-            //Add temporary Node (with Content)
+            // Create the working Directory
+            DriveFile workingDir = createWorkingDirectory(nodeRef);
+
+            // Create the Google Document in the working directory
+            driveFile = new DriveFile.Builder().setParents(workingDir.getId()).setTitle(name).setHidden(true).setMimeType(mimetype).build();
+            driveFile = driveOperations.createFileMetadata(driveFile);
+
+            // Add temporary Node (with Content) to repository
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
-            writer.setMimetype("application/vnd.openxmlformats-officedocument.presentationml.presentation");
+            writer.setMimetype(MimetypeMap.MIMETYPE_OPENXML_PRESENTATION);
             writer.putContent(newPresentation.getInputStream());
 
         }
@@ -810,126 +846,161 @@ public class GoogleDocsServiceImpl
             throw ioe;
         }
 
-        return documentListEntry;
+        return driveFile;
     }
 
 
-    private void getDocument(NodeRef nodeRef, String resourceID)
+    /**
+     * Get the Document from the users Google Drive account. The Document and its working directory will be removed from their
+     * Google Drive account. The editingInGoogle aspect will be removed.
+     * 
+     * @param nodeRef
+     * @param resourceID
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsServiceException
+     * @throws GoogleDocsRefreshTokenException
+     */
+    private void getDocument(NodeRef nodeRef, String resourceID, boolean removeFromDrive)
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
-            GoogleDocsRefreshTokenException,
-            IOException
+            IOException,
+            GoogleDocsRefreshTokenException
     {
         log.debug("Get Google Document for node: " + nodeRef);
-        DocsService docsService = getDocsService(getConnection());
+        DriveOperations driveOperations = getDriveOperations(getConnection());
 
         try
         {
-            MediaContent mc = new MediaContent();
+            String mimetype = null;
 
-            String mimeType = null;
-            String exportFormat = null;
-
-            mimeType = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
+            mimetype = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
             log.debug("Current mimetype: " + fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype()
-                      + "; Mimetype of Google Doc: " + mimeType);
-            exportFormat = getExportFormat(getContentType(nodeRef), mimeType);
-            log.debug("Export format: " + exportFormat);
+                      + "; Mimetype of Google Doc: " + mimetype);
+            log.debug("Export format: " + mimetype);
 
-            mc.setUri(GoogleDocsConstants.URL_DOCUMENT_DOWNLOAD + "?docID=" + resourceID.substring(resourceID.lastIndexOf(':') + 1)
-                      + "&exportFormat=" + exportFormat);
+            DriveFile driveFile = driveOperations.getFile(resourceID.substring(resourceID.lastIndexOf(':') + 1));
 
-            log.debug("Export URL: " + mc.getUri());
-            MediaSource ms = docsService.getMedia(mc);
+            InputStream inputstream = getFileInputStream(driveFile, mimetype);
 
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
-            writer.setMimetype(mimeType);
-            writer.putContent(ms.getInputStream());
+            writer.setMimetype(mimetype);
+            writer.putContent(inputstream);
 
-            DocumentListEntry documentListEntry = getDocumentListEntry(resourceID);
+            renameNode(nodeRef, driveFile.getTitle());
 
-            renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
+            saveSharedInfo(nodeRef, resourceID);
 
-            deleteContent(nodeRef, documentListEntry);
+            if (removeFromDrive)
+            {
+                deleteContent(nodeRef, driveFile);
+            }
+            else
+            {
+                nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_REVISION_ID, getLatestRevision(driveFile).getId());
+            }
 
             postActivity(nodeRef);
 
-            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY) && removeFromDrive)
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
                 log.debug("Temporary Aspect Removed");
             }
         }
-        catch (IOException ioe)
+        catch (HttpStatusCodeException hsce)
         {
-            throw ioe;
-        }
-        catch (ServiceException se)
-        {
-            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
         }
         catch (JSONException jsonException)
         {
             throw new GoogleDocsAuthenticationException("Unable to create activity entry: " + jsonException.getMessage(), jsonException);
         }
+    }
+
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.alfresco.integrations.google.docs.service.GoogleDocsService#getDocument(org.alfresco.service.cmr.repository.NodeRef)
+     */
+    public void getDocument(NodeRef nodeRef, boolean removeFromDrive)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            IOException,
+            GoogleDocsRefreshTokenException
+    {
+        // TODO Wrap with try for null
+        String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
+
+        getDocument(nodeRef, resourceID, removeFromDrive);
     }
 
 
     public void getDocument(NodeRef nodeRef)
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
-            GoogleDocsRefreshTokenException,
             IOException,
-            ConstraintException
+            GoogleDocsRefreshTokenException
     {
         // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
 
-        getDocument(nodeRef, resourceID);
+        getDocument(nodeRef, resourceID, true);
     }
 
 
-    private void getSpreadSheet(NodeRef nodeRef, String resourceID)
+    /**
+     * Get the Document from the users Google Drive account. The Document and its working directory will be removed from their
+     * Google Drive account. The editingInGoogle aspect will be removed.
+     * 
+     * @param nodeRef
+     * @param resourceID
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsServiceException
+     * @throws GoogleDocsRefreshTokenException
+     */
+    private void getSpreadSheet(NodeRef nodeRef, String resourceID, boolean removeFromDrive)
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
             IOException
     {
         log.debug("Get Google Spreadsheet for node: " + nodeRef);
-        DocsService docsService = getDocsService(getConnection());
+        DriveOperations driveOperations = getDriveOperations(getConnection());
 
         try
         {
-            MediaContent mc = new MediaContent();
+            String mimetype = null;
 
-            String mimeType = null;
-            String exportFormat = null;
-
-            mimeType = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
+            mimetype = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
             log.debug("Current mimetype: " + fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype()
-                      + "; Mimetype of Google Doc: " + mimeType);
-            exportFormat = getExportFormat(getContentType(nodeRef), mimeType);
-            log.debug("Export format: " + exportFormat);
+                      + "; Mimetype of Google Doc: " + mimetype);
+            log.debug("Export format: " + mimetype);
 
-            mc.setUri(GoogleDocsConstants.URL_SPREADSHEET_DOWNLOAD + "?key="
-                      + resourceID.substring(resourceID.lastIndexOf(':') + 1) + "&exportFormat=" + exportFormat);
+            DriveFile driveFile = driveOperations.getFile(resourceID.substring(resourceID.lastIndexOf(':') + 1));
 
-            log.debug("Export URL: " + mc.getUri());
-            MediaSource ms = docsService.getMedia(mc);
+            InputStream inputStream = getFileInputStream(driveFile, mimetype);
 
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
-            writer.setMimetype(mimeType);
-            writer.putContent(ms.getInputStream());
+            writer.setMimetype(mimetype);
+            writer.putContent(inputStream);
 
-            DocumentListEntry documentListEntry = getDocumentListEntry(resourceID);
+            renameNode(nodeRef, driveFile.getTitle());
 
-            renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
+            saveSharedInfo(nodeRef, resourceID);
 
-            deleteContent(nodeRef, documentListEntry);
+            if (removeFromDrive)
+            {
+                deleteContent(nodeRef, driveFile);
+            }
+            else
+            {
+                nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_REVISION_ID, getLatestRevision(driveFile).getId());
+            }
 
             postActivity(nodeRef);
 
-            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY) && removeFromDrive)
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
                 log.debug("Temporary Aspect Removed");
@@ -939,9 +1010,9 @@ public class GoogleDocsServiceImpl
         {
             throw ioe;
         }
-        catch (ServiceException se)
+        catch (HttpStatusCodeException hsce)
         {
-            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
         }
         catch (JSONException jsonException)
         {
@@ -950,61 +1021,90 @@ public class GoogleDocsServiceImpl
     }
 
 
-    public void getSpreadSheet(NodeRef nodeRef)
+    public void getSpreadSheet(NodeRef nodeRef, boolean removeFromDrive)
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
-            GoogleDocsRefreshTokenException,
             IOException,
-            ConstraintException
+            GoogleDocsRefreshTokenException
     {
         // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
 
-        getSpreadSheet(nodeRef, resourceID);
+        getSpreadSheet(nodeRef, resourceID, removeFromDrive);
     }
 
 
-    private void getPresentation(NodeRef nodeRef, String resourceID)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.alfresco.integrations.google.docs.service.GoogleDocsService#getSpreadSheet(org.alfresco.service.cmr.repository.NodeRef)
+     */
+    public void getSpreadSheet(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            IOException,
+            GoogleDocsRefreshTokenException
+    {
+        // TODO Wrap with try for null
+        String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
+
+        getSpreadSheet(nodeRef, resourceID, true);
+    }
+
+
+    /**
+     * Get the Document from the users Google Drive account. The Document and its working directory will be removed from their
+     * Google Drive account. The editingInGoogle aspect will be removed.
+     * 
+     * @param nodeRef
+     * @param resourceID
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsServiceException
+     * @throws GoogleDocsRefreshTokenException
+     */
+    private void getPresentation(NodeRef nodeRef, String resourceID, boolean removeFromDrive)
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
             IOException
     {
         log.debug("Get Google Presentation for node: " + nodeRef);
-        DocsService docsService = getDocsService(getConnection());
+        DriveOperations driveOperations = getDriveOperations(getConnection());
 
         try
         {
-            MediaContent mc = new MediaContent();
+            String mimetype = null;
 
-            String mimeType = null;
-            String exportFormat = null;
-
-            mimeType = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
+            mimetype = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
             log.debug("Current mimetype: " + fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype()
-                      + "; Mimetype of Google Doc: " + mimeType);
-            exportFormat = getExportFormat(getContentType(nodeRef), mimeType);
-            log.debug("Export format: " + exportFormat);
+                      + "; Mimetype of Google Doc: " + mimetype);
+            log.debug("Export format: " + mimetype);
 
-            mc.setUri(GoogleDocsConstants.URL_PRESENTATION_DOWNLOAD + "?docID="
-                      + resourceID.substring(resourceID.lastIndexOf(':') + 1) + "&exportFormat=" + exportFormat);
+            DriveFile driveFile = driveOperations.getFile(resourceID.substring(resourceID.lastIndexOf(':') + 1));
 
-            log.debug("Export URL: " + mc.getUri());
-            MediaSource ms = docsService.getMedia(mc);
+            InputStream inputStream = getFileInputStream(driveFile, mimetype);
 
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
-            writer.setMimetype(mimeType);
-            writer.putContent(ms.getInputStream());
+            writer.setMimetype(mimetype);
+            writer.putContent(inputStream);
 
-            DocumentListEntry documentListEntry = getDocumentListEntry(resourceID);
+            renameNode(nodeRef, driveFile.getTitle());
 
-            renameNode(nodeRef, documentListEntry.getTitle().getPlainText());
+            saveSharedInfo(nodeRef, resourceID);
 
-            deleteContent(nodeRef, documentListEntry);
+            if (removeFromDrive)
+            {
+                deleteContent(nodeRef, driveFile);
+            }
+            else
+            {
+                nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_REVISION_ID, getLatestRevision(driveFile).getId());
+            }
 
             postActivity(nodeRef);
 
-            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY) && removeFromDrive)
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
                 log.debug("Temporary Aspect Removed");
@@ -1014,9 +1114,9 @@ public class GoogleDocsServiceImpl
         {
             throw ioe;
         }
-        catch (ServiceException se)
+        catch (HttpStatusCodeException hsce)
         {
-            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
         }
         catch (JSONException jsonException)
         {
@@ -1025,38 +1125,62 @@ public class GoogleDocsServiceImpl
     }
 
 
-    public void getPresentation(NodeRef nodeRef)
+    public void getPresentation(NodeRef nodeRef, boolean removeFromDrive)
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
-            GoogleDocsRefreshTokenException,
             IOException,
-            ConstraintException
+            GoogleDocsRefreshTokenException
     {
         // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
 
-        getPresentation(nodeRef, resourceID);
+        getPresentation(nodeRef, resourceID, removeFromDrive);
     }
 
 
-    public DocumentListEntry uploadFile(NodeRef nodeRef)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.alfresco.integrations.google.docs.service.GoogleDocsService#getPresentation(org.alfresco.service.cmr.repository.NodeRef)
+     */
+    public void getPresentation(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            IOException,
+            GoogleDocsRefreshTokenException
+    {
+        // TODO Wrap with try for null
+        String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
+
+        getPresentation(nodeRef, resourceID, true);
+    }
+
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.alfresco.integrations.google.docs.service.GoogleDocsService#uploadFile(org.alfresco.service.cmr.repository.NodeRef)
+     */
+    public DriveFile uploadFile(NodeRef nodeRef)
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
             IOException
     {
         log.debug("Upload " + nodeRef + " to Google");
-        DocsService docsService = getDocsService(getConnection());
+        DriveOperations driveOperations = getDriveOperations(getConnection());
 
-        DocumentListEntry uploaded = null;
+        DriveFile driveFile = null;
 
         // It makes me want to cry that they don't support inputStreams.
         File file = null;
 
         try
         {
-            // Get the read
+            // Get the reader
             ContentReader reader = fileFolderService.getReader(nodeRef);
+
             file = File.createTempFile(nodeRef.getId(), ".tmp", TempFileProvider.getTempDir());
             reader.getContent(file);
 
@@ -1064,47 +1188,23 @@ public class GoogleDocsServiceImpl
             FileInfo fileInfo = fileFolderService.getFileInfo(nodeRef);
             String mimetype = fileInfo.getContentData().getMimetype();
 
-            // Create MediFileSource
-            MediaFileSource mediaFile = new MediaFileSource(file, mimetype);
+            // Create the working Directory
+            DriveFile workingDir = createWorkingDirectory(nodeRef);
 
-            DocumentListEntry entry = new DocumentListEntry();
-            entry.setTitle(new PlainTextConstruct(fileInfo.getName()));
-            entry.setHidden(true);
+            driveFile = new DriveFile.Builder().setParents(workingDir.getId()).setTitle(fileInfo.getName()).setHidden(true).setMimeType(mimetype).build();
 
-            ResumableGDataFileUploader uploader = new ResumableGDataFileUploader.Builder(docsService, new URL(GoogleDocsConstants.URL_CREATE_MEDIA), mediaFile, entry).chunkSize(10485760L).build();
-            uploader.start();
-            log.debug("Start Upload");
-            while (!uploader.isDone())
-            {
-                try
-                {
-                    Thread.sleep(100);
-                    log.debug("Uploading...");
-                }
-                catch (InterruptedException ie)
-                {
-                    throw new GoogleDocsServiceException(ie.getMessage());
-                }
-            }
+            UploadParameters uploadParameters = new UploadParameters().setConvert(true);
 
-            if (uploader.getUploadState() != UploadState.CLIENT_ERROR)
-            {
-                uploaded = uploader.getResponse(DocumentListEntry.class);
-                log.debug("Upload Complete");
-            }
-            else
-            {
-                throw new GoogleDocsServiceException("Error During Upload", HttpStatus.SC_METHOD_FAILURE);
-            }
+            driveFile = driveOperations.upload(new FileSystemResource(file), driveFile, uploadParameters);
 
         }
         catch (IOException ioe)
         {
             throw ioe;
         }
-        catch (ServiceException se)
+        catch (HttpStatusCodeException hsce)
         {
-            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
         }
         finally
         {
@@ -1114,38 +1214,112 @@ public class GoogleDocsServiceImpl
             }
         }
 
-        return uploaded;
+        return driveFile;
     }
 
 
-    public boolean deleteContent(NodeRef nodeRef, DocumentListEntry documentListEntry)
+    /**
+     * Unlock and Undecorate node; Remove content from users Google Account Does not update the content in Alfresco; If content was
+     * newly created by GoogleDocsService it will be removed.
+     * 
+     * Method can be run by owner, admin or site manager
+     * 
+     * @param nodeRef
+     * @param driveFile
+     * @param forceRemoval ignore <code>GoogleDocsServiceException</code> exceptions when attempting to remove content from user's
+     * Google account
+     * @throws GoogleDocsRefreshTokenException
+     * @throws GoogleDocsServiceException
+     * @throws GoogleDocsAuthenticationException
+     */
+    public void removeContent(NodeRef nodeRef, DriveFile driveFile, boolean forceRemoval)
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
-            GoogleDocsRefreshTokenException,
-            IOException
+            GoogleDocsRefreshTokenException
+    {
+        if (isGoogleDocsLockOwner(nodeRef) || authorityService.hasAdminAuthority()
+            || isSiteManager(nodeRef, AuthenticationUtil.getFullyAuthenticatedUser()))
+        {
+            unlockNode(nodeRef);
+
+            try
+            {
+                deleteContent(nodeRef, driveFile); // also undecorates node
+            }
+            catch (GoogleDocsServiceException gdse)
+            {
+                if (forceRemoval)
+                {
+                    log.debug("There was an error (" + gdse.getMessage() + ": " + gdse.getPassedStatusCode() + ") removing "
+                              + driveFile.getTitle() + " from " + AuthenticationUtil.getFullyAuthenticatedUser()
+                              + "'s Google Account. Force Removal ignores the error.");
+                }
+                else
+                {
+                    throw gdse;
+                }
+            }
+
+            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+            {
+                nodeService.deleteNode(nodeRef);
+            }
+        }
+    }
+
+
+    /**
+     * isSiteManager...also handles nodes not found in a site...
+     * 
+     * @param nodeRef
+     * @param authorityName
+     * @return
+     */
+    private boolean isSiteManager(NodeRef nodeRef, String authorityName)
+    {
+        boolean isSiteManager = false;
+
+        SiteInfo siteInfo = siteService.getSite(nodeRef);
+
+        if (siteInfo != null)
+        {
+            isSiteManager = SiteServiceImpl.SITE_MANAGER.equals(siteService.getMembersRole(siteInfo.getShortName(), authorityName));
+        }
+
+        return isSiteManager;
+    }
+
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.alfresco.integrations.google.docs.service.GoogleDocsService#deleteContent(org.alfresco.service.cmr.repository.NodeRef,
+     * org.springframework.social.google.api.drive.DriveFile)
+     */
+    public boolean deleteContent(NodeRef nodeRef, DriveFile driveFile)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException
     {
         log.debug("Delete Google Doc for " + nodeRef);
         boolean deleted = false;
 
-        DocsService docsService = getDocsService(getConnection());
+        DriveOperations driveOperations = getDriveOperations(getConnection());
 
         try
         {
-            docsService.delete(new URL(GoogleDocsConstants.URL_BASE_FEED
-                                       + "/"
-                                       + documentListEntry.getResourceId().substring(documentListEntry.getResourceId().lastIndexOf(':') + 1)
-                                       + "?delete=true"), documentListEntry.getEtag());
+            driveOperations.delete(driveFile.getId());
+
+            // Delete the Working directory in Google Drive (if it exists....this should handle any migration issues)
+            deleteWorkingDirectory(nodeRef);
 
             unDecorateNode(nodeRef);
             deleted = true;
         }
-        catch (IOException ioe)
+        catch (HttpStatusCodeException hsce)
         {
-            throw ioe;
-        }
-        catch (ServiceException se)
-        {
-            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
         }
 
         log.debug("Deleted: " + deleted);
@@ -1153,7 +1327,109 @@ public class GoogleDocsServiceImpl
     }
 
 
-    public void decorateNode(NodeRef nodeRef, DocumentListEntry documentListEntry, boolean newcontent)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.alfresco.integrations.google.docs.service.GoogleDocsService#getLatestRevision(org.alfresco.service.cmr.repository.NodeRef
+     * )
+     */
+    public FileRevision getLatestRevision(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException
+    {
+        FileRevision fileRevision = null;
+
+        DriveOperations driveOperations = getDriveOperations(getConnection());
+
+        try
+        {
+            if (nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID) != null)
+            {
+                List<FileRevision> fileRevisions = driveOperations.getRevisions(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString());
+
+                if (fileRevisions != null)
+                {
+                    Collections.sort(fileRevisions, new FileRevisionComparator());
+
+                    fileRevision = fileRevisions.get(fileRevisions.size() - 1);
+                }
+            }
+        }
+        catch (HttpStatusCodeException hsce)
+        {
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
+        }
+
+        return fileRevision;
+    }
+
+
+    public FileRevision getLatestRevision(DriveFile driveFile)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException
+    {
+        FileRevision fileRevision = null;
+
+        DriveOperations driveOperations = getDriveOperations(getConnection());
+
+        List<FileRevision> fileRevisions = driveOperations.getRevisions(driveFile.getId());
+
+        try
+        {
+            if (fileRevisions != null)
+            {
+                Collections.sort(fileRevisions, new FileRevisionComparator());
+
+                fileRevision = fileRevisions.get(fileRevisions.size() - 1);
+            }
+        }
+        catch (HttpStatusCodeException hsce)
+        {
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
+        }
+
+        return fileRevision;
+    }
+
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.alfresco.integrations.google.docs.service.GoogleDocsService#decorateNode(org.alfresco.service.cmr.repository.NodeRef,
+     * org.springframework.social.google.api.drive.DriveFile, boolean)
+     */
+    public void decorateNode(NodeRef nodeRef, DriveFile driveFile, boolean newcontent)
+    {
+        decorateNode(nodeRef, driveFile, null, null, newcontent);
+    }
+
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.alfresco.integrations.google.docs.service.GoogleDocsService#decorateNode(org.alfresco.service.cmr.repository.NodeRef,
+     * org.springframework.social.google.api.drive.DriveFile, org.springframework.social.google.api.drive.FileRevision, boolean)
+     */
+    public void decorateNode(NodeRef nodeRef, DriveFile driveFile, FileRevision fileRevision, boolean newcontent)
+    {
+        decorateNode(nodeRef, driveFile, fileRevision, null, newcontent);
+    }
+
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.alfresco.integrations.google.docs.service.GoogleDocsService#decorateNode(org.alfresco.service.cmr.repository.NodeRef,
+     * org.springframework.social.google.api.drive.DriveFile, org.springframework.social.google.api.drive.FileRevision,
+     * java.util.List<org.alfresco.integrations.google.docs.service.GoogleDocsService.GooglePermission>, boolean)
+     */
+    public void decorateNode(NodeRef nodeRef, DriveFile driveFile, FileRevision fileRevision, List<GooglePermission> permissions, boolean newcontent)
     {
         log.debug("Add Google Docs Aspect to " + nodeRef);
         behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
@@ -1168,11 +1444,30 @@ public class GoogleDocsServiceImpl
 
             // Get the googleMetadata to reference the Node
             Map<QName, Serializable> aspectProperties = new HashMap<QName, Serializable>();
-            aspectProperties.put(GoogleDocsModel.PROP_RESOURCE_ID, documentListEntry.getResourceId());
-            aspectProperties.put(GoogleDocsModel.PROP_EDITORURL, documentListEntry.getDocumentLink().getHref());
-            nodeService.addAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE, aspectProperties);
+            aspectProperties.put(GoogleDocsModel.PROP_CURRENT_PERMISSIONS, buildPermissionsPropertyValue(permissions));
+            aspectProperties.put(GoogleDocsModel.PROP_RESOURCE_ID, driveFile.getId());
+            aspectProperties.put(GoogleDocsModel.PROP_EDITORURL, driveFile.getAlternateLink());
+            aspectProperties.put(GoogleDocsModel.PROP_DRIVE_WORKING_FOLDER, driveFile.getParents().get(0).getId());
+            if (fileRevision != null)
+            {
+                aspectProperties.put(GoogleDocsModel.PROP_REVISION_ID, fileRevision.getId());
+            }
+            if (!nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
+            {
+                nodeService.addAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE, aspectProperties);
+            }
+            else
+            {
+                for (Map.Entry<QName, Serializable> prop : aspectProperties.entrySet())
+                {
+                    nodeService.setProperty(nodeRef, prop.getKey(), prop.getValue());
+                }
+            }
             log.debug("Resource Id: " + aspectProperties.get(GoogleDocsModel.PROP_RESOURCE_ID));
             log.debug("Editor Url:" + aspectProperties.get(GoogleDocsModel.PROP_EDITORURL));
+            log.debug("Revision Id: "
+                      + ((fileRevision != null) ? aspectProperties.get(GoogleDocsModel.PROP_REVISION_ID)
+                                               : "No file revision provided"));
         }
         finally
         {
@@ -1181,6 +1476,12 @@ public class GoogleDocsServiceImpl
     }
 
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.alfresco.integrations.google.docs.service.GoogleDocsService#unDecorateNode(org.alfresco.service.cmr.repository.NodeRef)
+     */
     public void unDecorateNode(NodeRef nodeRef)
     {
         log.debug("Remove Google Docs aspect from " + nodeRef);
@@ -1199,22 +1500,36 @@ public class GoogleDocsServiceImpl
     }
 
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.alfresco.integrations.google.docs.service.GoogleDocsService#lockNode(org.alfresco.service.cmr.repository.NodeRef)
+     */
     public void lockNode(NodeRef nodeRef)
     {
-        log.debug("Lock Node " + nodeRef + " for Google Docs Editing");
-        behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
-        try
+        if (nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_LOCKED) == null || 
+                new Boolean(false).equals(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_LOCKED)))
         {
-            nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_LOCKED, true);
-            lockservice.lock(nodeRef, LockType.READ_ONLY_LOCK);
-        }
-        finally
-        {
-            behaviourFilter.enableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
+            log.debug("Lock Node " + nodeRef + " for Google Docs Editing");
+            behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
+            try
+            {
+                nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_LOCKED, true);
+                lockservice.lock(nodeRef, LockType.READ_ONLY_LOCK);
+            }
+            finally
+            {
+                behaviourFilter.enableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
+            }
         }
     }
 
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.alfresco.integrations.google.docs.service.GoogleDocsService#unlockNode(org.alfresco.service.cmr.repository.NodeRef)
+     */
     public void unlockNode(NodeRef nodeRef)
     {
         log.debug("Unlock Node " + nodeRef + " from Google Docs Editing");
@@ -1242,8 +1557,9 @@ public class GoogleDocsServiceImpl
     {
 
         boolean locked = false;
+        Boolean isNodeLocked = (Boolean)nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_LOCKED);
 
-        if ((Boolean)nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_LOCKED))
+        if (isNodeLocked != null && isNodeLocked.booleanValue())
         {
             LockStatus lockStatus = lockservice.getLockStatus(nodeRef);
             if (lockStatus.equals(LockStatus.NO_LOCK))
@@ -1350,7 +1666,8 @@ public class GoogleDocsServiceImpl
 
         if (matcher.find())
         {
-            name = name.substring(0, name.length() - 1);
+            //append the x needed in the filename
+            name = name.concat("x");
         }
         else
         {
@@ -1418,12 +1735,12 @@ public class GoogleDocsServiceImpl
             }
         }
 
-        //Get the last known node with the same name (+number) in the same folder
+        // Get the last known node with the same name (+number) in the same folder
         NodeRef lastDup = findLastDuplicate(nodeRef, name);
 
         if (lastDup != null)
         {
-            //if it is not the same file increment (or add number to) the filename
+            // if it is not the same file increment (or add number to) the filename
             if (!lastDup.equals(fileInfo.getNodeRef()))
             {
                 name = filenameUtil.incrementFileName(fileFolderService.getFileInfo(lastDup).getName(), fileInfo.getContentData().getMimetype());
@@ -1442,11 +1759,10 @@ public class GoogleDocsServiceImpl
     public boolean hasConcurrentEditors(NodeRef nodeRef)
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
-            GoogleDocsServiceException,
-            IOException
+            GoogleDocsServiceException
     {
         log.debug("Check for Concurrent Editors (Edits that have occured in the last " + idleThreshold + " seconds)");
-        DocsService docsService = getDocsService(getConnection());
+        DriveOperations driveOperations = getDriveOperations(getConnection());
 
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
 
@@ -1454,27 +1770,23 @@ public class GoogleDocsServiceImpl
 
         try
         {
-            RevisionFeed revisionFeed = docsService.getFeed(new URL(GoogleDocsConstants.URL_BASE_FEED + "/"
-                                                                    + resourceID.substring(resourceID.lastIndexOf(':') + 1)
-                                                                    + "/revisions"), RevisionFeed.class);
+            List<FileRevision> fileRevisionList = driveOperations.getRevisions(resourceID.substring(resourceID.lastIndexOf(':') + 1));
 
-            List<RevisionEntry> revisionList = revisionFeed.getEntries();
-
-            if (revisionList.size() > 1)
+            if (fileRevisionList.size() > 1)
             {
                 log.debug("Revisions Found");
-                Collections.sort(revisionList, new RevisionEntryComparator());
+                Collections.sort(fileRevisionList, Collections.reverseOrder(new FileRevisionComparator()));
 
-                // Find any revisions occuring within the last 'idleThreshold'
+                // Find any revisions occurring within the last 'idleThreshold'
                 // seconds
-                List<RevisionEntry> workingList = new ArrayList<RevisionEntry>();
+                List<FileRevision> workingList = new ArrayList<FileRevision>();
 
                 Calendar bufferTime = Calendar.getInstance();
                 bufferTime.add(Calendar.SECOND, -idleThreshold);
 
-                for (RevisionEntry entry : revisionList)
+                for (FileRevision entry : fileRevisionList)
                 {
-                    if (new Date(entry.getUpdated().getValue()).after(new Date(bufferTime.getTimeInMillis())))
+                    if (entry.getModifiedDate().after(new Date(bufferTime.getTimeInMillis())))
                     {
                         workingList.add(entry);
                     }
@@ -1493,14 +1805,14 @@ public class GoogleDocsServiceImpl
                     // Filter the current user from the list
                     for (int i = workingList.size() - 1; i >= 0; i--)
                     {
-                        RevisionEntry revisionEntry = workingList.get(i);
-                        String email = getUserMetadata().getAuthors().get(0).getEmail();
+                        FileRevision fileRevision = workingList.get(i);
+                        String name = getGoogleUserProfile().getName();
 
                         // if there is no author -- the entry is the initial
                         // creation
-                        if (revisionEntry.getAuthors().size() > 0)
+                        if (fileRevision.getLastModifyingUserName() != null)
                         {
-                            if (revisionEntry.getAuthors().get(0).getEmail().equals(email))
+                            if (fileRevision.getLastModifyingUserName().equals(name))
                             {
                                 workingList.remove(i);
                             }
@@ -1523,19 +1835,19 @@ public class GoogleDocsServiceImpl
             }
             else
             {
-                String email = getUserMetadata().getAuthors().get(0).getEmail();
+                String name = getGoogleUserProfile().getName();
 
                 // if the authors list is empty -- the author was the original
                 // creator and it is the initial copy
-                if (!revisionList.get(0).getAuthors().isEmpty())
+                if (fileRevisionList.get(0).getLastModifyingUserName() != null)
                 {
 
-                    if (!revisionList.get(0).getAuthors().get(0).getEmail().equals(email))
+                    if (!fileRevisionList.get(0).getLastModifyingUserName().equals(name))
                     {
                         Calendar bufferTime = Calendar.getInstance();
                         bufferTime.add(Calendar.SECOND, -idleThreshold);
 
-                        if (new Date(revisionList.get(0).getUpdated().getValue()).before(new Date(bufferTime.getTimeInMillis())))
+                        if (fileRevisionList.get(0).getModifiedDate().before(new Date(bufferTime.getTimeInMillis())))
                         {
                             log.debug("Revisions not made by current user found.");
                             concurrentChange = true;
@@ -1545,13 +1857,9 @@ public class GoogleDocsServiceImpl
             }
 
         }
-        catch (IOException ioe)
+        catch (HttpStatusCodeException hsce)
         {
-            throw ioe;
-        }
-        catch (ServiceException se)
-        {
-            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
         }
 
         log.debug("Concurrent Edits: " + concurrentChange);
@@ -1559,21 +1867,168 @@ public class GoogleDocsServiceImpl
     }
 
 
-    public DocumentListEntry getDocumentListEntry(String resourceID)
+    public DriveFile getDriveFile(String resourceID)
+        throws GoogleDocsServiceException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException
+    {
+        log.debug("Get Document list entry for resource " + resourceID);
+        DriveOperations driveOperations = getDriveOperations(getConnection());
+
+        DriveFile driveFile = null;
+
+        try
+        {
+            driveFile = driveOperations.getFile(resourceID.substring(resourceID.lastIndexOf(':') + 1));
+        }
+        catch (HttpStatusCodeException hsce)
+        {
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
+        }
+
+        return driveFile;
+    }
+
+
+    private String getExportLink(DriveFile driveFile, String mimetype)
+    {
+        Map<String, String> exportLinks = driveFile.getExportLinks();
+
+        return exportLinks.get(validateMimeType(mimetype));
+    }
+
+
+    private InputStream getFileInputStream(DriveFile driveFile, String mimetype)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException
+    {
+        RestTemplate restTemplate = new RestTemplate();
+
+        String url = getExportLink(driveFile, mimetype);
+        log.debug("Google Export Format (mimetype) link: " + url);
+        
+        if (url == null)
+        {
+            throw new GoogleDocsServiceException("Google Docs Export Format not found.", HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "Bearer " + getConnection().getApi().getAccessToken());
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<String, Object>();
+        HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<MultiValueMap<String, Object>>(body, headers);
+
+        ResponseEntity<byte[]> response = restTemplate.exchange(url, HttpMethod.GET, entity, byte[].class);
+
+        return new ByteArrayInputStream(response.getBody());
+    }
+
+
+    public GoogleUserProfile getGoogleUserProfile()
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException
+    {
+        log.debug("Get Google Docs user metadata");
+        UserInfoOperations userInfoOperations = getConnection().getApi().userOperations();
+
+        GoogleUserProfile googleUserProfile = null;
+
+        try
+        {
+            googleUserProfile = userInfoOperations.getUserProfile();
+        }
+        catch (HttpStatusCodeException hsce)
+        {
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
+        }
+
+        return googleUserProfile;
+    }
+
+
+    private void postActivity(NodeRef nodeRef)
+        throws JSONException
+    {
+        log.debug("Create Activity Stream Entry");
+        if (personService.personExists(AuthenticationUtil.getRunAsUser()))
+        {
+            try
+            {
+                SiteInfo siteInfo = siteService.getSite(nodeRef);
+                if (siteInfo != null)
+                {
+                    String activityType = FILE_UPDATED;
+                    if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+                    {
+                        activityType = FILE_ADDED;
+                    }
+
+                    String siteId = siteInfo.getShortName();
+
+                    JSONObject jsonActivityData = new JSONObject();
+
+                    PersonInfo personInfo = personService.getPerson(personService.getPerson(AuthenticationUtil.getRunAsUser(), false));
+
+                    jsonActivityData.put("firstName", personInfo.getFirstName());
+                    jsonActivityData.put("lastName", personInfo.getLastName());
+                    jsonActivityData.put("title", fileFolderService.getFileInfo(nodeRef).getName());
+                    jsonActivityData.put("page", "document-details?nodeRef=" + nodeRef.toString());
+                    jsonActivityData.put("nodeRef", nodeRef.toString());
+
+                    if (AuthenticationUtil.isMtEnabled())
+                    {
+                        // MT share - add tenantDomain
+                        jsonActivityData.put("tenantDomain", tenantService.getCurrentUserDomain());
+                    }
+
+                    activityService.postActivity(activityType, siteId, GoogleDocsService.class.getSimpleName(), jsonActivityData.toString());
+                    log.debug("Post Activity Stream Entry -- type:" + activityType + "; site: " + siteId + "; Data: "
+                              + jsonActivityData);
+                }
+                else
+                {
+                    log.debug("Activity stream entry not created -- node is not inside a site.");
+                }
+            }
+            catch (JSONException jsonException)
+            {
+                throw jsonException;
+            }
+        }
+        else
+        {
+            log.debug("Activity stream entry not created -- user does not exist.");
+        }
+    }
+
+
+    /**
+     * Return a GData resource list entry representing the item with the given ID
+     * 
+     * TODO: Migrate fully to Google Drive API and Spring Social Google when the Drive API supports all the capabilities we require
+     * 
+     * @param resourceID Identifier for the file on Google
+     * @return
+     * @throws IOException
+     * @throws GoogleDocsServiceException
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     */
+    private DocumentListEntry getDocumentListEntry(String resourceID)
         throws IOException,
             GoogleDocsServiceException,
             GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException
     {
         log.debug("Get Document list entry for resource " + resourceID);
-        DocsService docsService = getDocsService(getConnection());
-
         DocumentListEntry documentListEntry = null;
 
         try
         {
-            documentListEntry = docsService.getEntry(new URL(GoogleDocsConstants.URL_BASE_FEED + "/"
-                                                             + resourceID.substring(resourceID.lastIndexOf(':') + 1)), DocumentListEntry.class);
+            documentListEntry = getDocsService(getConnection()).getEntry(new URL(GoogleDocsConstants.URL_BASE_FEED
+                                                                                 + "/"
+                                                                                 + resourceID.substring(resourceID.lastIndexOf(':') + 1)), DocumentListEntry.class);
         }
         catch (IOException ioe)
         {
@@ -1587,20 +2042,112 @@ public class GoogleDocsServiceImpl
     }
 
 
-    public MetadataEntry getUserMetadata()
+    /**
+     * Construct a GData service instance for use by methods which require this.
+     * 
+     * <p>
+     * It is expected that the user is authenticated when this method is called. The authentication from the supplied connection
+     * will be applied to the service.
+     * </p>
+     * 
+     * <p>
+     * TODO: Migrate fully to Google Drive API and Spring Social Google when the Drive API supports all the capabilities we require
+     * <p>
+     * 
+     * @return GData Service instance
+     */
+    private DocsService getDocsService(Connection<Google> connection)
+        throws GoogleDocsServiceException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException
+    {
+        DocsService docsService = new DocsService(GoogleDocsConstants.APPLICATION_NAME);
+
+        Google google = connection.getApi(); // after authentication
+        google.applyAuthentication(docsService);
+
+        log.debug("Google Docs Client initiated");
+        return docsService;
+
+    }
+
+
+    /**
+     * Retrieve the file's ACL from Google and return a list of users who are listed in the ACL along with their roles.
+     * 
+     * @param fileId Identifier for the file on Google
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     * @throws GoogleDocsServiceException
+     * @throws IOException
+     * @return Map where each represents a username and the value the role name
+     */
+    private List<GooglePermission> getFilePermissions(String resourceId)
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
             GoogleDocsServiceException,
             IOException
     {
-        log.debug("Get Google Docs user metadata");
-        DocsService docsService = getDocsService(getConnection());
+        if (log.isDebugEnabled())
+        {
+            log.error("Looking up Google user profile");
+        }
+        GoogleUserProfile profile = getGoogleUserProfile();
 
-        MetadataEntry metadataEntry = null;
+        log.debug("Fetching permissions for file with resource ID " + resourceId);
+
+        // TODO The Drive API does not yet return the email/username of document collborators.
+        // Use the Drive API when they make this possible!
+
+        // DriveOperations driveOperations = getDriveOperations(getConnection());
+        // List<UserPermission> permissions = driveOperations.getPermissions(fileId);
+        // Get the googleMetadata to reference the Node
+        // ArrayList<String> permissionsList = new ArrayList<String>(permissions.size());
+        // for (UserPermission userPermission : permissions)
+        // {
+        // permissionsList.add(userPermission.getName() + "|" + userPermission.getRole().name());
+        // }
+
+        List<GooglePermission> permissionsMap = new ArrayList<GooglePermission>();
 
         try
         {
-            metadataEntry = docsService.getEntry(new URL(GoogleDocsConstants.METADATA_URL), MetadataEntry.class);
+            DocumentListEntry documentListEntry = getDocumentListEntry(resourceId);
+            AclFeed aclFeed = getDocsService(getConnection()).getFeed(new URL(documentListEntry.getAclFeedLink().getHref()), AclFeed.class);
+            for (AclEntry entry : aclFeed.getEntries())
+            {
+                String role = entry.getRole().getValue(), scope = entry.getScope().getValue();
+                Type type = entry.getScope().getType();
+                String xmlBody = entry.getXmlBlob().getBlob();
+                if (xmlBody != null)
+                {
+                    log.debug("Found XML body: " + entry.getXmlBlob().getBlob());
+                }
+                if (xmlBody != null && xmlBody.indexOf("<gAcl:additionalRole value='commenter'/>") > -1 &&
+                        role.equals(AclRole.READER.getValue()))
+                {
+                    role = AclRole.COMMENTER.getValue();
+                }
+                if (type.equals(Type.USER) && profile.getEmail().equals(scope))
+                {
+                    if (log.isDebugEnabled())
+                    {
+                        log.debug("Skipping permission for owner '" + scope + "' (" + type + ") as '" + role
+                                  + "' which is implicit");
+                    }
+                }
+                else
+                {
+                    if (log.isDebugEnabled())
+                    {
+                        log.debug("Adding permission for '" + scope + "' (" + type + ") as '" + role + "'");
+                    }
+                    // Include the scope (authority identifier, e.g. email address), type (e.g. "user") and role (e.g. "owner")
+                    // Store the type lowercase for consistency with the Drive API v1.0 permission entity
+                    // (https://developers.google.com/drive/v2/reference/permissions)
+                    permissionsMap.add(new GooglePermission(scope, type.name().toLowerCase(), role));
+                }
+            }
         }
         catch (IOException ioe)
         {
@@ -1611,62 +2158,386 @@ public class GoogleDocsServiceImpl
             throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
         }
 
-        return metadataEntry;
+        return permissionsMap;
     }
 
 
-    private void postActivity(NodeRef nodeRef)
-        throws JSONException
+    /**
+     * Look up information from Google that describes the current state of the document, and store this into the repository.
+     * 
+     * <p>
+     * It is intended that this should be called prior to deleting the document from Google, and allows the state to be re-applied
+     * if the content is subsequently edited again in Google.
+     * </p>
+     * 
+     * <p>
+     * At present this stores only information on which Google users were explicitly listed as collaborators on the document.
+     * </p>
+     * 
+     * @param nodeRef Noderef identifying the file in the repository
+     * @param fileId Identifier for the file on Google
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     * @throws GoogleDocsServiceException
+     * @throws IOException
+     */
+    private void saveSharedInfo(NodeRef nodeRef, String resourceId)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException,
+            IOException
     {
-        log.debug("Create Activity Stream Entry");
-        if (personService.personExists(AuthenticationUtil.getRunAsUser()))
+        List<GooglePermission> permissionsMap = getFilePermissions(resourceId);
+        Serializable permissionsList = buildPermissionsPropertyValue(permissionsMap);
+        Map<QName, Serializable> aspectProperties = new HashMap<QName, Serializable>();
+        aspectProperties.put(GoogleDocsModel.PROP_PERMISSIONS, permissionsList);
+        log.debug("File permissions: " + permissionsList);
+
+        behaviourFilter.disableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
+        try
         {
-            try
+            if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_SHARED_IN_GOOGLE))
             {
-                String activityType = FILE_UPDATED;
-                if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
-                {
-                    activityType = FILE_ADDED;
-                }
-
-                String siteId = siteService.getSite(nodeRef).getShortName();
-
-                JSONObject jsonActivityData = new JSONObject();
-
-                // Using local getPerson ... not cloud
-                // personservice.getPerson(nodeRef) which returns personInfo object
-                PersonInfo personInfo = getPerson(personService.getPerson(AuthenticationUtil.getRunAsUser(), false));
-
-                jsonActivityData.put("firstName", personInfo.getFirstName());
-                jsonActivityData.put("lastName", personInfo.getLastName());
-                jsonActivityData.put("title", fileFolderService.getFileInfo(nodeRef).getName());
-                jsonActivityData.put("page", "document-details?nodeRef=" + nodeRef.toString());
-                jsonActivityData.put("nodeRef", nodeRef.toString());
-
-                if (AuthenticationUtil.isMtEnabled())
-                {
-                    // MT share - add tenantDomain
-                    jsonActivityData.put("tenantDomain", tenantService.getCurrentUserDomain());
-                }
-
-                activityService.postActivity(activityType, siteId, GoogleDocsService.class.getSimpleName(), jsonActivityData.toString());
-                log.debug("Post Activity Stream Entry -- type:" + activityType + "; site: " + siteId + "; Data: "
-                          + jsonActivityData);
+                log.debug("Updating Shared Google Docs permissions on " + nodeRef);
+                nodeService.setProperty(nodeRef, GoogleDocsModel.PROP_PERMISSIONS, permissionsList);
             }
-            catch (JSONException jsonException)
+            else
             {
-                throw jsonException;
+                log.debug("Adding Shared Google Docs aspect to " + nodeRef);
+                nodeService.addAspect(nodeRef, GoogleDocsModel.ASPECT_SHARED_IN_GOOGLE, aspectProperties);
             }
-        } else {
-            log.debug("Activity stream entry not created -- user does not exist.");
+        }
+        finally
+        {
+            behaviourFilter.enableBehaviour(nodeRef, ContentModel.ASPECT_VERSIONABLE);
         }
     }
 
 
-    private PersonInfo getPerson(NodeRef nodeRef)
+    public Serializable buildPermissionsPropertyValue(List<GooglePermission> permissions)
     {
-        return new PersonInfo(nodeRef, AuthenticationUtil.getRunAsUser(), nodeService.getProperty(nodeRef, ContentModel.PROP_FIRSTNAME).toString(), nodeService.getProperty(nodeRef, ContentModel.PROP_LASTNAME).toString());
+        if (permissions == null)
+        {
+            return null;
+        }
+        ArrayList<String> permissionsList = new ArrayList<String>(permissions.size());
+        for (GooglePermission p : permissions)
+        {
+            permissionsList.add(p.getAuthorityType() + "|" + p.getAuthorityId() + "|" + p.getRoleName());
+        }
+        return permissionsList;
     }
 
 
+    /**
+     * List the saved Google permissions currently stored for this object.
+     * 
+     * @param nodeRef Noderef identifying the file in the repository
+     * @return A list of permissions objects stored for this node, which may be an empty list, or null if nothing is stored
+     */
+    public List<GooglePermission> getGooglePermissions(NodeRef nodeRef, QName qName)
+    {
+        if (log.isDebugEnabled())
+        {
+            log.error("Loading Google permissions for " + nodeRef);
+        }
+        @SuppressWarnings("unchecked")
+        List<String> propVals = (List<String>)nodeService.getProperty(nodeRef, qName);
+        if (propVals != null)
+        {
+            List<GooglePermission> permissions = new ArrayList<GooglePermission>(propVals.size());
+            for (String val : propVals)
+            {
+                try
+                {
+                    if (log.isDebugEnabled())
+                    {
+                        log.error("Adding Google permission '" + val + "' for " + nodeRef);
+                    }
+                    permissions.add(GooglePermission.fromString(val));
+                }
+                catch (IllegalArgumentException e)
+                {
+                    log.error("Skipping bad permission '" + val + "'");
+                }
+            }
+            return permissions;
+        }
+        else
+        {
+            if (log.isDebugEnabled())
+            {
+                log.error("No Google permissions found for " + nodeRef);
+            }
+        }
+        return null;
+    }
+
+
+    @Override
+    public void addRemotePermissions(DriveFile driveFile, List<GooglePermission> permissions, boolean sendEmail)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException
+    {
+        if (log.isDebugEnabled())
+        {
+            log.debug("Adding permissions on item " + driveFile.getId() + " in Google");
+            if (sendEmail)
+            {
+                log.debug("Notification emails will be sent");
+            }
+            else
+            {
+                log.debug("Notification emails will NOT be sent");
+            }
+        }
+
+        DriveOperations driveOperations = getDriveOperations(getConnection());
+        for (GooglePermission p : permissions)
+        {
+            String roleName = p.getRoleName(), authorityType = p.getAuthorityType();
+            PermissionRole role;
+            PermissionType type;
+            List<AdditionalRole> additionalRoles = new ArrayList<AdditionalRole>();
+            if (roleName.equals(PERMISSION_ROLE_READER))
+            {
+                role = PermissionRole.READER;
+            }
+            else if (roleName.equals(PERMISSION_ROLE_WRITER))
+            {
+                role = PermissionRole.WRITER;
+            }
+            else if (roleName.equals(PERMISSION_ROLE_OWNER))
+            {
+                role = PermissionRole.OWNER;
+            }
+            else if (roleName.equals(PERMISSION_ROLE_COMMENTER))
+            {
+                role = PermissionRole.READER;
+                additionalRoles.add(AdditionalRole.COMMENTER);
+            }
+            else
+            {
+                throw new IllegalArgumentException("Bad permission role " + roleName);
+            }
+
+            if (authorityType.equals(PERMISSION_TYPE_USER))
+            {
+                type = PermissionType.USER;
+            }
+            else if (authorityType.equals(PERMISSION_TYPE_GROUP))
+            {
+                type = PermissionType.GROUP;
+            }
+            else if (authorityType.equals(PERMISSION_TYPE_DOMAIN))
+            {
+                type = PermissionType.DOMAIN;
+            }
+            else if (authorityType.equals(PERMISSION_TYPE_ANYONE))
+            {
+                type = PermissionType.ANYONE;
+            }
+            else
+            {
+                throw new IllegalArgumentException("Bad permission type " + authorityType);
+            }
+            if (log.isDebugEnabled())
+            {
+                log.debug("Adding permission " + role + " for " + type + " " + p.getAuthorityId() + "");
+            }
+
+            driveOperations.addPermission(driveFile.getId(), new UserPermission(role, type, additionalRoles, p.getAuthorityId()), sendEmail);
+        }
+    }
+
+
+    private DriveFile createWorkingDirectory(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException
+    {
+        DriveFile driveFile = null;
+
+        // Get or create the parent folder
+        if (googleDriveFolderExists(GoogleDocsConstants.ROOT_FOLDER_ID, GoogleDocsConstants.ALF_TEMP_FOLDER))
+        {
+            List<DriveFile> driveFiles = getFolder(GoogleDocsConstants.ROOT_FOLDER_ID, GoogleDocsConstants.ALF_TEMP_FOLDER);
+
+            // Look for our description if there is more than one file returned
+            if (!driveFiles.isEmpty() && driveFiles.size() > 1)
+            {
+                for (DriveFile file : driveFiles)
+                {
+                    if (StringUtils.equals(file.getDescription(), GoogleDocsConstants.ALF_TEMP_FOLDER_DESC))
+                    {
+                        driveFile = file;
+                        break;
+                    }
+                }
+
+                if (driveFile == null)
+                {
+                    driveFile = createFolder(GoogleDocsConstants.ROOT_FOLDER_ID, GoogleDocsConstants.ALF_TEMP_FOLDER);
+
+                    DriveOperations driveOperations = getDriveOperations(getConnection());
+                    driveFile = driveOperations.updateFileMetadata(driveFile.getId(), null, null, GoogleDocsConstants.ALF_TEMP_FOLDER_DESC);
+                }
+            }
+            else if (!driveFiles.isEmpty() && driveFiles.size() == 1)
+            {
+                driveFile = driveFiles.get(0);
+            }
+        } else {
+            driveFile = createFolder(GoogleDocsConstants.ROOT_FOLDER_ID, GoogleDocsConstants.ALF_TEMP_FOLDER);
+
+            DriveOperations driveOperations = getDriveOperations(getConnection());
+            driveFile = driveOperations.updateFileMetadata(driveFile.getId(), null, null, GoogleDocsConstants.ALF_TEMP_FOLDER_DESC);
+        }
+
+        // create working directory
+        driveFile = createFolder(driveFile.getId(), nodeRef.getId());
+
+        return driveFile;
+    }
+
+
+    private void deleteWorkingDirectory(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException
+    {
+        if (nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_DRIVE_WORKING_FOLDER) != null
+            && StringUtils.isNotBlank(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_DRIVE_WORKING_FOLDER).toString()))
+        {
+            String id = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_DRIVE_WORKING_FOLDER).toString();
+            deleteFolder(id);
+        }
+    }
+
+
+    /**
+     * Does a folder with the name and in the parent folder exist. (Note: there may be more than one)
+     * 
+     * @param parentId
+     * @param folderName
+     * @return
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     * @throws GoogleDocsServiceException
+     */
+    private boolean googleDriveFolderExists(String parentId, String folderName)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException
+    {
+        boolean exists = false;
+
+        List<DriveFile> driveFiles = getFolder(parentId, folderName);
+
+        if (!driveFiles.isEmpty())
+        {
+            exists = true;
+        }
+
+        return exists;
+    }
+
+
+    /**
+     * Create new folder in Google Drive
+     * 
+     * @param parentId
+     * @param folderName
+     * @return
+     * @throws GoogleDocsServiceException
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     */
+    private DriveFile createFolder(String parentId, String folderName)
+        throws GoogleDocsServiceException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException
+    {
+        DriveFile driveFile = null;
+        DriveOperations driveOperations = getDriveOperations(getConnection());
+
+        try
+        {
+            driveFile = driveOperations.createFolder(parentId, folderName);
+            driveFile = driveOperations.hide(driveFile.getId());
+        }
+        catch (HttpStatusCodeException hsce)
+        {
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce, hsce.getStatusCode().value());
+        }
+
+        return driveFile;
+    }
+
+
+    private List<DriveFile> getFolder(String parentId, String folderName)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException
+    {
+
+        List<DriveFile> driveFiles = new ArrayList<DriveFile>();
+        DriveFilesPage page = null;
+        DriveOperations driveOperations = getDriveOperations(getConnection());
+
+        try
+        {
+            do
+            {
+                if (page == null)
+                {
+                    page = driveOperations.driveFileQuery().titleIs(folderName).isFolder().getPage();
+                }
+                else
+                {
+                    page = driveOperations.driveFileQuery().fromPage(page.getNextPageToken()).getPage();
+                }
+
+                List<DriveFile> childfolders = page.getItems();
+                if (childfolders != null && !childfolders.isEmpty())
+                {
+                    driveFiles.addAll(childfolders);
+                }
+            }
+            while (page.getNextPageToken() != null);
+        }
+        catch (HttpStatusCodeException hsce)
+        {
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce, hsce.getStatusCode().value());
+        }
+
+        return driveFiles;
+    }
+
+
+    /**
+     * Delete Google Drive Folder
+     * 
+     * @param folderId
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     * @throws GoogleDocsServiceException
+     */
+    private void deleteFolder(String folderId)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException
+    {
+        DriveOperations driveOperations = getDriveOperations(getConnection());
+
+        try
+        {
+            driveOperations.delete(folderId);
+        }
+        catch (HttpStatusCodeException hsce)
+        {
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce, hsce.getStatusCode().value());
+        }
+    }
 }

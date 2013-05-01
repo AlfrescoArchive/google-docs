@@ -36,7 +36,9 @@ import org.alfresco.repo.version.Version2Model;
 import org.alfresco.service.cmr.dictionary.ConstraintException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
+import org.alfresco.service.cmr.version.Version;
 import org.alfresco.service.cmr.version.VersionService;
 import org.alfresco.service.cmr.version.VersionType;
 import org.alfresco.service.transaction.TransactionService;
@@ -58,7 +60,7 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
 public class SaveContent
     extends GoogleDocsWebScripts
 {
-    private static final Log    log                   = LogFactory.getLog(SaveContent.class);
+    private static final Log    log                      = LogFactory.getLog(SaveContent.class);
 
     private GoogleDocsService   googledocsService;
     private NodeService         nodeService;
@@ -66,12 +68,14 @@ public class SaveContent
     private TransactionService  transactionService;
     private SiteService         siteService;
 
-    private static final String JSON_KEY_NODEREF      = "nodeRef";
-    private static final String JSON_KEY_MAJORVERSION = "majorVersion";
-    private static final String JSON_KEY_DESCRIPTION  = "description";
-    private static final String JSON_KEY_OVERRIDE     = "override";
+    private static final String JSON_KEY_NODEREF         = "nodeRef";
+    private static final String JSON_KEY_MAJORVERSION    = "majorVersion";
+    private static final String JSON_KEY_DESCRIPTION     = "description";
+    private static final String JSON_KEY_OVERRIDE        = "override";
+    private static final String JSON_KEY_REMOVEFROMDRIVE = "removeFromDrive";
 
-    private static final String MODEL_SUCCESS         = "success";
+    private static final String MODEL_SUCCESS            = "success";
+    private static final String MODEL_VERSION            = "version";
 
 
     public void setGoogledocsService(GoogleDocsService googledocsService)
@@ -119,7 +123,8 @@ public class SaveContent
 
         try
         {
-            if (siteService.isMember(siteService.getSite(nodeRef).getShortName(), AuthenticationUtil.getRunAsUser()))
+            SiteInfo siteInfo = siteService.getSite(nodeRef);
+            if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
             {
 
                 if (!(Boolean)map.get(JSON_KEY_OVERRIDE))
@@ -132,6 +137,10 @@ public class SaveContent
                     }
                 }
 
+                // Should the content be removed from the users Google Drive Account
+                boolean removeFromDrive = (map.get(JSON_KEY_REMOVEFROMDRIVE) != null) ? (Boolean)map.get(JSON_KEY_REMOVEFROMDRIVE)
+                                                                                     : true;
+
                 String contentType = googledocsService.getContentType(nodeRef);
                 log.debug("NodeRef: " + nodeRef + "; ContentType: " + contentType);
                 if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
@@ -139,7 +148,15 @@ public class SaveContent
                     if (googledocsService.isGoogleDocsLockOwner(nodeRef))
                     {
                         googledocsService.unlockNode(nodeRef);
-                        googledocsService.getDocument(nodeRef);
+
+                        if (removeFromDrive)
+                        {
+                            googledocsService.getDocument(nodeRef);
+                        }
+                        else
+                        {
+                            googledocsService.getDocument(nodeRef, removeFromDrive);
+                        }
                         success = true; // TODO Make getDocument return boolean
                     }
                     else
@@ -152,7 +169,15 @@ public class SaveContent
                     if (googledocsService.isGoogleDocsLockOwner(nodeRef))
                     {
                         googledocsService.unlockNode(nodeRef);
-                        googledocsService.getSpreadSheet(nodeRef);
+
+                        if (removeFromDrive)
+                        {
+                            googledocsService.getSpreadSheet(nodeRef);
+                        }
+                        else
+                        {
+                            googledocsService.getSpreadSheet(nodeRef, removeFromDrive);
+                        }
                         success = true; // TODO Make getSpreadsheet return
                                         // boolean
                     }
@@ -166,7 +191,15 @@ public class SaveContent
                     if (googledocsService.isGoogleDocsLockOwner(nodeRef))
                     {
                         googledocsService.unlockNode(nodeRef);
-                        googledocsService.getPresentation(nodeRef);
+
+                        if (removeFromDrive)
+                        {
+                            googledocsService.getPresentation(nodeRef);
+                        }
+                        else
+                        {
+                            googledocsService.getPresentation(nodeRef, removeFromDrive);
+                        }
                         success = true; // TODO Make getPresentation return
                                         // boolean
                     }
@@ -196,7 +229,15 @@ public class SaveContent
                 }
 
                 log.debug("Version Node:" + nodeRef + "; Version Properties: " + versionProperties);
-                versionService.createVersion(nodeRef, versionProperties);
+                Version version = versionService.createVersion(nodeRef, versionProperties);
+                
+                model.put(MODEL_VERSION, version.getVersionLabel());
+                
+                if (!removeFromDrive)
+                {
+                    googledocsService.lockNode(nodeRef);
+                }
+                
             }
             else
             {
@@ -222,10 +263,6 @@ public class SaveContent
         catch (GoogleDocsRefreshTokenException gdrte)
         {
             throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage());
-        }
-        catch (IOException ioe)
-        {
-            throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
         }
         catch (ConstraintException ce)
         {
@@ -269,6 +306,10 @@ public class SaveContent
             });
 
             throw new WebScriptException(HttpStatus.SC_FORBIDDEN, ade.getMessage(), ade);
+        }
+        catch (Exception e)
+        {
+            throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage(), e);
         }
 
         model.put(MODEL_SUCCESS, success);
@@ -326,6 +367,11 @@ public class SaveContent
                                                                                             : VersionType.MINOR);
                     result.put(JSON_KEY_DESCRIPTION, json.getString(JSON_KEY_DESCRIPTION));
                 }
+                
+                if (json.has(JSON_KEY_REMOVEFROMDRIVE))
+                {
+                    result.put(JSON_KEY_REMOVEFROMDRIVE, json.getBoolean(JSON_KEY_REMOVEFROMDRIVE));
+                }  
             }
         }
         catch (final IOException ioe)

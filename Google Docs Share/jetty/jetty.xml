@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Mort Bay Consulting//DTD Configure//EN" "http://jetty.mortbay.org/configure.dtd">
+
+<Configure id="Server" class="org.mortbay.jetty.Server">
+    <Call name="addConnector">
+        <Arg>
+            <New class="org.mortbay.jetty.nio.SelectChannelConnector">
+                <Set name="host">
+                    <Property name="jetty.host"
+                       default="${share.jetty.host}" />
+                </Set>
+                <Set name="port">
+                    <Property name="jetty.port"
+                       default="${share.jetty.port}" />
+                </Set>
+            </New>
+        </Arg>
+    </Call>
+</Configure>

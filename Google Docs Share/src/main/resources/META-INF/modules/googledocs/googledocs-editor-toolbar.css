@@ -20,6 +20,19 @@
 	-o-border-image: url("images/btn-border.png") 1 stretch; /* Opera */
 }
 
+.gd-button-mini {
+   text-align: center;
+   white-space: nowrap;
+   height: 42px;
+   color: #FFFFFF;
+   background-image: url("images/btn-bg.png");
+   border: 1px solid black;
+	border-image: url("images/btn-border.png") 1 stretch;
+	-moz-border-image: url("images/btn-border.png") 1 stretch; /* Firefox */
+	-webkit-border-image: url("images/btn-border.png") 1 stretch; /* Safari and Chrome */
+	-o-border-image: url("images/btn-border.png") 1 stretch; /* Opera */
+}
+
 .gd-button-default {
    background-image: url("images/btn-default-bg.png");
    border-image: url("images/btn-default-border.png") 1 stretch;
@@ -30,6 +43,18 @@
 
 .gd-button:hover {
 	cursor: pointer;
+}
+
+.gd-button-close {
+	text-align: center;
+	white-space: nowrap;
+	background: url("images/x_button.png");
+	height: 42px;
+	width: 20px;
+	background-repeat: no-repeat;
+	margin-top: -18px;
+	margin-left: auto;
+	margin-right: 10px;
 }
 
 .gd-logo {
@@ -45,8 +70,33 @@
 	float: left;
 }
 
-.gddiscard, .gdsave, .before-gdsave {
+.gdclose, .gdsaveTo, .gdsave, .before-gdsave {
    float: right;
+}
+
+.gdversion-dialog {
+}
+
+.gdmessage {
+	text-align: center;
+	vertical-align: middle;
+	font-size: x-large;
+	color: #FFFFFF;
+	overflow: auto;
+	height: 42px;
+	width: 100%;
+}
+
+.gdsave-message {
+	background-color: #82c54f;
+}
+
+.gdsaving-message {
+    background-color: #0077bd;
+}
+
+.gdfailure-message {
+	background-color: #dd807c;
 }
 
 .before-gdsave {
@@ -64,4 +114,8 @@
 .alfresco-share .sticky-wrapper .gdtoolbar button {
 	font-weight: bold;
 	text-shadow: 0 -1px 1px #000000;
+}
+.status-banner {
+	margin-top: 0.75em;
+	padding: 0.5em 1em;
 }

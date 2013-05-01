@@ -1,0 +1,14 @@
+<webscript>
+   <shortname>Is Current Revision</shortname>
+   <description>Is the revision id persisted on the node the same as the latest Google Drive File revision</description>
+   <url>/googledocs/isLatestRevision?nodeRef={nodeRef}</url>
+   <cache>
+    <never>true</never>
+    <public>true</public>
+   </cache>
+   <lifecycle>internal</lifecycle>
+   <authentication>user</authentication>
+   <format default="json" />
+   <transaction>requiresnew</transaction>
+   <family>googledocs</family>
+</webscript>

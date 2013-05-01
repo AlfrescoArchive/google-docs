@@ -47,9 +47,7 @@ import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
-
-import com.google.gdata.data.docs.DocumentListEntry;
-
+import org.springframework.social.google.api.drive.DriveFile;
 
 /**
  * @author Jared Ottley <jared.ottley@alfresco.com>
@@ -107,7 +105,7 @@ public class CreateContent
             log.debug("ContentType: " + contentType + "; Parent: " + parentNodeRef);
 
             FileInfo fileInfo = null;
-            DocumentListEntry documentEntry = null;
+            DriveFile driveFile = null;
             try
             {
                 if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
@@ -115,27 +113,27 @@ public class CreateContent
                     String name = filenameHandler(contentType, parentNodeRef);
                     fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
 
-                    documentEntry = googledocsService.createDocument(fileInfo.getNodeRef());
+                    driveFile = googledocsService.createDocument(fileInfo.getNodeRef());
 
-                    googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+                    googledocsService.decorateNode(fileInfo.getNodeRef(), driveFile, googledocsService.getLatestRevision(driveFile), true);
                 }
                 else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
                 {
                     String name = filenameHandler(contentType, parentNodeRef);
                     fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
 
-                    documentEntry = googledocsService.createSpreadSheet(fileInfo.getNodeRef());
+                    driveFile = googledocsService.createSpreadSheet(fileInfo.getNodeRef());
 
-                    googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+                    googledocsService.decorateNode(fileInfo.getNodeRef(), driveFile, googledocsService.getLatestRevision(driveFile), true);
                 }
                 else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
                 {
                     String name = filenameHandler(contentType, parentNodeRef);
                     fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
 
-                    documentEntry = googledocsService.createPresentation(fileInfo.getNodeRef());
+                    driveFile = googledocsService.createPresentation(fileInfo.getNodeRef());
 
-                    googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+                    googledocsService.decorateNode(fileInfo.getNodeRef(), driveFile, googledocsService.getLatestRevision(driveFile), true);
                 }
                 else
                 {
@@ -169,6 +167,10 @@ public class CreateContent
             catch (IOException ioe)
             {
                 throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
+            }
+            catch (Exception e)
+            {
+                throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage(), e);
             }
 
             googledocsService.lockNode(fileInfo.getNodeRef());

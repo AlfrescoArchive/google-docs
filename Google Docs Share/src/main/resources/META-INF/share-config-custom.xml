@@ -3,6 +3,7 @@
 	   <dependencies>
          <js src="/googledocs/components/documentlibrary/actions-common.js" />
          <js src="/googledocs/components/documentlibrary/actions.js" />
+         <css src="/googledocs/components/documentlibrary/googledocs-actions.css" />
 	   </dependencies>
 	</config>
 	

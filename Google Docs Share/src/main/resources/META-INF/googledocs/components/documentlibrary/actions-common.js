@@ -85,7 +85,8 @@
          userMessage = Alfresco.util.PopupManager.displayMessage({
             displayTime: displayTime,
             text: showSpinner ? '<span class="wait">' + config.text + '</span>' : config.text,
-            noEscape: true
+            noEscape: true,
+            modal: true
          });
          userMessageText = config.text;
       }
@@ -260,7 +261,8 @@
          url: Alfresco.constants.PROXY_URI + "googledocs/authurl",
          dataObj : {
             state: Alfresco.constants.PROXY_URI,
-            override: "true"
+            override: "true",
+            nodeRef: config.nodeRef || ""
          },
          successCallback: {
             fn: function(response) {
@@ -274,6 +276,7 @@
                   {
                      Alfresco.logger.debug("Authorizing using URL: " + response.json.authURL);
                   }
+                  // TODO Must pass authurl response through here
                   Alfresco.GoogleDocs.doOAuth(response.json.authURL, {
                      onComplete: {
                         fn: config.onComplete.fn,
@@ -288,7 +291,7 @@
                }
                else
                {
-                  config.onComplete.fn.call(config.onComplete.scope);
+                  config.onComplete.fn.call(config.onComplete.scope, response);
                }
             },
             scope: this
@@ -355,6 +358,7 @@
          url: config.url,
          method: config.method || "GET",
          dataObj: config.dataObj,
+         requestContentType: config.requestContentType || null,
          successCallback: success,
          failureCallback: failure
       });

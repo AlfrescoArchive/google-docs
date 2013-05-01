@@ -1,0 +1,10 @@
+<webscript>
+	<shortname>Google Docs User Profile</shortname>
+	<description>Return information on the user who is currently authenticated to Google</description>
+	<url>/googledocs/userprofile</url>
+	<lifecycle>internal</lifecycle>
+	<authentication>user</authentication>
+	<format default="json" />
+	<transaction>requiresnew</transaction>
+	<family>googledocs</family>
+</webscript>

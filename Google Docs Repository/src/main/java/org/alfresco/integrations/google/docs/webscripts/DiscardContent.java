@@ -35,6 +35,7 @@ import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransacti
 import org.alfresco.service.cmr.repository.InvalidNodeRefException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.transaction.TransactionService;
 import org.apache.commons.httpclient.HttpStatus;
@@ -47,8 +48,7 @@ import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
-
-import com.google.gdata.data.docs.DocumentListEntry;
+import org.springframework.social.google.api.drive.DriveFile;
 
 
 public class DiscardContent
@@ -109,7 +109,8 @@ public class DiscardContent
 
                 if (!Boolean.valueOf(map.get(JSON_KEY_OVERRIDE).toString()))
                 {
-                    if (siteService.isMember(siteService.getSite(nodeRef).getShortName(), AuthenticationUtil.getRunAsUser()))
+                    SiteInfo siteInfo = siteService.getSite(nodeRef);
+                    if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
                     {
 
                         if (googledocsService.hasConcurrentEditors(nodeRef))
@@ -169,9 +170,9 @@ public class DiscardContent
                             public Object execute()
                                 throws Throwable
                             {
-                                DocumentListEntry documentListEntry = googledocsService.getDocumentListEntry(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString());
+                                DriveFile driveFile = googledocsService.getDriveFile(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString());
                                 googledocsService.unlockNode(nodeRef);
-                                boolean deleted = googledocsService.deleteContent(nodeRef, documentListEntry);
+                                boolean deleted = googledocsService.deleteContent(nodeRef, driveFile);
 
                                 if (deleted)
                                 {
@@ -197,6 +198,10 @@ public class DiscardContent
                 });
 
                 throw new WebScriptException(HttpStatus.SC_FORBIDDEN, ade.getMessage(), ade);
+            }
+            catch (Exception e)
+            {
+                throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage(), e);
             }
         }
         else
@@ -224,11 +229,12 @@ public class DiscardContent
             IOException,
             GoogleDocsServiceException,
             GoogleDocsAuthenticationException,
-            GoogleDocsRefreshTokenException
+            GoogleDocsRefreshTokenException,
+            Exception
     {
-        DocumentListEntry documentListEntry = googledocsService.getDocumentListEntry(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString());
+        DriveFile driveFile = googledocsService.getDriveFile(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString());
         googledocsService.unlockNode(nodeRef);
-        boolean deleted = googledocsService.deleteContent(nodeRef, documentListEntry);
+        boolean deleted = googledocsService.deleteContent(nodeRef, driveFile);
 
         if (deleted)
         {

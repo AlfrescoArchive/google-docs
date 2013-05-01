@@ -17,6 +17,8 @@ package org.alfresco.integrations.google.docs.service;
 
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
@@ -26,11 +28,11 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsTypeException;
 import org.alfresco.integrations.google.docs.exceptions.MustDowngradeFormatException;
 import org.alfresco.integrations.google.docs.exceptions.MustUpgradeFormatException;
 import org.alfresco.service.Auditable;
-import org.alfresco.service.cmr.dictionary.ConstraintException;
 import org.alfresco.service.cmr.repository.NodeRef;
-
-import com.google.gdata.data.docs.DocumentListEntry;
-import com.google.gdata.data.docs.MetadataEntry;
+import org.alfresco.service.namespace.QName;
+import org.springframework.social.google.api.drive.DriveFile;
+import org.springframework.social.google.api.drive.FileRevision;
+import org.springframework.social.google.api.userinfo.GoogleUserProfile;
 
 
 /**
@@ -75,11 +77,10 @@ public interface GoogleDocsService
     public boolean isEnabled();
     
     @Auditable
-    public MetadataEntry getUserMetadata()
+    public GoogleUserProfile getGoogleUserProfile()
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
-            GoogleDocsServiceException,
-            IOException;
+            GoogleDocsServiceException;
 
 
     /**
@@ -89,7 +90,7 @@ public interface GoogleDocsService
      * @return
      */
     @Auditable(parameters = { "nodeRef" })
-    public DocumentListEntry createDocument(NodeRef nodeRef)
+    public DriveFile createDocument(NodeRef nodeRef)
         throws GoogleDocsServiceException,
             GoogleDocsTypeException,
             GoogleDocsAuthenticationException,
@@ -104,7 +105,7 @@ public interface GoogleDocsService
      * @return
      */
     @Auditable(parameters = { "nodeRef" })
-    public DocumentListEntry createPresentation(NodeRef nodeRef)
+    public DriveFile createPresentation(NodeRef nodeRef)
         throws GoogleDocsServiceException,
             GoogleDocsTypeException,
             GoogleDocsAuthenticationException,
@@ -119,7 +120,7 @@ public interface GoogleDocsService
      * @return
      */
     @Auditable(parameters = { "nodeRef" })
-    public DocumentListEntry createSpreadSheet(NodeRef nodeRef)
+    public DriveFile createSpreadSheet(NodeRef nodeRef)
         throws GoogleDocsServiceException,
             GoogleDocsTypeException,
             GoogleDocsAuthenticationException,
@@ -131,10 +132,33 @@ public interface GoogleDocsService
      * Apply/Update GoogleDocs Aspect
      * 
      * @param nodeRef
-     * @param documentListEntry
+     * @param DriveFile
      * @param newcontent If this is a new node, mark the content as temporary.
      */
-    public void decorateNode(NodeRef nodeRef, DocumentListEntry documentListEntry, boolean newcontent);
+    public void decorateNode(NodeRef nodeRef, DriveFile driveFile, boolean newcontent);
+
+
+    /**
+     * Apply/Update GoogleDocs Aspect
+     * 
+     * @param nodeRef
+     * @param driveFile
+     * @param fileRevision
+     * @param newcontent If this is a new node, mark the content as temporary.
+     */
+    public void decorateNode(NodeRef nodeRef, DriveFile driveFile, FileRevision fileRevision, boolean newcontent);
+
+
+    /**
+     * Apply/Update GoogleDocs Aspect
+     * 
+     * @param nodeRef
+     * @param driveFile
+     * @param fileRevision
+     * @param permissions   List of permissions which have been applied to the file in Google, to be stored in against the node, used for re-creating permissions if the remote copy is removed.
+     * @param newcontent If this is a new node, mark the content as temporary.
+     */
+    public void decorateNode(NodeRef nodeRef, DriveFile driveFile, FileRevision fileRevision, List<GoogleDocsService.GooglePermission> permissions, boolean newcontent);
 
 
     /**
@@ -166,7 +190,7 @@ public interface GoogleDocsService
      */
     public boolean isImportable(String mimetype);
 
-    
+
     /**
      * List of mimetypes that can be imported into Google Docs and the Google Doc Type
      * 
@@ -186,7 +210,8 @@ public interface GoogleDocsService
 
 
     /**
-     * Retrieve the Google Doc Document associated to this node from Google Docs into the repository
+     * Retrieve the Google Doc Document associated to this node from Google Docs into the repository. Removes the document from the
+     * users Google Drive account
      * 
      * @param nodeRef
      */
@@ -195,12 +220,27 @@ public interface GoogleDocsService
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
-            IOException,
-            ConstraintException;
+            IOException;
 
 
     /**
-     * Retrieve the Google Doc Spreadsheet associated to this node from Google Docs into the repository
+     * Retrieve the Google Doc Document associated to this node from Google Docs into the repository. Removes the document from the
+     * users Google Drive account if removeFromDrive is true
+     * 
+     * @param nodeRef
+     * @param removeFromDrive
+     */
+    @Auditable(parameters = { "nodeRef", "removeFrom Drive" })
+    public void getDocument(NodeRef nodeRef, boolean removeFromDrive)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException;
+
+
+    /**
+     * Retrieve the Google Doc Spreadsheet associated to this node from Google Docs into the repository. Removes the spreadsheet
+     * from the users Google Drive account
      * 
      * @param nodeRef
      */
@@ -209,12 +249,27 @@ public interface GoogleDocsService
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
-            IOException,
-            ConstraintException;
+            IOException;
 
 
     /**
-     * Retrieve the Google Doc Presentation associated to this node from Google Docs into the repository
+     * Retrieve the Google Doc Spreadsheet associated to this node from Google Docs into the repository. Removes the spreadsheet
+     * from the users Google Drive account if removeFromDrive is true
+     * 
+     * @param nodeRef
+     * @param removeFromDrive
+     */
+    @Auditable(parameters = { "nodeRef", "removeFromDrive" })
+    public void getSpreadSheet(NodeRef nodeRef, boolean removeFromDrive)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException;
+
+
+    /**
+     * Retrieve the Google Doc Presentation associated to this node from Google Docs into the repository. Removes the presentation
+     * from the users Google Drive account
      * 
      * @param nodeRef
      */
@@ -223,8 +278,21 @@ public interface GoogleDocsService
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
-            IOException,
-            ConstraintException;
+            IOException;
+
+
+    /**
+     * Retrieve the Google Doc Presentation associated to this node from Google Docs into the repository. Removes the presentation
+     * from the users Google Drive account if removeFromDrive is true
+     * 
+     * @param nodeRef
+     */
+    @Auditable(parameters = { "nodeRef", "removeFromDrive" })
+    public void getPresentation(NodeRef nodeRef, boolean removeFromDrive)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException;
 
 
     /**
@@ -234,7 +302,7 @@ public interface GoogleDocsService
      * @return
      */
     @Auditable(parameters = { "nodeRef" })
-    public DocumentListEntry uploadFile(NodeRef nodeRef)
+    public DriveFile uploadFile(NodeRef nodeRef)
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
@@ -250,28 +318,47 @@ public interface GoogleDocsService
      * @throws GoogleDocsRefreshTokenException
      */
     @Auditable(parameters = { "resourceId" })
-    public DocumentListEntry getDocumentListEntry(String resourceID)
-        throws IOException,
-            GoogleDocsServiceException,
+    public DriveFile getDriveFile(String resourceID)
+        throws GoogleDocsServiceException,
             GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException;
 
 
     /**
      * @param nodeRef
-     * @param documentListEntry
+     * @param driveFile
      * @return
      * @throws GoogleDocsAuthenticationException
      * @throws GoogleDocsServiceException
      * @throws GoogleDocsRefreshTokenException
-     * @throws IOException
+     * @throws Exception
      */
-    @Auditable(parameters = { "nodeRef", "documentListEntry" })
-    public boolean deleteContent(NodeRef nodeRef, DocumentListEntry documentListEntry)
+    @Auditable(parameters = { "nodeRef", "driveFile" })
+    public boolean deleteContent(NodeRef nodeRef, DriveFile driveFile)
         throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
-            GoogleDocsRefreshTokenException,
-            IOException;
+            GoogleDocsRefreshTokenException;
+
+
+    /**
+     * Unlock and Undecorate node; Remove content from users Google Account Does not update the content in Alfresco; If content was
+     * newly created by GoogleDocsService it will be removed.
+     * 
+     * Method can be run by owner, admin or site manager
+     * 
+     * @param nodeRef
+     * @param driveFile
+     * @param forceRemoval ignore <code>GoogleDocsServiceException</code> exceptions when attempting to remove content from user's
+     * Google account
+     * @throws GoogleDocsRefreshTokenException
+     * @throws GoogleDocsServiceException
+     * @throws GoogleDocsAuthenticationException
+     */
+    @Auditable(parameters = { "nodeRef", "driveFile", "forceRemoval" })
+    public void removeContent(NodeRef nodeRef, DriveFile driveFile, boolean forceRemoval)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException;
 
 
     /**
@@ -284,8 +371,35 @@ public interface GoogleDocsService
     public boolean hasConcurrentEditors(NodeRef nodeRef)
         throws GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException,
-            GoogleDocsServiceException,
-            IOException;
+            GoogleDocsServiceException;
+
+
+    /**
+     * @param nodeRef
+     * @return
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     * @throws GoogleDocsServiceException
+     */
+    @Auditable(parameters = { "nodeRef" })
+    public FileRevision getLatestRevision(NodeRef nodeRef)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException;
+
+
+    /**
+     * @param driveFile
+     * @return
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     * @throws GoogleDocsServiceException
+     */
+    @Auditable(parameters = { "driveFile" })
+    public FileRevision getLatestRevision(DriveFile driveFile)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException,
+            GoogleDocsServiceException;
 
 
     /**
@@ -316,4 +430,118 @@ public interface GoogleDocsService
      */
     @Auditable(parameters = { "nodeRef" })
     public boolean isGoogleDocsLockOwner(NodeRef nodeRef);
+
+
+    /**
+     * List the saved Google permissions currently stored for this object.
+     * 
+     * @param nodeRef Noderef identifying the file in the repository
+     * @return A list of permissions objects stored for this node, which may be an empty list, or null if nothing is stored
+     */
+    @Auditable(parameters = { "nodeRef", "qname" })
+    public List<GooglePermission> getGooglePermissions(NodeRef nodeRef, QName qname);
+
+
+    /**
+     * Add permissions on the remote object stored in Google
+     * 
+     * @param driveFile Drive file instance of the remote object
+     * @param permissions A list of permissions objects stored for this node
+     * @param sendEmail Whether Google should send an email to each invited party, containing a link to the shared document
+     */
+    @Auditable(parameters = { "nodeRef" })
+    public void addRemotePermissions(DriveFile driveFile, List<GooglePermission> permissions, boolean sendEmail)
+        throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException;
+
+
+    public Serializable buildPermissionsPropertyValue(List<GooglePermission> permissions);
+
+
+    /**
+     * Represents a named authority and their role on a Google Docs object. This should be compatible across the document list and
+     * the drive APIs.
+     * 
+     * @author Will Abson
+     */
+    public static class GooglePermission
+    {
+        private String authorityId;
+
+        private String authorityType;
+
+        private String roleName;
+
+
+        public GooglePermission(String authorityId, String authorityType, String roleName)
+        {
+            this.authorityId = authorityId;
+            this.authorityType = authorityType;
+            this.roleName = roleName;
+        }
+
+
+        public GooglePermission()
+        {
+        }
+
+
+        public String getAuthorityId()
+        {
+            return authorityId;
+        }
+
+
+        public void setAuthorityId(String authorityId)
+        {
+            this.authorityId = authorityId;
+        }
+
+
+        public String getAuthorityType()
+        {
+            return authorityType;
+        }
+
+
+        public void setAuthorityType(String authorityType)
+        {
+            this.authorityType = authorityType;
+        }
+
+
+        public String getRoleName()
+        {
+            return roleName;
+        }
+
+
+        public void setRoleName(String roleName)
+        {
+            this.roleName = roleName;
+        }
+
+
+        public String toString()
+        {
+            return authorityType + "|" + authorityId + "|" + roleName;
+        }
+
+
+        public static GooglePermission fromString(String input)
+        {
+            String[] parts = input.split("\\|");
+            if (parts.length != 3)
+            {
+                throw new IllegalArgumentException("Bad number of paramters in input string '" + input + "'. Need 3, found "
+                                                   + parts.length + ".");
+            }
+            GooglePermission p = new GooglePermission();
+            p.setAuthorityType(parts[0]);
+            p.setAuthorityId(parts[1]);
+            p.setRoleName(parts[2]);
+            return p;
+        }
+    }
 }

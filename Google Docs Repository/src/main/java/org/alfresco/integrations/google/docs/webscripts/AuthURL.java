@@ -17,9 +17,12 @@ package org.alfresco.integrations.google.docs.webscripts;
 
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.alfresco.integrations.google.docs.GoogleDocsModel;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
+import org.alfresco.service.cmr.repository.NodeRef;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.extensions.webscripts.Cache;
@@ -37,9 +40,11 @@ public class AuthURL
 
     private final static String MODEL_AUTHURL       = "authURL";
     private final static String MODEL_AUTHENTICATED = "authenticated";
+    private final static String MODEL_PERMISSIONS = "permissions";
 
     private final static String PARAM_STATE         = "state";
     private final static String PARAM_OVERRIDE      = "override";
+    private final static String PARAM_NODEREF         = "nodeRef";
 
     private GoogleDocsService   googledocsService;
 
@@ -55,6 +60,8 @@ public class AuthURL
     {
         getGoogleDocsServiceSubsystem();
 
+        String nodeRef = req.getParameter(PARAM_NODEREF);
+        
         Map<String, Object> model = new HashMap<String, Object>();
 
         boolean authenticated = false;
@@ -78,6 +85,13 @@ public class AuthURL
             model.put(MODEL_AUTHURL, googledocsService.getAuthenticateUrl(req.getParameter(PARAM_STATE)));
             authenticated = googledocsService.isAuthenticated();
             log.debug("Forced AuthURL. AuthUrl: " + model.get(MODEL_AUTHURL) + "; Authenticated: " + authenticated);
+        }
+
+        if (nodeRef != null && nodeRef.length() > 0)
+        {
+            List<GoogleDocsService.GooglePermission> permissions = 
+                    googledocsService.getGooglePermissions(new NodeRef(nodeRef), GoogleDocsModel.PROP_PERMISSIONS);
+            model.put(MODEL_PERMISSIONS, permissions); // permissions may be null
         }
 
         model.put(MODEL_AUTHENTICATED, authenticated);

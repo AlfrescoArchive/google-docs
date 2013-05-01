@@ -18,6 +18,7 @@ package org.alfresco.integrations.google.docs.webscripts;
 
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.repo.management.subsystems.ApplicationContextFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;

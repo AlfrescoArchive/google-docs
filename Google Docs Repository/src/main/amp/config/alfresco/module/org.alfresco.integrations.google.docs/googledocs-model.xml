@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model name="gd2:googledocs" xmlns="http://www.alfresco.org/model/dictionary/1.0">
+
+	<description>Google Docs</description>
+	<author>Jared Ottley, Will Abson</author>
+	<version>2.0</version>
+
+	<imports>
+		<import uri="http://www.alfresco.org/model/dictionary/1.0" prefix="d" />
+		<import uri="http://www.alfresco.org/model/content/1.0" prefix="cm" />
+	</imports>
+
+	<namespaces>
+		<namespace uri="http://www.alfresco.org/model/googledocs/2.0" prefix="gd2" />
+	</namespaces>
+
+	<aspects>
+		<aspect name="gd2:editingInGoogle">
+			<title>Google Docs</title>
+			<properties>
+				<property name="gd2:resourceID">
+					<type>d:text</type>
+				</property>
+				<property name="gd2:locked">
+					<type>d:boolean</type>
+				</property>
+				<property name="gd2:editorURL">
+					<type>d:text</type>
+				</property>
+				<property name="gd2:driveWorkingDir">
+					<type>d:text</type>
+				</property>
+				<property name="gd2:revisionID">
+					<type>d:text</type>
+				</property>
+				<property name="gd2:currentPermissions">
+					<type>d:text</type>
+					<multiple>true</multiple>
+				</property>
+			</properties>
+		</aspect>
+		
+		<aspect name="gd2:sharedInGoogle">
+            <title>Google Docs Shared</title>
+            <properties>
+                <property name="gd2:permissions">
+                    <type>d:text</type>
+                    <multiple>true</multiple>
+                </property>
+            </properties>
+        </aspect>
+		
+	</aspects>
+
+</model>
+ 
+    

@@ -3,17 +3,135 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>org.alfresco.integrations</groupId>
    <artifactId>alfresco-GoogleDocs</artifactId>
-   <version>2.0.2-${buildnumber}</version>
+   <version>2.1.0-${buildnumber}</version>
    <name>alfresco-GoogleDocs</name>
    <packaging>pom</packaging>
 
    <properties>
       <buildnumber>SNAPSHOT</buildnumber>
+      <alfresco.groupId>org.alfresco</alfresco.groupId>
+      <alfresco.version>Cloud1-SNAPSHOT</alfresco.version>
+      <app.log.root.level>WARN</app.log.root.level>
+      <alfresco.data.location>${project.basedir}/../../data</alfresco.data.location>
+      <alfresco.db.url>jdbc:mysql://localhost/gdocs21?useUnicode=yes</alfresco.db.url>
+      <alfresco.db.driver>org.gjt.mm.mysql.Driver</alfresco.db.driver>
+      <alfresco.db.datasource.class>com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource</alfresco.db.datasource.class>
+      <mysql-connector.version>5.1.18</mysql-connector.version>
+      <alfresco.jetty.host>localhost</alfresco.jetty.host>
+      <alfresco.jetty.port>8080</alfresco.jetty.port>
+      <share.jetty.host>localhost</share.jetty.host>
+      <share.jetty.port>8081</share.jetty.port>
+      <!-- Repository properties used by test runner -->
+      <alfresco.solr.dir>${project.basedir}/solr_home</alfresco.solr.dir>
+      <alfresco.solr.war>apache-solr-1.4.1.war</alfresco.solr.war>
+      <ooo.exe>/Applications/LibreOffice.app/Contents/MacOS/soffice</ooo.exe>
+      <img.root>/usr/local</img.root>
+      <swf.exe>pdf2swf</swf.exe>
+      <gs.exe>/usr/local/bin/gs</gs.exe>
+      <!-- This controls which properties will be picked in src/test/properties for embedded run -->
+      <env>local</env>
    </properties>
+
+   <parent>
+      <groupId>org.alfresco.maven</groupId>
+      <artifactId>alfresco-sdk-parent</artifactId>
+      <version>1.0.1</version>
+   </parent>
+
+   <repositories>
+          <!--<repository>
+         <id>spring.social.google</id>
+         <name>Spring Social Google</name>
+         <url>https://github.com/GabiAxel/maven/raw/master/</url>
+      </repository>-->
+      <repository>
+         <id>alfresco-cloud</id>
+         <url>https://artifacts.alfresco.com/nexus/content/repositories/cloud-snapshots</url>
+         <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>daily</updatePolicy>
+         </snapshots>
+      </repository>
+      <repository>
+         <id>alfresco-3rd-party</id>
+         <url>https://artifacts.alfresco.com/nexus/content/repositories/thirdparty</url>
+      </repository>
+      <repository>
+         <id>alfresco-artifacts</id>
+         <url>https://artifacts.alfresco.com/nexus/content/groups/public</url>
+      </repository>
+      <repository>
+         <id>alfresco-artifacts-snapshots</id>
+         <url>https://artifacts.alfresco.com/nexus/content/groups/public-snapshots</url>
+      </repository>
+   </repositories>
+   <pluginRepositories>
+      <pluginRepository>
+         <id>alfresco-public</id>
+         <url>https://artifacts.alfresco.com/nexus/content/groups/public</url>
+      </pluginRepository>
+      <pluginRepository>
+         <id>alfresco-public-snapshots</id>
+         <url>https://artifacts.alfresco.com/nexus/content/groups/public-snapshots</url>
+         <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>daily</updatePolicy>
+         </snapshots>
+      </pluginRepository>
+   </pluginRepositories>
 
    <modules>
       <module>Google Docs Repository</module>
       <module>Google Docs Share</module>
    </modules>
+
+   <!-- Override version policy to allow 'Cloud1' versions as well as Enterprise and Community -->
+   <profiles>
+      <profile>
+         <id>enforce-sdk-rules</id>
+         <activation>
+            <activeByDefault>true</activeByDefault>
+         </activation>
+         <build>
+            <plugins>
+               <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-enforcer-plugin</artifactId>
+                  <version>${maven.enforcer.plugin}</version>
+                  <executions>
+                     <execution>
+                        <id>enforce-sdk-requirements</id>
+                        <goals>
+                           <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                           <rules>
+                              <!-- Test for Alfresco version -->
+                              <requireProperty>
+                                 <property>alfresco.version</property>
+                                 <message>The SDK is supported only for Alfresco 4.1.2+ and 4.2+ versions</message>
+                                 <regex>^(4\.1\.[2-9]|4\.[2-9]|[5-9]|Cloud1).*</regex>
+                              </requireProperty>
+                              <!-- Test for groupId value (Community / Enterprise) -->
+                              <requireProperty>
+                                 <property>alfresco.groupId</property>
+                                 <message>You need to select an Alfresco Edition (Community / Enterprise) by setting alfresco.groupId=org.alfresco|org.alfresco.enterprise</message>
+                                 <regex>(org\.alfresco|org\.alfresco\.enterprise)</regex>
+                              </requireProperty>
+                              <!-- Test for JDK version -->
+                              <requireJavaVersion>
+                                 <version>[1.6.0,)</version>
+                                 <message>Alfresco 4.1+ requires Java 6</message>
+                              </requireJavaVersion>
+                           </rules>
+                           <fail>true</fail>
+                        </configuration>
+                     </execution>
+                  </executions>
+               </plugin>
+            </plugins>
+         </build>
+      </profile>
+   </profiles>
 
 </project>
