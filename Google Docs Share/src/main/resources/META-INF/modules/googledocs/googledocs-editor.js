@@ -32,7 +32,7 @@
    /**
     * YUI Library aliases
     */
-   var Dom = YAHOO.util.Dom;
+   var Dom = YAHOO.util.Dom, Event = YAHOO.util.Event;
 
    /**
     * Alfresco Slingshot aliases
@@ -57,6 +57,15 @@
     */
    YAHOO.extend(Alfresco.GoogleDocs.Editor, Alfresco.component.Base,
    {
+      /**
+       * Whether or not the editor iframe has finished loading or not. This is populated by an 'onload' event
+       * attached to the iframe html element.
+       * 
+       * @property _loaded
+       * @type boolean
+       * @private
+       */
+      _loaded: false,
 
       /**
        * Object container for initialization options
@@ -95,17 +104,47 @@
          Alfresco.GoogleDocs.checkGoogleLogin.call(this, {
             onLoggedIn: {
                fn: function() {
-                  Dom.get(this.id + "-gdocs-wrapper").innerHTML = "<iframe class=\"gdocs-embed\" src=\"" + this.options.editorURL + "\"></iframe>";
-                  
-                  // Notify the toolbar that we are done, so it can enable its buttons
-                  YAHOO.Bubbling.fire ('editorLoaded', {});
+                  var iframe = document.createElement("iframe");
+                  Event.addListener(iframe, "load", this.onIFrameLoaded, this, true);
+                  Dom.addClass(iframe, "gdocs-embed");
+                  Dom.setAttribute(iframe, "src", this.options.editorURL);
+                  Dom.get(this.id + "-gdocs-wrapper").appendChild(iframe);
+
+                  // Check if the iframe has loaded after 10 seconds
+                  YAHOO.lang.later(10000, this, function() {
+                     if (this._loaded === false)
+                     {
+                        Alfresco.util.PopupManager.displayPrompt({
+                           title: this.msg("error.iframe-not-loaded-title"),
+                           text: this.msg("error.iframe-not-loaded-msg", this.msg("error.iframe-not-loaded-uri")),
+                           noEscape: true
+                        });
+                     }
+                  });
                },
                scope: this
             }
          });
          // TODO Deal with editorURL being empty?
       },
-      
+
+      /**
+       * Event handler for iFrame onload event
+       * 
+       * In Chrome, the onload event is fired only when the frame loads successfully without errors. Firefox 
+       * fires this event even when an X-Frame-Options header prevents the content from being displayed, so 
+       * unfortunately this is not an infallible method!
+       * 
+       * @method onIFrameLoaded
+       */
+      onIFrameLoaded: function GDE_onIFrameLoaded(p_obj)
+      {
+         this._loaded = true;
+
+         // Notify the toolbar that we are done, so it can enable its buttons
+         YAHOO.Bubbling.fire ('editorLoaded', {});
+      },
+
       /**
        * Authenticate to Google Docs using OAuth flow
        * 
