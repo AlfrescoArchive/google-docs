@@ -832,7 +832,7 @@ public class GoogleDocsServiceImpl
             exportFormat = getExportFormat(getContentType(nodeRef), mimeType);
             log.debug("Export format: " + exportFormat);
 
-            mc.setUri(GoogleDocsConstants.URL_DOCUMENT_DOWNLOAD + "?docID=" + resourceID.substring(resourceID.lastIndexOf(':') + 1)
+            mc.setUri(GoogleDocsConstants.URL_DOCUMENT_DOWNLOAD + "?id=" + resourceID.substring(resourceID.lastIndexOf(':') + 1)
                       + "&exportFormat=" + exportFormat);
 
             log.debug("Export URL: " + mc.getUri());
@@ -982,7 +982,7 @@ public class GoogleDocsServiceImpl
             exportFormat = getExportFormat(getContentType(nodeRef), mimeType);
             log.debug("Export format: " + exportFormat);
 
-            mc.setUri(GoogleDocsConstants.URL_PRESENTATION_DOWNLOAD + "?docID="
+            mc.setUri(GoogleDocsConstants.URL_PRESENTATION_DOWNLOAD + "?id="
                       + resourceID.substring(resourceID.lastIndexOf(':') + 1) + "&exportFormat=" + exportFormat);
 
             log.debug("Export URL: " + mc.getUri());
@@ -1335,7 +1335,7 @@ public class GoogleDocsServiceImpl
      * @param name
      * @param office2007Pattern
      * @param office1997Pattern
-     * @param office2007extension
+     * @param office1997extension
      * @return
      */
     private String MSofficeExtensionHandler(String name, String office2007Pattern, String office1997Pattern,
@@ -1346,7 +1346,7 @@ public class GoogleDocsServiceImpl
 
         if (matcher.find())
         {
-            name = name.substring(0, name.length() - 1);
+            name = name.concat("x");
         }
         else
         {
@@ -1653,9 +1653,7 @@ public class GoogleDocsServiceImpl
             {
                 throw jsonException;
             }
-        }
-        else
-        {
+        } else {
             log.debug("Activity stream entry not created -- user does not exist.");
         }
     }

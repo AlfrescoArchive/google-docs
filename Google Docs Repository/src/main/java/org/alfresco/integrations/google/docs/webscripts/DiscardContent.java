@@ -169,17 +169,14 @@ public class DiscardContent
                             public Object execute()
                                 throws Throwable
                             {
-                                DocumentListEntry documentListEntry = googledocsService.getDocumentListEntry(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString());
-                                googledocsService.unlockNode(nodeRef);
-                                boolean deleted = googledocsService.deleteContent(nodeRef, documentListEntry);
-
-                                if (deleted)
-                                {
-                                    AuthenticationUtil.runAsSystem(new AuthenticationUtil.RunAsWork<Object>()
+                                AuthenticationUtil.runAsSystem(new AuthenticationUtil.RunAsWork<Object>()
                                     {
                                         public Object doWork()
                                             throws Exception
                                         {
+                                            googledocsService.unlockNode(nodeRef);
+                                            googledocsService.unDecorateNode(nodeRef);
+
                                             if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
                                             {
                                                 nodeService.deleteNode(nodeRef);
@@ -188,7 +185,6 @@ public class DiscardContent
                                             return null;
                                         }
                                     });
-                                }
 
                                 return null;
                             }

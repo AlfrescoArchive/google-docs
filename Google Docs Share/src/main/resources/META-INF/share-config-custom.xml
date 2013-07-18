@@ -18,6 +18,7 @@
          <action id="google-docs-resume-action-link" type="javascript" icon="google-edit" label="googledocs.actions.resume">
             <param name="function">onGoogledocsActionResume</param>
             <evaluator>evaluator.doclib.google.docs.resume</evaluator>
+            <override>document-cancel-editing-unlock</override>
          </action>
 		</actions>
 		

@@ -3,7 +3,7 @@
 function main()
 {
         AlfrescoUtil.param('nodeRef');
-        AlfrescoUtil.param('site');
+        AlfrescoUtil.param('site', null);
         var metadata = AlfrescoUtil.getNodeDetails(model.nodeRef, model.site);
 
         if (metadata)
