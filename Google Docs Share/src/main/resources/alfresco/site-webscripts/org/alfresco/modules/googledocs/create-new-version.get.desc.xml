@@ -1,0 +1,5 @@
+<webscript>
+  <shortname>Google Docs version</shortname>
+  <description>Dialog for saving the current Google Documnet as a new version in the repository</description>
+  <url>/modules/googledocs/create-new-version</url>
+</webscript>

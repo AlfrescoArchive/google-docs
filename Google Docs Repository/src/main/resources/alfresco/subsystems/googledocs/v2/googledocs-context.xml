@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+   <!-- Load the Model -->
+   <bean id="googledocsModel.dictionaryBootstrap" parent="dictionaryModelBootstrap"
+      depends-on="dictionaryBootstrap">
+      <property name="models">
+         <list>
+            <value>alfresco/subsystems/googledocs/v2/googledocs-model.xml</value>
+         </list>
+      </property>
+   </bean>
+
+   <!-- GoogleDocs Connection Factory -->
+
+   <bean id="googledocsConnectionFactory"
+      class="org.springframework.social.google.docs.connect.GoogleDocsConnectionFactory">
+      <constructor-arg value="176148111206-onm9idr174ub34k8pi09puui2nb46627.apps.googleusercontent.com" />
+      <constructor-arg value="yEbWWWax6QSwTTZhrqcLJrXq" />
+   </bean>
+
+
+   <!-- Googledocs Service -->
+   <bean id="GoogleDocsService" class="org.springframework.aop.framework.ProxyFactoryBean">
+      <property name="proxyInterfaces">
+         <value>org.alfresco.integrations.google.docs.service.GoogleDocsService</value>
+      </property>
+      <property name="target">
+         <ref bean="googledocsService"/>
+      </property>
+      <property name="interceptorNames">
+         <list>
+            <idref bean="googledocsServiceReadTxnAdvisor"/>
+            <idref bean="googledocsServiceWriteTxnAdvisor"/>
+            <idref bean="AuditMethodInterceptor"/>
+            <idref bean="exceptionTranslator"/>
+            <idref bean="googledocsService_security"/>
+         </list>
+      </property>
+   </bean>
+   
+   <bean id="googledocsService_security" class="org.alfresco.repo.security.permissions.impl.acegi.MethodSecurityInterceptor">
+      <property name="authenticationManager">
+         <ref bean="authenticationManager"/>
+      </property>
+      <property name="accessDecisionManager">
+         <ref bean="accessDecisionManager"/>
+      </property>
+      <property name="afterInvocationManager">
+         <ref bean="afterInvocationManager"/>
+      </property>
+      <property name="objectDefinitionSource">
+         <value>
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isAuthenticated=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getAuthenticateUrl=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.completeAuthentication=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isEnabled=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getUserMetadata=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.createDocument=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.createSpreadSheet=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.createPresentation=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.decorateNode=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.unDecorateNode=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isExportable=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isImportable=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getImportFormats=ACL_ALLOWW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getContentType=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getDocument=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getSpreadSheet=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getPresentation=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.uploadFile=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.hasConcurrentEditors=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.lockNode=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.unlockNode=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isGoogleDocsLockOwner=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.isLockedByGoogleDocs=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getDocumentListEntry=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.deleteContent=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.*=ACL_DENY
+         </value>
+      </property>
+   </bean>
+   
+   <bean id="googledocsServiceReadTxnAdvisor" class="org.springframework.aop.support.NameMatchMethodPointcutAdvisor">
+      <property name="advice">
+         <ref bean="retryingReadTxnAdvice"/>
+      </property>
+      <property name="mappedNames">
+         <list>
+            <value>isAuthenticated</value>
+            <value>getUserMetadata</value>
+            <value>getContentType</value>
+            <value>hasConcurrentEditors</value>
+            <value>isGoogleDocsLockOwner</value>
+            <value>isLockedByGoogleDocs</value>
+            <value>getDocumentListEntry</value>
+         </list>
+      </property>
+   </bean>
+   
+   <bean id="googledocsServiceWriteTxnAdvisor" class="org.springframework.aop.support.NameMatchMethodPointcutAdvisor">
+      <property name="advice">
+         <ref bean="retryingWriteTxnAdvice"/>
+      </property>
+      <property name="mappedNames">
+         <list>
+            <value>completeAuthentication</value>
+            <value>createDocument</value>
+            <value>createSpreadSheet</value>
+            <value>createPresentation</value>
+            <value>decorateNode</value>
+            <value>unDecorateNode</value>
+            <value>getDocument</value>
+            <value>getSpreadSheet</value>
+            <value>getPresentation</value>
+            <value>uploadFile</value>
+            <value>lockNode</value>
+            <value>unlockNode</value>
+            <value>deleteContent</value>
+         </list>
+      </property>
+   </bean>
+
+   <bean id="googledocsService"
+      class="org.alfresco.integrations.google.docs.service.GoogleDocsServiceImpl">
+      <property name="connectionFactory">
+         <ref bean="googledocsConnectionFactory" />
+      </property>
+      <property name="oauth2CredentialsStoreService">
+         <ref bean="OAuth2CredentialsStoreService" />
+      </property>
+      <property name="fileFolderService">
+         <ref bean="fileFolderService"/>
+      </property>
+      <property name="nodeService">
+         <ref bean="nodeService"/>
+      </property>
+      <property name="lockService">
+         <ref bean="lockService"/>
+      </property>
+      <property name="fileNameUtil">
+         <ref bean="fileNameUtil"/>
+      </property>
+      <property name="dictionaryService">
+      	<ref bean="dictionaryService"/>
+      </property>
+      <property name="mimetypeService">
+         <ref bean="mimetypeService"/>
+      </property>
+      <property name="behaviourFilter">
+         <ref bean="policyBehaviourFilter" />
+      </property>
+      <property name="activityService">
+         <ref bean="activityService"/>
+      </property>
+      <property name="siteService">
+         <ref bean="siteService"/>
+      </property>
+      <property name="tenantService">
+         <ref bean="tenantService" />
+      </property>
+      <property name="personService">
+         <ref bean="personService"/>
+      </property>
+      <property name="importFormats">
+         <map>
+            <entry
+               key="application/vnd.openxmlformats-officedocument.presentationml.presentation">
+               <value>presentation</value>
+            </entry>
+            <entry key="application/vnd.ms-powerpoint">
+               <value>presentation</value>
+            </entry>
+            <entry key="text/tab-separated-values">
+               <value>spreadsheet</value>
+            </entry>
+            <entry key="application/vnd.sun.xml.writer">
+               <value>document</value>
+            </entry>
+            <entry key="application/vnd.ms-excel">
+               <value>spreadsheet</value>
+            </entry>
+            <entry
+               key="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+               <value>spreadsheet</value>
+            </entry>
+            <entry key="application/rtf">
+               <value>document</value>
+            </entry>
+            <entry key="application/msword">
+               <value>document</value>
+            </entry>
+            <entry key="application/vnd.oasis.opendocument.text">
+               <value>document</value>
+            </entry>
+            <entry key="text/plain">
+               <value>document</value>
+            </entry>
+            <entry key="text/csv">
+               <value>spreadsheet</value>
+            </entry>
+            <entry key="application/x-vnd.oasis.opendocument.spreadsheet">
+               <value>spreadsheet</value>
+            </entry>
+            <!-- GOOGLEDOCS-71 Work around Alfresco only supporting this mimetype for ODS OpenOffice SpreadSheets -->
+            <entry key="application/vnd.oasis.opendocument.spreadsheet">
+               <value>spreadsheet</value>
+            </entry>
+            <entry
+               key="application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+               <value>document</value>
+            </entry>
+         </map>
+      </property>
+      <property name="exportFormats">
+         <map>
+            <entry key="document">
+               <map>
+                  <entry key="application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                  	 <value>docx</value>
+                  </entry>
+                  <entry key="application/msword">
+                     <value>doc</value>
+                  </entry>
+                  <entry key="application/rtf">
+                     <value>rtf</value>
+                  </entry>
+                  <entry key="text/plain">
+                     <value>txt</value>
+                  </entry>
+                  <entry key="application/vnd.oasis.opendocument.text">
+                     <value>odt</value>
+                  </entry>
+                  <entry key="text/rtf">
+                     <value>rtf</value>
+                  </entry>
+               </map>
+            </entry>
+            <entry key="spreadsheet">
+               <map>
+                  <entry key="application/x-vnd.oasis.opendocument.spreadsheet">
+                     <value>ods</value>
+                  </entry>
+                  <!-- GOOGLEDOCS-71 Work around Alfresco only supporting this mimetype for ODS OpenOffice SpreadSheets -->
+                  <entry key="application/vnd.oasis.opendocument.spreadsheet">
+                     <value>ods</value>
+                  </entry>
+                  <entry key="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+                  	 <value>xlsx</value>
+                  </entry>                  
+                  <entry key="application/vnd.ms-excel">
+                     <value>xls</value>
+                  </entry>
+                  <entry key="text/tab-separated-values">
+                     <value>tsv</value>
+                  </entry>
+                  <entry key="text/csv">
+                     <value>csv</value>
+                  </entry>
+               </map>
+            </entry>
+            <entry key="presentation">
+               <map>
+                  <entry key="application/vnd.openxmlformats-officedocument.presentationml.presentation">
+                     <value>pptx</value>
+                  </entry>
+                  <entry key="application/vnd.ms-powerpoint">
+                     <value>ppt</value>
+                  </entry>
+               </map>
+            </entry>
+         </map>
+      </property>
+      <property name="upgradeMappings">
+         <map>
+            <entry key="application/vnd.sun.xml.writer">
+               <value>application/vnd.oasis.opendocument.text</value>
+            </entry>
+         </map>
+      </property>
+      <property name="newDocument">
+         <value>classpath:alfresco/module/org.alfresco.integrations.google.docs/resources/UntitledDocument</value>
+      </property>
+      <property name="newSpreadsheet">
+         <value>classpath:alfresco/module/org.alfresco.integrations.google.docs/resources/UntitledSpreadsheet</value>
+      </property>
+      <property name="newPresentation">
+         <value>classpath:alfresco/module/org.alfresco.integrations.google.docs/resources/UntitledPresentation</value>
+      </property>
+      <property name="enabled">
+      	<value>${googledocs.enabled}</value>
+      </property>
+      <property name="idleThreshold">
+         <value>${googledocs.idleThresholdSeconds}</value>
+      </property>
+   </bean>
+   
+   <bean id="fileNameUtil" class="org.alfresco.integrations.google.docs.utils.FileNameUtil">
+      <property name="mimetypeService">
+         <ref bean="mimetypeService"/>
+      </property>
+      <property name="fileFolderService">
+         <ref bean="fileFolderService"/>
+      </property>
+   </bean>
+   
+   <!-- Custom Response -->
+   <bean id="googledocsCustomResponse"
+      class="org.alfresco.integrations.google.docs.repo.jscript.app.GoogleDocsCustomResponse">
+      <property name="googledocsService">
+         <ref bean="googledocsService" />
+      </property>
+   </bean>
+
+   <bean id="googledocsCustomResponses" parent="slingshotDocLibCustomResponse">
+      <property name="customResponses">
+         <map merge="true">
+            <entry key="googledocs">
+               <ref bean="googledocsCustomResponse" />
+            </entry>
+         </map>
+      </property>
+   </bean>
+
+</beans>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+   
+   <!-- Google Docs v2 subsystem -->
+   <bean id="googledocs_v2" class="org.alfresco.repo.management.subsystems.ChildApplicationContextFactory" parent="abstractPropertyBackedBean">
+      <property name="category">
+         <value>googledocs</value>
+      </property>
+      <property name="typeName">
+         <value>v2</value>
+      </property>
+      <property name="instancePath">
+         <value>v2</value>
+      </property>
+      <property name="autoStart">
+         <value>true</value>
+      </property>
+   </bean>
+   
+   <!-- Google Docs v2 Web Scripts -->
+   <bean id="webscript.org.alfresco.integrations.google.docs.AuthURL.get" class="org.alfresco.integrations.google.docs.webscripts.AuthURL" parent="webscript">
+   </bean>
+
+   <bean id="webscript.org.alfresco.integrations.google.docs.CompleteAuth.get" class="org.alfresco.integrations.google.docs.webscripts.CompleteAuth" parent="webscript">
+   </bean>
+
+   <bean id="webscript.org.alfresco.integrations.google.docs.Exportable.get" class="org.alfresco.integrations.google.docs.webscripts.Exportable" parent="webscript">
+   </bean>
+   
+   <bean id="webscript.org.alfresco.integrations.google.docs.CreateContent.get" class="org.alfresco.integrations.google.docs.webscripts.CreateContent" parent="webscript">
+      <property name="fileFolderService">
+         <ref bean="fileFolderService"/>
+      </property>
+   </bean>
+   
+   <bean id="webscript.org.alfresco.integrations.google.docs.UploadContent.get" class="org.alfresco.integrations.google.docs.webscripts.UploadContent" parent="webscript">
+      <property name="nodeService">
+      	 <ref bean="nodeService"/>
+      </property>
+      <property name="versionService">
+         <ref bean="versionService" />
+      </property>
+   </bean>
+   
+   <bean id="webscript.org.alfresco.integrations.google.docs.SaveContent.post" class="org.alfresco.integrations.google.docs.webscripts.SaveContent" parent="webscript">
+      <property name="nodeService">
+         <ref bean="nodeService"/>
+      </property>
+      <property name="versionService">
+         <ref bean="versionService" />
+      </property>
+      <property name="transactionService">
+         <ref bean="transactionService"/>
+      </property>
+      <property name="siteService">
+      	<ref bean="siteService"/>
+      </property>
+   </bean>
+   
+   <bean id="webscript.org.alfresco.integrations.google.docs.HasConcurrentEditors.get" class="org.alfresco.integrations.google.docs.webscripts.HasConcurrentEditors">
+   </bean>
+   
+   <bean id="webscript.org.alfresco.integrations.google.docs.DiscardContent.post" class="org.alfresco.integrations.google.docs.webscripts.DiscardContent">
+      <property name="nodeService">
+         <ref bean="nodeService"/>
+      </property>
+      <property name="transactionService">
+         <ref bean="transactionService"/>
+      </property>
+      <property name="siteService">
+      	<ref bean="siteService"/>
+      </property>
+   </bean>
+
+</beans>

@@ -1,0 +1,67 @@
+.gdtoolbar {
+   display: block;
+   background-color: #000000;
+   height: 42px;
+   margin: 0px -10px;
+   background-image: url("images/main-bg.png");
+}
+
+.gd-button {
+   text-align: center;
+   white-space: nowrap;
+   height: 42px;
+   color: #FFFFFF;
+   background-image: url("images/btn-bg.png");
+   padding: 12px 20px;
+   border: 1px solid black;
+	border-image: url("images/btn-border.png") 1 stretch;
+	-moz-border-image: url("images/btn-border.png") 1 stretch; /* Firefox */
+	-webkit-border-image: url("images/btn-border.png") 1 stretch; /* Safari and Chrome */
+	-o-border-image: url("images/btn-border.png") 1 stretch; /* Opera */
+}
+
+.gd-button-default {
+   background-image: url("images/btn-default-bg.png");
+   border-image: url("images/btn-default-border.png") 1 stretch;
+   -moz-border-image: url("images/btn-default-border.png") 1 stretch; /* Firefox */
+   -webkit-border-image: url("images/btn-default-border.png") 1 stretch; /* Safari and Chrome */
+   -o-border-image: url("images/btn-default-border.png") 1 stretch; /* Opera */
+}
+
+.gd-button:hover {
+	cursor: pointer;
+}
+
+.gd-logo {
+	width: 140px;
+   height: 30px;
+   margin-top: 7px;
+   margin-left: 10px;
+   background-image: url("images/logo.png");
+   background-repeat: no-repeat;
+}
+
+.gdback, .gd-logo, .after-gdback {
+	float: left;
+}
+
+.gddiscard, .gdsave, .before-gdsave {
+   float: right;
+}
+
+.before-gdsave {
+	width: 1px;
+	height: 100%;
+	background: url("images/btn-border.png") top right;
+}
+
+.after-gdback {
+   width: 1px;
+   height: 100%;
+   background: url("images/btn-border.png") top left;
+}
+
+.alfresco-share .sticky-wrapper .gdtoolbar button {
+	font-weight: bold;
+	text-shadow: 0 -1px 1px #000000;
+}

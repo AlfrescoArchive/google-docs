@@ -1,0 +1,10 @@
+<webscript>
+	<shortname>Build Google Docs Auth URL</shortname>
+	<description>Build Google Docs Auth URL</description>
+	<url>/googledocs/authurl?state={state}</url>
+	<lifecycle>internal</lifecycle>
+	<authentication>user</authentication>
+	<format default="json" />
+	<transaction>requiresnew</transaction>
+	<family>googledocs</family>
+</webscript>

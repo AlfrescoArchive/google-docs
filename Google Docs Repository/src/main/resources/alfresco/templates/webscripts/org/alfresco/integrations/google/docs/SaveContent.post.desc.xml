@@ -1,0 +1,10 @@
+<webscript>
+   <shortname>Google Docs Save Content</shortname>
+   <description>Google Docs Save Content</description>
+   <url>/googledocs/saveContent</url>
+   <lifecycle>internal</lifecycle>
+   <authentication>user</authentication>
+   <format default="json" />
+   <transaction>requiresnew</transaction>
+   <family>googledocs</family>
+</webscript>

@@ -1,0 +1,53 @@
+<alfresco-config>
+	<config evaluator="string-compare" condition="DocLibCustom">
+	   <dependencies>
+         <js src="/googledocs/components/documentlibrary/actions-common.js" />
+         <js src="/googledocs/components/documentlibrary/actions.js" />
+	   </dependencies>
+	</config>
+	
+	<config evaluator="string-compare" condition="DocLibActions">
+		<actions>
+			<action id="google-docs-edit-action-link" type="javascript" icon="google-edit" label="googledocs.actions.edit">
+				<param name="function">onGoogledocsActionEdit</param>
+				<evaluator>evaluator.doclib.google.docs.edit</evaluator>
+				<permissions>
+					<permission allow="true">Write</permission>
+				</permissions>
+			</action>
+         <action id="google-docs-resume-action-link" type="javascript" icon="google-edit" label="googledocs.actions.resume">
+            <param name="function">onGoogledocsActionResume</param>
+            <evaluator>evaluator.doclib.google.docs.resume</evaluator>
+            <override>document-cancel-editing-unlock</override>
+         </action>
+		</actions>
+		
+		<actionGroups>
+			<actionGroup id="document-browse">
+				<action index="250" id="google-docs-edit-action-link" />
+            <action index="250" id="google-docs-resume-action-link" />
+			</actionGroup>
+			
+			<actionGroup id="document-details">
+				<action index="250" id="google-docs-edit-action-link" />
+            <action index="250" id="google-docs-resume-action-link" />
+			</actionGroup>
+		</actionGroups>	
+	</config>
+	
+<config evaluator="string-compare" condition="DocumentLibrary">
+      <create-content>
+         <content id="google-docs" label="create-content.googledocs.document" icon="document" index="50" type="javascript">
+            <param name="function">onGoogledocsActionCreateDocument</param>
+ 			<evaluator>evaluator.doclib.google.docs.enabled</evaluator>
+         </content>
+         <content id="google-docs" label="create-content.googledocs.spreadsheet" icon="spreadsheet" index="51" type="javascript">
+            <param name="function">onGoogledocsActionCreateSpreadsheet</param>
+         </content>
+         <content id="google-docs" label="create-content.googledocs.presentation" icon="presentation" index="52" type="javascript">
+            <param name="function">onGoogledocsActionCreatePresentation</param>
+         </content>
+      </create-content>
+</config>
+	
+</alfresco-config>

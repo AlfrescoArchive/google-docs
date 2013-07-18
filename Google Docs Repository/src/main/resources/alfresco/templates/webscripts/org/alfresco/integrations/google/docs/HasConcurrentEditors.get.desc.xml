@@ -1,0 +1,10 @@
+<webscript>
+   <shortname>Concurrent Editors</shortname>
+   <description>The Google Docs has concurrent editors</description>
+   <url>/googledocs/concurrentEditors?nodeRef={nodeRef}</url>
+   <lifecycle>internal</lifecycle>
+   <authentication>user</authentication>
+   <format default="json" />
+   <transaction>requiresnew</transaction>
+   <family>googledocs</family>
+</webscript>

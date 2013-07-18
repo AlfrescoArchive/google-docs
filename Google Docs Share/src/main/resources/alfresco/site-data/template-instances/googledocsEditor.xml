@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<template-instance>
+   <template-type>org/alfresco/googledocsEditor</template-type>
+   <properties>
+      <pageFamily>googledocs</pageFamily>
+      <containter>documentLibrary</containter>
+   </properties>
+   <components>
+      <!-- What will go here? -->
+      <component>
+         <region-id>toolbar</region-id>
+         <url>/components/googledocs/toolbar</url>
+      </component>
+      <component>
+         <region-id>editor</region-id>
+         <url>/components/googledocs/editor</url>
+      </component>
+   </components>
+</template-instance>

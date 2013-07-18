@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!-- This file is required to reside on alfresco.com, it provides a user with a method to
+		authenticate their Google account with Alfresco (Cloud or On-Prem). 
+		This feature is triggered inside the Doc Lib page of Share and from the Share Google Docs Editor.
+		This page is the target of the redirect URL specified during app registration by
+		Alfresco when generating the App Key.
+-->
+	<head>
+		<title>Alfresco &raquo; Authorization</title>
+		<style type="text/css">
+			body {margin:3em;font-family:arial,helvetica,clean,sans-serif;}
+			div.header {background:#56A3D9;}
+			h1 {color: white;font-size: 1.3em;padding:5px 6px 3px;}
+		</style>
+	</head>
+	<body>
+		<img src="http://www.alfresco.com/images/alfresco-logo.png" alt="Alfresco" height="61" width="215" />
+		<div class="header"><h1>Google Authorization</h1></div>
+		<p id="status">Completing your authorization...</p>
+		<script>
+         // The Auth token is received from the publisher as a hash on the URL of this call
+         // This needs passing back to the originating Alfresco instance.
+         // One of the easiest ways to achieve this is if we still have a handle to the
+         // window that opened the page:
+         var statusEl = document.getElementById("status");
+	    var searchArray = window.location.search.split("state="),
+               authCallbackUrl = (searchArray[1])? searchArray[1].substring(0, searchArray[1].indexOf("&")): false ;
+	if(authCallbackUrl)
+            {
+               // The Alfresco Auth Return webscript expects the access token as a query string parameter, not as a URL fragment.
+               var accessToken = window.location.search.split("code=");
+                  url = decodeURIComponent(authCallbackUrl);
+               statusEl.innerHTML = "Your authorization has been received.<br /> You are being redirected back to Alfresco to finish processing the authorization.";
+               // Use a client side redirect to send the user there. That page should sort everything out and close itself, if possible.
+               window.location = url + "googledocs/completeauth?access_token=" + accessToken[1];
+            }
+		</script>
+	</body>
+</html>

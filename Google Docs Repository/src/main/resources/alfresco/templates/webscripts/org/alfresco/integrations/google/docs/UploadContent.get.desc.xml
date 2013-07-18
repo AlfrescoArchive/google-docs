@@ -1,0 +1,10 @@
+<webscript>
+   <shortname>Google Docs Upload Content</shortname>
+   <description>Google Docs Upload Content</description>
+   <url>/googledocs/uploadContent?nodeRef={nodeRef}</url>
+   <lifecycle>internal</lifecycle>
+   <authentication>user</authentication>
+   <format default="json" />
+   <transaction>requiresnew</transaction>
+   <family>googledocs</family>
+</webscript>
