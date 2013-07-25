@@ -20,6 +20,10 @@
          <id>alfresco-3rd-party</id>
          <url>https://artifacts.alfresco.com/nexus/content/repositories/thirdparty</url>
       </repository>
+      <repository>
+      	<id>spring-surf</id>
+      	<url>https://artifacts.alfresco.com/nexus/content/repositories/snapshot.extensions.springframework.org</url>
+      </repository>
    </repositories>
    <pluginRepositories>
       <pluginRepository>
