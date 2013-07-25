@@ -472,19 +472,15 @@ public class GoogleDocsServiceImpl
 
         if (state != null)
         {
-
-            /*
-             * When we change to spring social 1.0.2 OAuth2Parameters will need to be updated OAuth2Parameters parameters = new
-             * OAuth2Parameters(); parameters.setRedirectUri(REDIRECT_URI); parameters.setScope(SCOPE); parameters.setState(state);
-             */
-
             MultiValueMap<String, String> additionalParameters = new LinkedMultiValueMap<String, String>(1);
             additionalParameters.add("access_type", "offline");
-
-            OAuth2Parameters parameters = new OAuth2Parameters(GoogleDocsConstants.REDIRECT_URI, GoogleDocsConstants.SCOPE, state, additionalParameters);
-            parameters.getAdditionalParameters();
+            
+            OAuth2Parameters parameters = new OAuth2Parameters();
+            parameters.setRedirectUri(GoogleDocsConstants.REDIRECT_URI);
+            parameters.setScope(GoogleDocsConstants.SCOPE);
+            parameters.setState(state);
+            
             authenticateUrl = connectionFactory.getOAuthOperations().buildAuthenticateUrl(GrantType.AUTHORIZATION_CODE, parameters);
-
         }
 
         log.debug("Authentication URL: " + authenticateUrl);
@@ -562,8 +558,11 @@ public class GoogleDocsServiceImpl
             AccessGrant accessGrant = null;
             try
             {
-
-                accessGrant = connectionFactory.getOAuthOperations().refreshAccess(credentialInfo.getOAuthRefreshToken(), null, null);
+                OAuth2Parameters parameters = new OAuth2Parameters();
+                parameters.setRedirectUri(GoogleDocsConstants.REDIRECT_URI);
+                parameters.setScope(GoogleDocsConstants.SCOPE);
+                
+            	accessGrant = connectionFactory.getOAuthOperations().refreshAccess(credentialInfo.getOAuthRefreshToken(), parameters);
             }
             catch (ApiException apie)
             {
