@@ -68,6 +68,7 @@ import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.cmr.security.PersonService.PersonInfo;
+import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
@@ -1624,7 +1625,8 @@ public class GoogleDocsServiceImpl
                     activityType = FILE_ADDED;
                 }
 
-                String siteId = siteService.getSite(nodeRef).getShortName();
+                SiteInfo siteInfo = siteService.getSite(nodeRef);
+                String siteId = siteInfo != null ? siteInfo.getShortName() : null;
 
                 JSONObject jsonActivityData = new JSONObject();
 

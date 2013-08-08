@@ -35,6 +35,7 @@ import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransacti
 import org.alfresco.service.cmr.repository.InvalidNodeRefException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.transaction.TransactionService;
 import org.apache.commons.httpclient.HttpStatus;
@@ -109,9 +110,9 @@ public class DiscardContent
 
                 if (!Boolean.valueOf(map.get(JSON_KEY_OVERRIDE).toString()))
                 {
-                    if (siteService.isMember(siteService.getSite(nodeRef).getShortName(), AuthenticationUtil.getRunAsUser()))
+                    SiteInfo siteInfo = siteService.getSite(nodeRef);
+                    if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
                     {
-
                         if (googledocsService.hasConcurrentEditors(nodeRef))
                         {
                             throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString()

@@ -36,6 +36,7 @@ import org.alfresco.repo.version.Version2Model;
 import org.alfresco.service.cmr.dictionary.ConstraintException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.cmr.version.VersionService;
 import org.alfresco.service.cmr.version.VersionType;
@@ -119,7 +120,8 @@ public class SaveContent
 
         try
         {
-            if (siteService.isMember(siteService.getSite(nodeRef).getShortName(), AuthenticationUtil.getRunAsUser()))
+            SiteInfo siteInfo = siteService.getSite(nodeRef);
+            if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
             {
 
                 if (!(Boolean)map.get(JSON_KEY_OVERRIDE))
