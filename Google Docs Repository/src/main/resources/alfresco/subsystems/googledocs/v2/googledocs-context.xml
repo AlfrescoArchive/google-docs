@@ -132,22 +132,22 @@
          <ref bean="OAuth2CredentialsStoreService" />
       </property>
       <property name="fileFolderService">
-         <ref bean="fileFolderService"/>
+         <ref bean="FileFolderService"/>
       </property>
       <property name="nodeService">
-         <ref bean="nodeService"/>
+         <ref bean="NodeService"/>
       </property>
       <property name="lockService">
-         <ref bean="lockService"/>
+         <ref bean="LockService"/>
       </property>
       <property name="fileNameUtil">
          <ref bean="fileNameUtil"/>
       </property>
       <property name="dictionaryService">
-      	<ref bean="dictionaryService"/>
+      	<ref bean="DictionaryService"/>
       </property>
       <property name="mimetypeService">
-         <ref bean="mimetypeService"/>
+         <ref bean="MimetypeService"/>
       </property>
       <property name="behaviourFilter">
          <ref bean="policyBehaviourFilter" />
@@ -156,13 +156,13 @@
          <ref bean="activityService"/>
       </property>
       <property name="siteService">
-         <ref bean="siteService"/>
+         <ref bean="SiteService"/>
       </property>
       <property name="tenantService">
          <ref bean="tenantService" />
       </property>
       <property name="personService">
-         <ref bean="personService"/>
+         <ref bean="PersonService"/>
       </property>
       <property name="importFormats">
          <map>
@@ -302,7 +302,7 @@
          <ref bean="mimetypeService"/>
       </property>
       <property name="fileFolderService">
-         <ref bean="fileFolderService"/>
+         <ref bean="FileFolderService"/>
       </property>
    </bean>
    
