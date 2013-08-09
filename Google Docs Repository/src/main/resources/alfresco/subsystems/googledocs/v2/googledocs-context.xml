@@ -32,8 +32,6 @@
       </property>
       <property name="interceptorNames">
          <list>
-            <idref bean="googledocsServiceReadTxnAdvisor"/>
-            <idref bean="googledocsServiceWriteTxnAdvisor"/>
             <idref bean="AuditMethodInterceptor"/>
             <idref bean="exceptionTranslator"/>
             <idref bean="googledocsService_security"/>
