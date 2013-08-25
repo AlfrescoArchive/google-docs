@@ -1630,9 +1630,7 @@ public class GoogleDocsServiceImpl
 
                 JSONObject jsonActivityData = new JSONObject();
 
-                // Using local getPerson ... not cloud
-                // personservice.getPerson(nodeRef) which returns personInfo object
-                PersonInfo personInfo = getPerson(personService.getPerson(AuthenticationUtil.getRunAsUser(), false));
+                PersonInfo personInfo = personService.getPerson(personService.getPerson(AuthenticationUtil.getRunAsUser(), false));
 
                 jsonActivityData.put("firstName", personInfo.getFirstName());
                 jsonActivityData.put("lastName", personInfo.getLastName());
@@ -1657,12 +1655,6 @@ public class GoogleDocsServiceImpl
         } else {
             log.debug("Activity stream entry not created -- user does not exist.");
         }
-    }
-
-
-    private PersonInfo getPerson(NodeRef nodeRef)
-    {
-        return new PersonInfo(nodeRef, AuthenticationUtil.getRunAsUser(), nodeService.getProperty(nodeRef, ContentModel.PROP_FIRSTNAME).toString(), nodeService.getProperty(nodeRef, ContentModel.PROP_LASTNAME).toString());
     }
 
 
