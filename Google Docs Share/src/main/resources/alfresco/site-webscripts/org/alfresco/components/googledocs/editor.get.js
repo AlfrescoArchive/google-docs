@@ -8,7 +8,11 @@ function main()
 
         if (metadata)
         {
-                model.editorURL = metadata.item.node.properties["gd2:editorURL"];
+                model.item = metadata.item;
+                if (metadata.item.node.properties["gd2:editorURL"])
+                {
+                    model.editorURL = metadata.item.node.properties["gd2:editorURL"];
+                }
         }
 }
 

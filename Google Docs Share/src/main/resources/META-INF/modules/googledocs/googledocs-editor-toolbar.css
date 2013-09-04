@@ -65,3 +65,7 @@
 	font-weight: bold;
 	text-shadow: 0 -1px 1px #000000;
 }
+.status-banner {
+	margin-top: 0.75em;
+	padding: 0.5em 1em;
+}

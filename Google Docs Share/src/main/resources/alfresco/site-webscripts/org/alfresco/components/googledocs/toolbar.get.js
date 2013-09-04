@@ -32,9 +32,14 @@ function main()
 
    if (metadata)
    {
+      model.item = metadata.item;
       model.editorURL = metadata.item.node.properties["gd2:editorURL"];
       model.version = metadata.item.version;
       model.isVersioned = isVersioned(metadata);
+   }
+   else
+   {
+       model.isVersioned = false;
    }
    
 }

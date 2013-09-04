@@ -1,5 +1,5 @@
 <#assign el=args.htmlid?html>
-<#if nodeRef?? && isVersioned?? && version??>
+<#if nodeRef??>
    <div id="${el}-body" class="gdtoolbar">
       <div class="gdback"><button id="${el}-googledocs-back-button" class="gd-button gdback-button" name="back"><img src="${url.context}/res/modules/googledocs/images/back.png" /></button></div>
       <div class="after-gdback"></div>
@@ -10,10 +10,10 @@
    </div>
    <script type="text/javascript">//<![CDATA[
    new Alfresco.GoogleDocs.Toolbar("${el}").setOptions({
-      nodeRef: "${nodeRef?js_string}",
+      nodeRef: <#if item??>"${nodeRef?js_string}"<#else>null</#if>,
       site: "${site!""?js_string}",
       isVersioned: ${isVersioned?string},
-      version: "${version?js_string}"
+      version: "${version!""?js_string}"
    }).setMessages(
       ${messages}
    );
