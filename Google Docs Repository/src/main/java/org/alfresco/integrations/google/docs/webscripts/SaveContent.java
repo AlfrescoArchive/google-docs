@@ -208,22 +208,22 @@ public class SaveContent
         }
         catch (GoogleDocsAuthenticationException gdae)
         {
-            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdae.getMessage());
+            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdae.getMessage(), gdae);
         }
         catch (GoogleDocsServiceException gdse)
         {
             if (gdse.getPassedStatusCode() > -1)
             {
-                throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage());
+                throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage(), gdse);
             }
             else
             {
-                throw new WebScriptException(gdse.getMessage());
+                throw new WebScriptException(gdse.getMessage(), gdse);
             }
         }
         catch (GoogleDocsRefreshTokenException gdrte)
         {
-            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage());
+            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage(), gdrte);
         }
         catch (IOException ioe)
         {
