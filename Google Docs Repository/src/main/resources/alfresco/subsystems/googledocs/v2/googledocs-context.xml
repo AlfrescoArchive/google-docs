@@ -17,8 +17,8 @@
 
    <bean id="googledocsConnectionFactory"
       class="org.springframework.social.google.docs.connect.GoogleDocsConnectionFactory">
-      <constructor-arg value="176148111206-onm9idr174ub34k8pi09puui2nb46627.apps.googleusercontent.com" />
-      <constructor-arg value="yEbWWWax6QSwTTZhrqcLJrXq" />
+      <constructor-arg value="${google.api.clientId}" />
+      <constructor-arg value="${google.api.clientSecret}" />
    </bean>
 
 

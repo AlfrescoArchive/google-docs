@@ -9,6 +9,8 @@
  
   <properties>
       <buildnumber>SNAPSHOT</buildnumber>
+      <google.api.clientId>176148111206-onm9idr174ub34k8pi09puui2nb46627.apps.googleusercontent.com</google.api.clientId>
+      <google.api.clientSecret>yEbWWWax6QSwTTZhrqcLJrXq</google.api.clientSecret>
    </properties>
 
    <repositories>
@@ -158,6 +160,12 @@
             </configuration>
          </plugin>
       </plugins>
+      <resources>
+         <resource>
+            <directory>src/main/resources</directory>
+            <filtering>true</filtering>
+         </resource>
+      </resources>
    </build>
 
 </project>
