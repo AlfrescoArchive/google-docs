@@ -52,6 +52,12 @@ public interface GoogleDocsConstants
     public static final String PRESENTATION_TYPE          = "presentation";
     public static final String SPREADSHEET_TYPE           = "spreadsheet";
 
+    // Google mimetypes
+    public static final String MIMETYPE_DOCUMENT          = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    public static final String MIMETYPE_PRESENTATION      = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    public static final String MIMETYPE_SPREADSHEET       = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    public static final String MIMETYPE_ODT               = "application/vnd.oasis.opendocument.text";
+
     // Google New Document Names
     public static final String NEW_DOCUMENT_NAME          = "Untitled Document";
     public static final String NEW_PRESENTATION_NAME      = "Untitled Presentation";

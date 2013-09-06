@@ -17,9 +17,7 @@ package org.alfresco.integrations.google.docs.webscripts;
 
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
@@ -30,15 +28,13 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsTypeException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.integrations.google.docs.utils.FileNameUtil;
 import org.alfresco.model.ContentModel;
-import org.alfresco.query.CannedQueryPageDetails;
-import org.alfresco.query.PagingRequest;
-import org.alfresco.query.PagingResults;
 import org.alfresco.repo.management.subsystems.ApplicationContextFactory;
+import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransactionCallback;
+import org.alfresco.service.cmr.model.FileExistsException;
 import org.alfresco.service.cmr.model.FileFolderService;
 import org.alfresco.service.cmr.model.FileInfo;
 import org.alfresco.service.cmr.repository.NodeRef;
-import org.alfresco.service.namespace.QName;
-import org.alfresco.util.Pair;
+import org.alfresco.service.transaction.TransactionService;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -52,7 +48,10 @@ import com.google.gdata.data.docs.DocumentListEntry;
 
 
 /**
+ * Create new Google Document/Spreadsheet/Presentation web script
+ * 
  * @author Jared Ottley <jared.ottley@alfresco.com>
+ * @author Will Abson <will.abson@alfresco.com>
  */
 public class CreateContent
     extends GoogleDocsWebScripts
@@ -61,6 +60,7 @@ public class CreateContent
 
     private final static String FILENAMEUTIL  = "fileNameUtil";
 
+    private TransactionService  transactionService;
     private GoogleDocsService   googledocsService;
     private FileFolderService   fileFolderService;
 
@@ -70,6 +70,12 @@ public class CreateContent
     private final static String PARAM_PARENT  = "parent";
 
     private final static String MODEL_NODEREF = "nodeRef";
+
+
+    public void setTransactionService(TransactionService transactionService)
+    {
+        this.transactionService = transactionService;
+    }
 
 
     public void setGoogledocsService(GoogleDocsService googledocsService)
@@ -112,35 +118,24 @@ public class CreateContent
             {
                 if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
                 {
-                    String name = filenameHandler(contentType, parentNodeRef);
-                    fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
-
+                    fileInfo = createFile(parentNodeRef, contentType, GoogleDocsConstants.MIMETYPE_DOCUMENT);
                     documentEntry = googledocsService.createDocument(fileInfo.getNodeRef());
-
-                    googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
                 }
                 else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
                 {
-                    String name = filenameHandler(contentType, parentNodeRef);
-                    fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
-
+                    fileInfo = createFile(parentNodeRef, contentType, GoogleDocsConstants.MIMETYPE_SPREADSHEET);
                     documentEntry = googledocsService.createSpreadSheet(fileInfo.getNodeRef());
-
-                    googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
                 }
                 else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
                 {
-                    String name = filenameHandler(contentType, parentNodeRef);
-                    fileInfo = fileFolderService.create(parentNodeRef, name, ContentModel.TYPE_CONTENT);
-
+                    fileInfo = createFile(parentNodeRef, contentType, GoogleDocsConstants.MIMETYPE_PRESENTATION);
                     documentEntry = googledocsService.createPresentation(fileInfo.getNodeRef());
-
-                    googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
                 }
                 else
                 {
                     throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, "Content Type Not Found.");
                 }
+                googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
 
             }
             catch (GoogleDocsServiceException gdse)
@@ -186,55 +181,58 @@ public class CreateContent
 
 
     /**
-     * Look for duplicate file names for the type in the folder/space
+     * Create a new content item for a document, spreadsheet or presentation which is to be edited in Google Docs
      * 
-     * @param contentType
-     * @param parentNodeRef
-     * @return
+     * <p>The name of the file is generated automatically, based on the type of content. In the event of a clash with
+     * an existing file, the file name will have a numeric suffix placed on the end of it before the file extension,
+     * which will be incremented until a valid name is found.</p>
+     * 
+     * @param parentNodeRef NodeRef identifying the folder where the content will be created
+     * @param contentType   The type of content to be created, one of 'document', 'spreadsheet' or 'presentation'
+     * @param mimetype  The mimetype of the new content item, used to determine the file extension to add
+     * @return  A FileInfo object representing the new content item. Call fileInfo.getNodeRef() to get the nodeRef
      */
-    private String filenameHandler(String contentType, NodeRef parentNodeRef)
+    private FileInfo createFile(final NodeRef parentNodeRef, final String contentType, final String mimetype)
     {
-        List<Pair<QName, Boolean>> sortProps = new ArrayList<Pair<QName, Boolean>>(1);
-        sortProps.add(new Pair<QName, Boolean>(ContentModel.PROP_NAME, false));
+        String baseName = getNewFileName(contentType), fileExt = fileNameUtil.getExtension(mimetype);
+        final StringBuffer sb = new StringBuffer(baseName);
+        if (fileExt != null && !fileExt.equals(""))
+        {
+            sb.append(".").append(fileExt);
+        }
+        int i = 0, maxCount = 1000; // Limit the damage should something go horribly wrong and a FileExistsException is always thrown
+        
+        while (i <= maxCount)
+        {
+            try
+            {
+               if (log.isDebugEnabled())
+                  log.debug("trying to create file with name " + sb.toString());
 
-        PagingResults<FileInfo> results = null;
-        if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
-        {
-            results = fileFolderService.list(parentNodeRef, true, false, GoogleDocsConstants.NEW_DOCUMENT_NAME + "*", null, sortProps, new PagingRequest(CannedQueryPageDetails.DEFAULT_PAGE_SIZE));
+               /* 
+                * Execute fileFolderService.create() inside its own transaction, so that the main transction
+                * does not get marked for rollback in the event of an exception being thrown
+                */
+               return (FileInfo) transactionService.getRetryingTransactionHelper().doInTransaction(new RetryingTransactionCallback<Object>()
+               {
+                   public Object execute()
+                       throws Throwable
+                   {
+                       return fileFolderService.create(parentNodeRef, sb.toString(), ContentModel.TYPE_CONTENT);
+                   }
+               }, false, true);
+            }
+            catch (FileExistsException e)
+            {
+                log.debug("Caught FileExistsException for filename " + sb.toString());
+                String name = fileNameUtil.incrementFileName(sb.toString());
+                sb.replace(0, sb.length(), name);
+                if (log.isDebugEnabled())
+                   log.debug("new file name " + sb.toString());
+            }
+            i++;
         }
-        else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
-        {
-            results = fileFolderService.list(parentNodeRef, true, false, GoogleDocsConstants.NEW_SPREADSHEET_NAME + "*", null, sortProps, new PagingRequest(CannedQueryPageDetails.DEFAULT_PAGE_SIZE));
-        }
-        else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
-        {
-            results = fileFolderService.list(parentNodeRef, true, false, GoogleDocsConstants.NEW_PRESENTATION_NAME + "*", null, sortProps, new PagingRequest(CannedQueryPageDetails.DEFAULT_PAGE_SIZE));
-        }
-        else
-        {
-            throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, "Content type: " + contentType + " unknown.");
-        }
-
-        List<FileInfo> page = results.getPage();
-        FileInfo fileInfo = null;
-        if (page.size() > 0)
-        {
-            fileInfo = page.get(0);
-            log.debug("Duplicate file name: " + (fileInfo != null ? fileInfo.getName() : "none"));
-        }
-
-        String name = null;
-        if (fileInfo != null)
-        {
-            name = fileNameUtil.incrementFileName(fileInfo.getNodeRef());
-        }
-        else
-        {
-            name = getNewFileName(contentType);
-        }
-
-        return name;
-
+        throw new WebScriptException(HttpStatus.SC_CONFLICT, "Too many untitled files. Try renaming some existing documents.");
     }
 
 

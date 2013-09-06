@@ -737,7 +737,7 @@ public class GoogleDocsServiceImpl
         {
             //Add temporary Node (with Content)
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
-            writer.setMimetype("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+            writer.setMimetype(GoogleDocsConstants.MIMETYPE_DOCUMENT);
             writer.putContent(newDocument.getInputStream());
 
         }
@@ -767,7 +767,7 @@ public class GoogleDocsServiceImpl
         {
             //Add temporary Node (with Content)
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
-            writer.setMimetype("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            writer.setMimetype(GoogleDocsConstants.MIMETYPE_SPREADSHEET);
             writer.putContent(newSpreadsheet.getInputStream());
 
         }
@@ -797,7 +797,7 @@ public class GoogleDocsServiceImpl
         {
             //Add temporary Node (with Content)
             ContentWriter writer = fileFolderService.getWriter(nodeRef);
-            writer.setMimetype("application/vnd.openxmlformats-officedocument.presentationml.presentation");
+            writer.setMimetype(GoogleDocsConstants.MIMETYPE_PRESENTATION);
             writer.putContent(newPresentation.getInputStream());
 
         }
@@ -1384,19 +1384,19 @@ public class GoogleDocsServiceImpl
         FileInfo fileInfo = fileFolderService.getFileInfo(nodeRef);
         String mimetype = fileInfo.getContentData().getMimetype();
 
-        if (mimetype.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+        if (mimetype.equals(GoogleDocsConstants.MIMETYPE_DOCUMENT))
         {
             name = MSofficeExtensionHandler(name, "\\.docx$", "\\.doc$", ".docx");
         }
-        else if (mimetype.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+        else if (mimetype.equals(GoogleDocsConstants.MIMETYPE_SPREADSHEET))
         {
             name = MSofficeExtensionHandler(name, "\\.xlsx$", "\\.xls$", ".xlsx");
         }
-        else if (mimetype.equals("application/vnd.openxmlformats-officedocument.presentationml.presentation"))
+        else if (mimetype.equals(GoogleDocsConstants.MIMETYPE_PRESENTATION))
         {
             name = MSofficeExtensionHandler(name, "\\.pptx$", "\\.ppt$", ".pptx");
         }
-        else if (mimetype.equals("application/vnd.oasis.opendocument.text"))
+        else if (mimetype.equals(GoogleDocsConstants.MIMETYPE_ODT))
         {
             Pattern odt_pattern = Pattern.compile("\\.odt$");
             Matcher odt_matcher = odt_pattern.matcher(name);

@@ -33,6 +33,9 @@
       <property name="fileFolderService">
          <ref bean="FileFolderService"/>
       </property>
+      <property name="transactionService">
+         <ref bean="TransactionService"/>
+      </property>
    </bean>
    
    <bean id="webscript.org.alfresco.integrations.google.docs.UploadContent.get" class="org.alfresco.integrations.google.docs.webscripts.UploadContent" parent="webscript">
