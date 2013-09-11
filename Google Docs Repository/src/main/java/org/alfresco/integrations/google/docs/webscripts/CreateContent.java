@@ -17,7 +17,9 @@ package org.alfresco.integrations.google.docs.webscripts;
 
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
@@ -29,12 +31,11 @@ import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.integrations.google.docs.utils.FileNameUtil;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.management.subsystems.ApplicationContextFactory;
-import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransactionCallback;
-import org.alfresco.service.cmr.model.FileExistsException;
 import org.alfresco.service.cmr.model.FileFolderService;
-import org.alfresco.service.cmr.model.FileInfo;
+import org.alfresco.service.cmr.model.FileNotFoundException;
 import org.alfresco.service.cmr.repository.NodeRef;
-import org.alfresco.service.transaction.TransactionService;
+import org.alfresco.service.namespace.NamespaceService;
+import org.alfresco.service.namespace.QName;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -60,7 +61,6 @@ public class CreateContent
 
     private final static String FILENAMEUTIL  = "fileNameUtil";
 
-    private TransactionService  transactionService;
     private GoogleDocsService   googledocsService;
     private FileFolderService   fileFolderService;
 
@@ -70,12 +70,6 @@ public class CreateContent
     private final static String PARAM_PARENT  = "parent";
 
     private final static String MODEL_NODEREF = "nodeRef";
-
-
-    public void setTransactionService(TransactionService transactionService)
-    {
-        this.transactionService = transactionService;
-    }
 
 
     public void setGoogledocsService(GoogleDocsService googledocsService)
@@ -112,30 +106,30 @@ public class CreateContent
 
             log.debug("ContentType: " + contentType + "; Parent: " + parentNodeRef);
 
-            FileInfo fileInfo = null;
+            NodeRef newNode = null;
             DocumentListEntry documentEntry = null;
             try
             {
                 if (contentType.equals(GoogleDocsConstants.DOCUMENT_TYPE))
                 {
-                    fileInfo = createFile(parentNodeRef, contentType, GoogleDocsConstants.MIMETYPE_DOCUMENT);
-                    documentEntry = googledocsService.createDocument(fileInfo.getNodeRef());
+                    newNode = createFile(parentNodeRef, contentType, GoogleDocsConstants.MIMETYPE_DOCUMENT);
+                    documentEntry = googledocsService.createDocument(newNode);
                 }
                 else if (contentType.equals(GoogleDocsConstants.SPREADSHEET_TYPE))
                 {
-                    fileInfo = createFile(parentNodeRef, contentType, GoogleDocsConstants.MIMETYPE_SPREADSHEET);
-                    documentEntry = googledocsService.createSpreadSheet(fileInfo.getNodeRef());
+                    newNode = createFile(parentNodeRef, contentType, GoogleDocsConstants.MIMETYPE_SPREADSHEET);
+                    documentEntry = googledocsService.createSpreadSheet(newNode);
                 }
                 else if (contentType.equals(GoogleDocsConstants.PRESENTATION_TYPE))
                 {
-                    fileInfo = createFile(parentNodeRef, contentType, GoogleDocsConstants.MIMETYPE_PRESENTATION);
-                    documentEntry = googledocsService.createPresentation(fileInfo.getNodeRef());
+                    newNode = createFile(parentNodeRef, contentType, GoogleDocsConstants.MIMETYPE_PRESENTATION);
+                    documentEntry = googledocsService.createPresentation(newNode);
                 }
                 else
                 {
                     throw new WebScriptException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE, "Content Type Not Found.");
                 }
-                googledocsService.decorateNode(fileInfo.getNodeRef(), documentEntry, true);
+                googledocsService.decorateNode(newNode, documentEntry, true);
 
             }
             catch (GoogleDocsServiceException gdse)
@@ -166,9 +160,9 @@ public class CreateContent
                 throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage(), ioe);
             }
 
-            googledocsService.lockNode(fileInfo.getNodeRef());
+            googledocsService.lockNode(newNode);
 
-            model.put(MODEL_NODEREF, fileInfo.getNodeRef().toString());
+            model.put(MODEL_NODEREF, newNode.toString());
 
         }
         else
@@ -192,7 +186,7 @@ public class CreateContent
      * @param mimetype  The mimetype of the new content item, used to determine the file extension to add
      * @return  A FileInfo object representing the new content item. Call fileInfo.getNodeRef() to get the nodeRef
      */
-    private FileInfo createFile(final NodeRef parentNodeRef, final String contentType, final String mimetype)
+    private NodeRef createFile(final NodeRef parentNodeRef, final String contentType, final String mimetype)
     {
         String baseName = getNewFileName(contentType), fileExt = fileNameUtil.getExtension(mimetype);
         final StringBuffer sb = new StringBuffer(baseName);
@@ -204,31 +198,26 @@ public class CreateContent
         
         while (i <= maxCount)
         {
+            List<String> parts = new ArrayList<String>(1);
+            parts.add(QName.createQName(NamespaceService.CONTENT_MODEL_1_0_URI, sb.toString()).toPrefixString());
             try
             {
-               if (log.isDebugEnabled())
-                  log.debug("trying to create file with name " + sb.toString());
-
-               /* 
-                * Execute fileFolderService.create() inside its own transaction, so that the main transction
-                * does not get marked for rollback in the event of an exception being thrown
-                */
-               return (FileInfo) transactionService.getRetryingTransactionHelper().doInTransaction(new RetryingTransactionCallback<Object>()
-               {
-                   public Object execute()
-                       throws Throwable
-                   {
-                       return fileFolderService.create(parentNodeRef, sb.toString(), ContentModel.TYPE_CONTENT);
-                   }
-               }, false, true);
+                if (fileFolderService.resolveNamePath(parentNodeRef, parts, false) == null)
+                {
+                   return fileFolderService.create(parentNodeRef, sb.toString(), ContentModel.TYPE_CONTENT).getNodeRef();
+                }
+                else
+                {
+                    log.debug("Filename " + sb.toString() + " already exists");
+                    String name = fileNameUtil.incrementFileName(sb.toString());
+                    sb.replace(0, sb.length(), name);
+                    if (log.isDebugEnabled())
+                       log.debug("new file name " + sb.toString());
+                }
             }
-            catch (FileExistsException e)
+            catch (FileNotFoundException e) // We should never catch this because we set mustExist=false
             {
-                log.debug("Caught FileExistsException for filename " + sb.toString());
-                String name = fileNameUtil.incrementFileName(sb.toString());
-                sb.replace(0, sb.length(), name);
-                if (log.isDebugEnabled())
-                   log.debug("new file name " + sb.toString());
+                throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Unexpected FileNotFoundException", e);
             }
             i++;
         }
