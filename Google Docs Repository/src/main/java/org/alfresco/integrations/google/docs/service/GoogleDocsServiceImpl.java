@@ -479,6 +479,7 @@ public class GoogleDocsServiceImpl
             OAuth2Parameters parameters = new OAuth2Parameters();
             parameters.setRedirectUri(GoogleDocsConstants.REDIRECT_URI);
             parameters.setScope(GoogleDocsConstants.SCOPE);
+            parameters.putAll(additionalParameters);
             parameters.setState(state);
             
             authenticateUrl = connectionFactory.getOAuthOperations().buildAuthenticateUrl(GrantType.AUTHORIZATION_CODE, parameters);
@@ -512,7 +513,7 @@ public class GoogleDocsServiceImpl
             // need to make sure it is persisted across the "refresh".
             if (accessGrant.getRefreshToken() == null)
             {
-                log.debug("Missing Refresh Token");
+                log.warn("Missing Refresh Token");
 
                 OAuth2CredentialsInfo credentialInfo = oauth2CredentialsStoreService.getPersonalOAuth2Credentials(GoogleDocsConstants.REMOTE_SYSTEM);
                 // In the "rare" case that no refresh token is returned and the
@@ -560,9 +561,6 @@ public class GoogleDocsServiceImpl
             try
             {
                 OAuth2Parameters parameters = new OAuth2Parameters();
-                parameters.setRedirectUri(GoogleDocsConstants.REDIRECT_URI);
-                parameters.setScope(GoogleDocsConstants.SCOPE);
-                
             	accessGrant = connectionFactory.getOAuthOperations().refreshAccess(credentialInfo.getOAuthRefreshToken(), parameters);
             }
             catch (ApiException apie)
@@ -572,7 +570,7 @@ public class GoogleDocsServiceImpl
                     ServiceException se = (ServiceException)apie.getCause();
                     if (se.getHttpErrorCodeOverride() == HttpStatus.SC_UNAUTHORIZED)
                     {
-                        throw new GoogleDocsAuthenticationException("Token Refresh Failed.");
+                        throw new GoogleDocsAuthenticationException("Token Refresh Failed.", apie);
                     }
                 }
             }
@@ -580,11 +578,12 @@ public class GoogleDocsServiceImpl
             {
                 if (hcee.getStatusCode().value() == HttpStatus.SC_BAD_REQUEST)
                 {
-                    throw new GoogleDocsAuthenticationException(hcee.getMessage());
+                    log.debug("Refresh token request got 400 response, body: \n" + hcee.getResponseBodyAsString());
+                    throw new GoogleDocsAuthenticationException(hcee.getMessage(), hcee);
                 }
                 else
                 {
-                    throw new GoogleDocsServiceException(hcee.getMessage(), hcee.getStatusCode().ordinal());
+                    throw new GoogleDocsServiceException(hcee.getMessage(), hcee.getStatusCode().ordinal(), hcee);
                 }
 
             }
@@ -621,7 +620,7 @@ public class GoogleDocsServiceImpl
         }
         else
         {
-            throw new GoogleDocsRefreshTokenException("No Refresh Token Provided for " + AuthenticationUtil.getRunAsUser());
+            throw new GoogleDocsRefreshTokenException("No Refresh Token stored for " + AuthenticationUtil.getRunAsUser());
         }
     }
 
