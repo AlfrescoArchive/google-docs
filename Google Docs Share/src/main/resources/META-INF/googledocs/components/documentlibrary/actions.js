@@ -70,6 +70,18 @@
             contenttype: contentType,
             parent: record.nodeRef
          },
+         beforeRequestCallback:
+         {
+            fn : function(response)
+            {
+               Alfresco.GoogleDocs.showMessage({
+                  text: this.msg("create-content.googledocs." + contentType + ".creating"), 
+                  displayTime: 0,
+                  showSpinner: true
+               });
+            },
+            scope : this
+         },
          successCallback: {
             fn: function(response)
             {
@@ -187,6 +199,18 @@
                   fn : function(response)
                   {
                      navigateToEditorPage(response.json.nodeRef);
+                  },
+                  scope : this
+               },
+               beforeRequestCallback:
+               {
+                  fn : function(response)
+                  {
+                     Alfresco.GoogleDocs.showMessage({
+                        text: this.msg("googledocs.actions.editing"), 
+                        displayTime: 0,
+                        showSpinner: true
+                     });
                   },
                   scope : this
                },
