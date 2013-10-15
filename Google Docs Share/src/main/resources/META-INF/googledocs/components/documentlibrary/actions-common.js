@@ -351,10 +351,8 @@
          scope: this
       };
       
-      console.log("new code");
       // Used for example to display a spinner before the callout is made
       if (typeof config.beforeRequestCallback == "object" && typeof config.beforeRequestCallback.fn == "function") {
-         console.log("running beforeRequestCallback");
          config.beforeRequestCallback.fn.call(config.beforeRequestCallback.scope || window);
       }
        
