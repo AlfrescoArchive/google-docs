@@ -1412,6 +1412,19 @@ public class GoogleDocsServiceImpl
                 }
             }
         }
+        else
+        {
+            String guessedMimetype = mimetypeService.guessMimetype(name);
+            if (guessedMimetype == null || !mimetype.equals(guessedMimetype))
+            {
+                String oldName = name, mimeTypeExtension = mimetypeService.getExtension(mimetype);
+                name = name.concat("." + mimeTypeExtension);
+                if (log.isInfoEnabled())
+                {
+                    log.info("Rename file '" + oldName + "' to '" + name + "'");
+                }
+            }
+        }
 
         //Get the last known node with the same name (+number) in the same folder
         NodeRef lastDup = findLastDuplicate(nodeRef, name);
