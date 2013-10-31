@@ -3,7 +3,7 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>org.alfresco.integrations</groupId>
    <artifactId>alfresco-googledocs-share</artifactId>
-   <version>2.0.5-${buildnumber}</version>
+   <version>2.0.6-${buildnumber}</version>
    <name>Alfresco Cloud Share</name>
    <packaging>amp</packaging>
 
