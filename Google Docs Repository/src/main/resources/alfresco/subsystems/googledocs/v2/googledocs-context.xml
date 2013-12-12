@@ -276,6 +276,15 @@
             <entry key="application/vnd.sun.xml.writer">
                <value>application/vnd.oasis.opendocument.text</value>
             </entry>
+            <entry key="application/vnd.ms-excel">
+               <value>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</value>
+            </entry>
+            <entry key="application/msword">
+               <value>application/vnd.openxmlformats-officedocument.wordprocessingml.document</value>
+            </entry>
+            <entry key="application/vnd.ms-powerpoint">
+               <value>application/vnd.openxmlformats-officedocument.presentationml.presentation</value>
+            </entry>
          </map>
       </property>
       <property name="newDocument">
