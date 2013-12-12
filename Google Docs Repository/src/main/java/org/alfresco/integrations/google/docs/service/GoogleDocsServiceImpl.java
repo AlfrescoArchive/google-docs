@@ -316,11 +316,26 @@ public class GoogleDocsServiceImpl
     {
         if (isUpgrade(mimetype))
         {
+            if (log.isDebugEnabled())
+            {
+                log.debug("Mimetype " + mimetype + " cannot be exported directly and will be upgraded");
+            }
             throw new MustUpgradeFormatException();
         }
         else if (isDownGrade(mimetype))
         {
+            if (log.isDebugEnabled())
+            {
+                log.debug("Mimetype " + mimetype + " cannot be exported directly and will be upgraded");
+            }
             throw new MustDowngradeFormatException();
+        }
+        else
+        {
+            if (log.isDebugEnabled())
+            {
+                log.debug("Mimetype " + mimetype + " can be exported");
+            }
         }
 
         String type = getImportType(mimetype);
@@ -392,10 +407,18 @@ public class GoogleDocsServiceImpl
         if (isDownGrade(mimeType))
         {
             mimeType = downgradeMappings.get(mimeType);
+            if (log.isDebugEnabled())
+            {
+                log.debug("Mimetype will be downgraded to " + mimeType);
+            }
         }
         else if (isUpgrade(mimeType))
         {
             mimeType = upgradeMappings.get(mimeType);
+            if (log.isDebugEnabled())
+            {
+                log.debug("Mimetype will be upgraded to " + mimeType);
+            }
         }
 
         return mimeType;
