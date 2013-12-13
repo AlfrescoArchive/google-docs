@@ -395,6 +395,47 @@
       }
    }),
    
+   
+   YAHOO.Bubbling.fire("registerAction", {
+      actionName : "onGoogledocsActionCancel",
+      fn : function dlA_onGoogledocsActionCancel(record) {
+
+         Alfresco.GoogleDocs.showMessage({
+            text: this.msg("googledocs.actions.cancel"), 
+            displayTime: 0,
+            showSpinner: true
+         });
+         var displayName = record.displayName;
+
+		 var success =
+		 {
+			fn: function(response) {
+			   location.reload(); 
+			}
+		 };
+		 
+		 var failure =
+		 {
+			fn: function(response) {
+			   location.reload(); 
+			}
+		 };
+
+		 var actionUrl = Alfresco.constants.PROXY_URI + "googledocs/discardContent";
+              
+	     Alfresco.GoogleDocs.request({
+		    url: actionUrl,
+		    method: "POST",
+		    dataObj: {
+			   nodeRef: record.nodeRef,
+			   override: true
+		    },
+		    successCallback: success,
+	        failureCallback: failure
+		});
+      }
+   }),
+   
    /*
     * Create Content Actions
     */

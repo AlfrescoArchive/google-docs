@@ -23,17 +23,25 @@
             <param name="function">onGoogledocsActionResume</param>
             <evaluator>evaluator.doclib.google.docs.resume</evaluator>
          </action>
+		 <action id="google-docs-cancel-action-link" type="javascript" 
+                icon="../../../googledocs/components/documentlibrary/actions/google-edit-flat" 
+                label="googledocs.actions.cancel">
+            <param name="function">onGoogledocsActionCancel</param>
+            <evaluator>evaluator.doclib.google.docs.resume</evaluator>
+         </action>
 		</actions>
 		
 		<actionGroups>
 			<actionGroup id="document-browse">
 				<action index="250" id="google-docs-edit-action-link" />
-            <action index="250" id="google-docs-resume-action-link" />
+                <action index="250" id="google-docs-resume-action-link" />
+			    <action index="250" id="google-docs-cancel-action-link" />
 			</actionGroup>
 			
 			<actionGroup id="document-details">
 				<action index="250" id="google-docs-edit-action-link" />
-            <action index="250" id="google-docs-resume-action-link" />
+                <action index="250" id="google-docs-resume-action-link" />
+			    <action index="250" id="google-docs-cancel-action-link" />
 			</actionGroup>
 		</actionGroups>	
 	</config>

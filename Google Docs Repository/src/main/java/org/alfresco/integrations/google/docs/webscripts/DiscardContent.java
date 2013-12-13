@@ -148,6 +148,43 @@ public class DiscardContent
             }
             catch (GoogleDocsServiceException gdse)
             {
+            	if (gdse.getPassedStatusCode() == HttpStatus.SC_NOT_FOUND)
+            	{
+                    // This code will make changes after the rollback has occurred to clean up the node: remove the lock and the Google
+                    // Docs aspect. If it has the temporary aspect it will also remove the node from Alfresco
+                    AlfrescoTransactionSupport.bindListener(new TransactionListenerAdapter()
+                    {
+                        public void afterCommit()
+                        {
+                            transactionService.getRetryingTransactionHelper().doInTransaction(new RetryingTransactionCallback<Object>()
+                            {
+                                public Object execute()
+                                    throws Throwable
+                                {
+                                    AuthenticationUtil.runAsSystem(new AuthenticationUtil.RunAsWork<Object>()
+                                    {
+                                        public Object doWork()
+                                            throws Exception
+                                        {
+                                            googledocsService.unlockNode(nodeRef);
+                                            googledocsService.unDecorateNode(nodeRef);
+
+                                           return null;
+                                        }
+                                    });
+
+                                    return null;
+                                }
+                            }, false, true);
+                        }
+                    });
+                    //throw new WebScriptException(HttpStatus.SC_NOT_FOUND, gdse.getMessage(), gdse);
+                    if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+                    {
+                        nodeService.deleteNode(nodeRef);
+                    }
+                    model.put(MODEL_SUCCESS, true);
+            	} else
                 if (gdse.getPassedStatusCode() > -1)
                 {
                     throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage());
