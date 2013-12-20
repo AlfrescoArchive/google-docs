@@ -169,6 +169,11 @@ public class DiscardContent
                                             googledocsService.unlockNode(nodeRef);
                                             googledocsService.unDecorateNode(nodeRef);
 
+                                            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+                                            {
+                                                nodeService.deleteNode(nodeRef);
+                                            }
+
                                            return null;
                                         }
                                     });
@@ -178,11 +183,6 @@ public class DiscardContent
                             }, false, true);
                         }
                     });
-                    //throw new WebScriptException(HttpStatus.SC_NOT_FOUND, gdse.getMessage(), gdse);
-                    if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
-                    {
-                        nodeService.deleteNode(nodeRef);
-                    }
                     model.put(MODEL_SUCCESS, true);
             	} else
                 if (gdse.getPassedStatusCode() > -1)
