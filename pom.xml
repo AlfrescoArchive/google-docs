@@ -10,7 +10,7 @@
    <properties>
       <buildnumber>SNAPSHOT</buildnumber>
       <alfresco.groupId>org.alfresco</alfresco.groupId>
-      <alfresco.version>4.2.d-SNAPSHOT</alfresco.version>
+      <alfresco.version>5.0.b</alfresco.version>
       <app.log.root.level>WARN</app.log.root.level>
       <alfresco.db.url>jdbc:h2:./${alfresco.data.location}/h2_data/${alfresco.db.name};${alfresco.db.params}</alfresco.db.url>
       <!--
