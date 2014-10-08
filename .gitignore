@@ -1,0 +1,7 @@
+# No build / target directories
+*/target
+
+# Ignore class files
+*.class
+# Ignore vim swp files
+.*.swp
