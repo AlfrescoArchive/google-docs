@@ -42,6 +42,7 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceExcepti
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsTypeException;
 import org.alfresco.integrations.google.docs.exceptions.MustDowngradeFormatException;
 import org.alfresco.integrations.google.docs.exceptions.MustUpgradeFormatException;
+import org.alfresco.integrations.google.docs.exceptions.NotInGoogleDriveException;
 import org.alfresco.integrations.google.docs.utils.FileNameUtil;
 import org.alfresco.integrations.google.docs.utils.FileRevisionComparator;
 import org.alfresco.model.ContentModel;
@@ -929,8 +930,11 @@ public class GoogleDocsServiceImpl
             IOException,
             GoogleDocsRefreshTokenException
     {
-        // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
+        if (resourceID == null)
+        {
+           throw new NotInGoogleDriveException(nodeRef);
+        }
 
         getDocument(nodeRef, resourceID, removeFromDrive);
     }
@@ -942,8 +946,11 @@ public class GoogleDocsServiceImpl
             IOException,
             GoogleDocsRefreshTokenException
     {
-        // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
+        if (resourceID == null)
+        {
+           throw new NotInGoogleDriveException(nodeRef);
+        }
 
         getDocument(nodeRef, resourceID, true);
     }
@@ -1027,8 +1034,11 @@ public class GoogleDocsServiceImpl
             IOException,
             GoogleDocsRefreshTokenException
     {
-        // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
+        if (resourceID == null)
+        {
+           throw new NotInGoogleDriveException(nodeRef);
+        }
 
         getSpreadSheet(nodeRef, resourceID, removeFromDrive);
     }
@@ -1046,8 +1056,11 @@ public class GoogleDocsServiceImpl
             IOException,
             GoogleDocsRefreshTokenException
     {
-        // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
+        if (resourceID == null)
+        {
+           throw new NotInGoogleDriveException(nodeRef);
+        }
 
         getSpreadSheet(nodeRef, resourceID, true);
     }
@@ -1131,8 +1144,11 @@ public class GoogleDocsServiceImpl
             IOException,
             GoogleDocsRefreshTokenException
     {
-        // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
+        if (resourceID == null)
+        {
+           throw new NotInGoogleDriveException(nodeRef);
+        }
 
         getPresentation(nodeRef, resourceID, removeFromDrive);
     }
@@ -1150,8 +1166,11 @@ public class GoogleDocsServiceImpl
             IOException,
             GoogleDocsRefreshTokenException
     {
-        // TODO Wrap with try for null
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
+        if (resourceID == null)
+        {
+           throw new NotInGoogleDriveException(nodeRef);
+        }
 
         getPresentation(nodeRef, resourceID, true);
     }
@@ -1900,9 +1919,9 @@ public class GoogleDocsServiceImpl
 
           if (resourceID == null)
           {
-             // TODO More specific exception
-             throw new GoogleDocsServiceException("Node " + nodeRef + " is not currently in Google Drive");
+             throw new NotInGoogleDriveException(nodeRef);
           }
+          
           return getDriveFile(resourceID);
       }
 
