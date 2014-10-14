@@ -1890,6 +1890,23 @@ public class GoogleDocsServiceImpl
     }
 
 
+    public DriveFile getDriveFile(NodeRef nodeRef)
+          throws GoogleDocsServiceException,
+              GoogleDocsAuthenticationException,
+              GoogleDocsRefreshTokenException
+      {
+          String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
+          log.debug("Node " + nodeRef + " maps to Resource ID " + resourceID);
+
+          if (resourceID == null)
+          {
+             // TODO More specific exception
+             throw new GoogleDocsServiceException("Node " + nodeRef + " is not currently in Google Drive");
+          }
+          return getDriveFile(resourceID);
+      }
+
+
     private String getExportLink(DriveFile driveFile, String mimetype)
     {
         Map<String, String> exportLinks = driveFile.getExportLinks();

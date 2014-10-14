@@ -310,7 +310,7 @@ public interface GoogleDocsService
 
 
     /**
-     * @param resourceID
+     * @param resourceID Google Drive Resource ID
      * @return
      * @throws IOException
      * @throws ServiceException
@@ -319,6 +319,21 @@ public interface GoogleDocsService
      */
     @Auditable(parameters = { "resourceId" })
     public DriveFile getDriveFile(String resourceID)
+        throws GoogleDocsServiceException,
+            GoogleDocsAuthenticationException,
+            GoogleDocsRefreshTokenException;
+
+
+    /**
+     * @param nodeRef Alfresco Node which is currently uploaded to Google Drive
+     * @return
+     * @throws IOException
+     * @throws ServiceException
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsRefreshTokenException
+     */
+    @Auditable(parameters = { "resourceId" })
+    public DriveFile getDriveFile(NodeRef nodeRef)
         throws GoogleDocsServiceException,
             GoogleDocsAuthenticationException,
             GoogleDocsRefreshTokenException;

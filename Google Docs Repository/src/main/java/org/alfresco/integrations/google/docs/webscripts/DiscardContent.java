@@ -170,7 +170,7 @@ public class DiscardContent
                             public Object execute()
                                 throws Throwable
                             {
-                                DriveFile driveFile = googledocsService.getDriveFile(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString());
+                                DriveFile driveFile = googledocsService.getDriveFile(nodeRef);
                                 googledocsService.unlockNode(nodeRef);
                                 boolean deleted = googledocsService.deleteContent(nodeRef, driveFile);
 
@@ -232,7 +232,7 @@ public class DiscardContent
             GoogleDocsRefreshTokenException,
             Exception
     {
-        DriveFile driveFile = googledocsService.getDriveFile(nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString());
+        DriveFile driveFile = googledocsService.getDriveFile(nodeRef);
         googledocsService.unlockNode(nodeRef);
         boolean deleted = googledocsService.deleteContent(nodeRef, driveFile);
 
