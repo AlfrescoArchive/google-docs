@@ -84,13 +84,10 @@ public class RemoveContent
         /* Make sure the node is currently "checked out" to Google */
         if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
         {
-            /* Which google drive account are we working with? */
-            String resourceId = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
-
             try
             {
                 /* Get the metadata for the file we are working on */
-                DriveFile driveFile = googledocsService.getDriveFile(resourceId);
+                DriveFile driveFile = googledocsService.getDriveFile(nodeRef);
                 /* remove it from users Google account and free it in the repo */
                 googledocsService.removeContent(nodeRef, driveFile, (Boolean)map.get(JSON_KEY_FORCE));
 

@@ -114,10 +114,9 @@ public class UploadContent
             if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
             {
                 // Check the doc exists in Google - it may have been removed accidentally
-                String googleId = (String) nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID);
                 try
                 {
-                    driveFile = googledocsService.getDriveFile(googleId);
+                    driveFile = googledocsService.getDriveFile(nodeRef);
                 }
                 catch(GoogleDocsServiceException gdse)
                 {
