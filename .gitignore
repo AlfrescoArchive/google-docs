@@ -5,3 +5,7 @@
 *.class
 # Ignore vim swp files
 .*.swp
+
+.idea/*
+atlassian-ide-plugin.xml
+*.iml
