@@ -3,18 +3,17 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>org.alfresco.integrations</groupId>
    <artifactId>alfresco-googledocs-share</artifactId>
-   <version>2.1.0</version>
-   <name>Alfresco Cloud Share</name>
+   <version>3.0.0</version>
+   <name>Alfresco / Google Docs Share Module</name>
 
    <properties>
-      <alfresco.client.war>share</alfresco.client.war>
-      <jetty.context>share</jetty.context>
+      <project.build.finalName>${project.build.finalName}-${buildnumber}.amp</project.build.finalName>
    </properties>
 
    <parent>
       <groupId>org.alfresco.integrations</groupId>
       <artifactId>alfresco-GoogleDocs</artifactId>
-      <version>2.1.0-${buildnumber}</version>
+      <version>3.0.0-${buildnumber}</version>
    </parent>
 
    <packaging>amp</packaging>
@@ -52,11 +51,11 @@
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
-            <version>2.3.2</version>
+            <version>${compiler-plugin.version}</version>
             <configuration>
-               <source>1.6</source>
-               <target>1.6</target>
-               <encoding>UTF-8</encoding>
+               <source>${java.version}</source>
+               <target>${java.version}</target>
+               <encoding>${project.build.sourceEncoding}</encoding>
             </configuration>
          </plugin>
          <plugin>
@@ -77,14 +76,6 @@
                   <exclude>**/*.css</exclude>
                   <exclude>**/*.get.js</exclude>
                </excludes>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>maven-jetty-plugin</artifactId>
-            <configuration>
-               <contextPath>${jetty.context}</contextPath>
-               <jettyConfig>${project.build.directory}/jetty.xml</jettyConfig>
             </configuration>
          </plugin>
       </plugins>
