@@ -20,10 +20,13 @@
 package org.alfresco.integrations.google.docs.webscripts;
 
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.services.drive.model.Revision;
 import org.alfresco.integrations.google.docs.GoogleDocsModel;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
@@ -39,7 +42,6 @@ import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
-import org.springframework.social.google.api.drive.FileRevision;
 
 /**
  * @author Jared Ottley <jared.ottley@alfresco.com>
@@ -91,14 +93,16 @@ public class IsLatestRevision
             /* The node needs the editingInGoogle aspect if not then tell return 412 */
             if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
             {
+                Credential credential = googledocsService.getCredential();
+
                 /* get the nodes revision Id null if not found */
                 Serializable property = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_REVISION_ID);
                 currentRevision = property != null ? property.toString() : null;
                 log.debug("currentRevision: " + currentRevision);
 
                 /* get the latest revision Id null if not found */
-                FileRevision fileRevision = googledocsService.getLatestRevision(nodeRef);
-                latestRevision = fileRevision != null ? fileRevision.getId() : null;
+                Revision revision = googledocsService.getLatestRevision(credential, nodeRef);
+                latestRevision = revision != null ? revision.getId() : null;
                 log.debug("latestRevision: " + latestRevision);
 
                 /* compare the revision Ids */
@@ -135,6 +139,11 @@ public class IsLatestRevision
         {
             throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage());
         }
+        catch (IOException ioe)
+        {
+            throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage());
+        }
+
 
         return model;
     }

@@ -16,6 +16,11 @@
 package org.alfresco.integrations.google.docs;
 
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+
 /**
  * @author Jared Ottley <jared.ottley@alfresco.com>
  */
@@ -23,50 +28,58 @@ public interface GoogleDocsConstants
 {
 
     // OAuth2 Credential Store -- remotesystem name
-    public static final String REMOTE_SYSTEM              = "googledocs";
+    public static final String REMOTE_SYSTEM = "googledocs";
 
     // Google OAuth2 redirect URI
-    public static final String REDIRECT_URI               = "http://www.alfresco.com/google-auth-return.html";
+    public static final String REDIRECT_URI = "http://www.alfresco.com/google-auth-return.html";
 
     // Google OAuth2 Scopes
-    public static final String SCOPE                      = "https://docs.google.com/feeds/ https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email";
+    public static final String       SCOPE  = "https://docs.google.com/feeds/ https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email";
+    public static final List<String> SCOPES = Collections.unmodifiableList(Arrays.asList("https://www.googleapis.com/auth/drive.file","https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/userinfo.profile","https://www.googleapis.com/auth/userinfo.email"));
+
     // Google docsService Client Name
-    public static final String APPLICATION_NAME           = "Alfresco-GoogleDocs/2.1";
-    
+    public static final String APPLICATION_NAME = "Alfresco-GoogleDocs/2.0";
+
     // Google Document List API EndPoints
-    public static final String BASE_URL                   = "https://docs.google.com/feeds";
-    public static final String METADATA_URL               = BASE_URL + "/metadata/default";
-    public static final String BASE_SPREADSHEET_URL       = "https://spreadsheets.google.com/feeds";
-    public static final String URL_BASE_FEED              = BASE_URL + "/default/private/full";
+    public static final String BASE_URL             = "https://docs.google.com/feeds";
+    public static final String METADATA_URL         = BASE_URL + "/metadata/default";
+    public static final String BASE_SPREADSHEET_URL = "https://spreadsheets.google.com/feeds";
+    public static final String URL_BASE_FEED        = BASE_URL + "/default/private/full";
 
     // Google contentTypes
-    public static final String DOCUMENT_TYPE              = "document";
-    public static final String PRESENTATION_TYPE          = "presentation";
-    public static final String SPREADSHEET_TYPE           = "spreadsheet";
+    public static final String DOCUMENT_TYPE     = "document";
+    public static final String PRESENTATION_TYPE = "presentation";
+    public static final String SPREADSHEET_TYPE  = "spreadsheet";
 
     // Google Docs Mimetypes
-    public static final String DOCUMENT_MIMETYPE          = "application/vnd.google-apps.document";
-    public static final String SPREADSHEET_MIMETYPE       = "application/vnd.google-apps.spreadsheet";
-    public static final String PRESENTATION_MIMETYPE      = "application/vnd.google-apps.presentation";
-    public static final String FOLDER_MIMETYPE            = "application/vnd.google-apps.folder";
+    public static final String DOCUMENT_MIMETYPE     = "application/vnd.google-apps.document";
+    public static final String SPREADSHEET_MIMETYPE  = "application/vnd.google-apps.spreadsheet";
+    public static final String PRESENTATION_MIMETYPE = "application/vnd.google-apps.presentation";
+    public static final String FOLDER_MIMETYPE       = "application/vnd.google-apps.folder";
+
+    // Google mimetypes
+    public static final String MIMETYPE_DOCUMENT     = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    public static final String MIMETYPE_PRESENTATION = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    public static final String MIMETYPE_SPREADSHEET  = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    public static final String MIMETYPE_ODT          = "application/vnd.oasis.opendocument.text";
 
     // Google New Document Names
-    public static final String NEW_DOCUMENT_NAME          = "Untitled Document";
-    public static final String NEW_PRESENTATION_NAME      = "Untitled Presentation";
-    public static final String NEW_SPREADSHEET_NAME       = "Untitled Spreadsheet";
+    public static final String NEW_DOCUMENT_NAME     = "Untitled Document";
+    public static final String NEW_PRESENTATION_NAME = "Untitled Presentation";
+    public static final String NEW_SPREADSHEET_NAME  = "Untitled Spreadsheet";
 
     // Google Drive Root Folder Id
-    public static final String ROOT_FOLDER_ID             = "root";
+    public static final String ROOT_FOLDER_ID = "root";
 
     // Google Drive Alfresco Working Directory
-    public static final String ALF_TEMP_FOLDER            = "Alfresco Temporary Files";
-    public static final String ALF_TEMP_FOLDER_DESC       = "Alfresco Google Docs Temporary Work Files";
+    public static final String ALF_TEMP_FOLDER      = "Alfresco Temporary Files";
+    public static final String ALF_TEMP_FOLDER_DESC = "Alfresco Google Docs Temporary Work Files";
 
     /*
      * There is no standard 419. Some say not set (like Alfresco); Apache says WebDav INSUFFICIENT_SPACE_ON_RESOURCE.
      * 
      * Cut our loses and create our own.
      */
-    public static final int    STATUS_INTEGIRTY_VIOLATION = 419;
+    public static final int STATUS_INTEGIRTY_VIOLATION = 419;
 
 }

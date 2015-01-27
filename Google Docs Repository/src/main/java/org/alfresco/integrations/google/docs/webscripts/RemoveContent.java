@@ -7,6 +7,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.services.drive.model.File;
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
 import org.alfresco.integrations.google.docs.GoogleDocsModel;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
@@ -17,7 +19,7 @@ import org.alfresco.model.ContentModel;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.security.permissions.AccessDeniedException;
 import org.alfresco.repo.transaction.AlfrescoTransactionSupport;
-import org.alfresco.repo.transaction.TransactionListenerAdapter;
+import org.alfresco.util.transaction.TransactionListenerAdapter;
 import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransactionCallback;
 import org.alfresco.service.cmr.dictionary.ConstraintException;
 import org.alfresco.service.cmr.repository.NodeRef;
@@ -34,7 +36,6 @@ import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
-import org.springframework.social.google.api.drive.DriveFile;
 
 
 public class RemoveContent
@@ -86,10 +87,12 @@ public class RemoveContent
         {
             try
             {
+                Credential credential = googledocsService.getCredential();
+
                 /* Get the metadata for the file we are working on */
-                DriveFile driveFile = googledocsService.getDriveFile(nodeRef);
+                File file = googledocsService.getDriveFile(credential, nodeRef);
                 /* remove it from users Google account and free it in the repo */
-                googledocsService.removeContent(nodeRef, driveFile, (Boolean)map.get(JSON_KEY_FORCE));
+                googledocsService.removeContent(credential, nodeRef, file, (Boolean)map.get(JSON_KEY_FORCE));
 
                 /* if we reach this point all should be completed */
                 success = true;

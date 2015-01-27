@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.api.client.auth.oauth2.Credential;
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
@@ -30,7 +31,7 @@ import org.alfresco.model.ContentModel;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.security.permissions.AccessDeniedException;
 import org.alfresco.repo.transaction.AlfrescoTransactionSupport;
-import org.alfresco.repo.transaction.TransactionListenerAdapter;
+import org.alfresco.util.transaction.TransactionListenerAdapter;
 import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransactionCallback;
 import org.alfresco.repo.version.Version2Model;
 import org.alfresco.service.cmr.dictionary.ConstraintException;
@@ -123,6 +124,8 @@ public class SaveContent
 
         try
         {
+            Credential credential = googledocsService.getCredential();
+
             SiteInfo siteInfo = siteService.getSite(nodeRef);
             if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
             {
@@ -130,7 +133,7 @@ public class SaveContent
                 if (!(Boolean)map.get(JSON_KEY_OVERRIDE))
                 {
                     log.debug("Check for Concurent Users.");
-                    if (googledocsService.hasConcurrentEditors(nodeRef))
+                    if (googledocsService.hasConcurrentEditors(credential, nodeRef))
                     {
                         throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString()
                                                                              + " has concurrent editors.");
@@ -151,11 +154,11 @@ public class SaveContent
 
                         if (removeFromDrive)
                         {
-                            googledocsService.getDocument(nodeRef);
+                            googledocsService.getDocument(credential, nodeRef);
                         }
                         else
                         {
-                            googledocsService.getDocument(nodeRef, removeFromDrive);
+                            googledocsService.getDocument(credential, nodeRef, removeFromDrive);
                         }
                         success = true; // TODO Make getDocument return boolean
                     }
@@ -172,11 +175,11 @@ public class SaveContent
 
                         if (removeFromDrive)
                         {
-                            googledocsService.getSpreadSheet(nodeRef);
+                            googledocsService.getSpreadSheet(credential, nodeRef);
                         }
                         else
                         {
-                            googledocsService.getSpreadSheet(nodeRef, removeFromDrive);
+                            googledocsService.getSpreadSheet(credential, nodeRef, removeFromDrive);
                         }
                         success = true; // TODO Make getSpreadsheet return
                                         // boolean
@@ -194,11 +197,11 @@ public class SaveContent
 
                         if (removeFromDrive)
                         {
-                            googledocsService.getPresentation(nodeRef);
+                            googledocsService.getPresentation(credential, nodeRef);
                         }
                         else
                         {
-                            googledocsService.getPresentation(nodeRef, removeFromDrive);
+                            googledocsService.getPresentation(credential, nodeRef, removeFromDrive);
                         }
                         success = true; // TODO Make getPresentation return
                                         // boolean

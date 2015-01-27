@@ -20,24 +20,30 @@
 package org.alfresco.integrations.google.docs.utils;
 
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Date;
 
-import org.springframework.social.google.api.drive.FileRevision;
+import com.google.api.client.util.DateTime;
+import com.google.api.services.drive.model.Revision;
 
 /**
  * @author Jared Ottley <jared.ottley@alfresco.com>
  */
 public class FileRevisionComparator
-    implements Comparator<FileRevision>
+    implements Comparator<Revision>, Serializable
 {
     @Override
-    public int compare(FileRevision entry1, FileRevision entry2)
+    public int compare(Revision entry1, Revision entry2)
     {
-        Date entry1Revision = entry1.getModifiedDate();
-        Date entry2Revision = entry2.getModifiedDate();
+        DateTime entry1Revision = entry1.getModifiedDate();
+        DateTime entry2Revision = entry2.getModifiedDate();
 
-        return entry1Revision.compareTo(entry2Revision);
+        //Google DateTime has no compare method. Convert to Java Date to compare.
+        Date dt1 = new Date(entry1Revision.getValue());
+        Date dt2 = new Date(entry2Revision.getValue());
+
+        return dt1.compareTo(dt2);
     }
 
 }
