@@ -13,15 +13,6 @@
       </property>
    </bean>
 
-   <!-- GoogleDocs Connection Factory -->
-
-   <bean id="googledocsConnectionFactory"
-      class="org.springframework.social.google.connect.GoogleConnectionFactory">
-      <constructor-arg value="176148111206.apps.googleusercontent.com" />
-      <constructor-arg value="m6lTsstN2mNm8IiTFQSr8rCW" />
-   </bean>
-
-
    <!-- Googledocs Service -->
    <bean id="GoogleDocsService" class="org.springframework.aop.framework.ProxyFactoryBean">
       <property name="proxyInterfaces">
@@ -56,7 +47,7 @@
             org.alfresco.integrations.google.docs.service.GoogleDocsService.isAuthenticated=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.getAuthenticateUrl=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.completeAuthentication=ACL_ALLOW
-            org.alfresco.integrations.google.docs.service.GoogleDocsService.getGoogleUserProfile=ACL_ALLOW
+            org.alfresco.integrations.google.docs.service.GoogleDocsService.getDriveUser=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.createDocument=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.createSpreadSheet=ACL_ALLOW
             org.alfresco.integrations.google.docs.service.GoogleDocsService.createPresentation=ACL_ALLOW
@@ -90,7 +81,7 @@
       <property name="mappedNames">
          <list>
             <value>isAuthenticated</value>
-            <value>getGoogleUserProfile</value>
+            <value>getDriveUser</value>
             <value>getContentType</value>
             <value>hasConcurrentEditors</value>
             <value>isGoogleDocsLockOwner</value>
@@ -126,10 +117,7 @@
    </bean>
 
    <bean id="googledocsService"
-      class="org.alfresco.integrations.google.docs.service.GoogleDocsServiceImpl">
-      <property name="connectionFactory">
-         <ref bean="googledocsConnectionFactory" />
-      </property>
+      class="org.alfresco.integrations.google.docs.service.GoogleDocsServiceImpl" init-method="init">
       <property name="oauth2CredentialsStoreService">
          <ref bean="OAuth2CredentialsStoreService" />
       </property>
@@ -325,13 +313,12 @@
       </property>
    </bean>
 
-   <bean id="googleDocsCustomResponses" parent="slingshotDocLibCustomResponse">
-      <property name="customResponses">
-         <map merge="true">
-            <entry key="googledocs">
-               <ref bean="googleDocsImportFormats" />
-            </entry>
-         </map>
+   <bean id="googleDocsCustomResponses" parent="registerSlingshotCustomResponse">
+      <property name="key">
+         <value>googledocs</value>
+      </property>
+      <property name="value">
+         <ref bean="googleDocsImportFormats"/>
       </property>
    </bean>
 

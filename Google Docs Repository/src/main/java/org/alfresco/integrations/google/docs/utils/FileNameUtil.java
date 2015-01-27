@@ -33,6 +33,7 @@ public class FileNameUtil
 {
     private static final Log    log          = LogFactory.getLog(FileNameUtil.class);
 
+    private final static String FULL_PATTERN_WITH_EXT = "(.+?)(\\-(\\d+))?(\\.\\w+)?";
     private final static String FULL_PATTERN = "\\-\\d++\\.";
     private final static String FIRST_DUP    = "-1.";
     private final static String DUP_NUMBER   = "\\d++";
@@ -119,6 +120,52 @@ public class FileNameUtil
         }
 
         return newname;
+    }
+
+
+    /**
+     * Increment the number in the given file name, or add a -1 suffix to the file name,
+     * regardless of the mimetype of the file
+     *
+     * @param name
+     * @return
+     */
+    public String incrementFileName(String name)
+    {
+        String newname = null;
+
+        Pattern p = Pattern.compile(FULL_PATTERN_WITH_EXT);
+        Matcher m = p.matcher(name);
+
+        if (m.matches())
+        {
+            String fileExt = m.group(4), fileName = m.group(1), number = m.group(3);
+            log.debug("Matching filename: " + name + ", base: " + fileName + ", number: " + number + ", extension: " + fileExt);
+
+            int newNumber = 1;
+
+            if (number != null && !number.equals(""))
+            {
+                newNumber = Integer.parseInt(number) + 1;
+            }
+
+            newname = fileName + "-" + newNumber + fileExt;
+            log.debug("Increment filename from: " + name + " to: " + newname);
+        }
+
+        return newname;
+    }
+
+
+    /**
+     * Return default file extension for the given mimetype
+     *
+     * @param mimetype
+     * @return
+     */
+    public String getExtension(String mimetype)
+    {
+        return mimetypeService.getExtension(mimetype);
     }
 
 }

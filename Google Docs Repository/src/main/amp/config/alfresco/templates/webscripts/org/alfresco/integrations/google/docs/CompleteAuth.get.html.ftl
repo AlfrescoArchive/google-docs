@@ -72,7 +72,7 @@ div.panel
       <br/>
       <br/>
       <br/>
-      <a href="http://www.alfresco.com">Alfresco Software</a> Inc. &copy; 2005-2012 All rights reserved.
+      <a href="http://www.alfresco.com">Alfresco Software</a> Inc. &copy; 2005-2015 All rights reserved.
    </div>
 </div>
 </body>

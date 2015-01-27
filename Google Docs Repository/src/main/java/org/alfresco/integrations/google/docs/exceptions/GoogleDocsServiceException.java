@@ -57,6 +57,13 @@ public class GoogleDocsServiceException
     }
 
 
+    public GoogleDocsServiceException(String message, int passedStatusCode, Throwable cause)
+    {
+        super(message, cause);
+        this.passedStatusCode = passedStatusCode;
+    }
+
+
     public GoogleDocsServiceException(Throwable cause)
     {
         super(cause);
