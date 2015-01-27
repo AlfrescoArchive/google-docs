@@ -26,14 +26,14 @@
    	  <property name="importFormats" value="custom.googledocs.importFormats"/>
    </bean>
 
-   <!-- <bean id="evaluator.doclib.google.docs.enabled" parent="evaluator.doclib.action.metadataValue">
+   <bean id="evaluator.doclib.google.docs.enabled" parent="evaluator.doclib.action.metadataValue">
       <property name="accessor" value="custom.googledocs.enabled"/>
       <property name="comparator">
          <bean class="org.alfresco.web.evaluator.StringEqualsComparator">
             <property name="value" value="true" />
          </bean>
       </property>
-   </bean> -->
+   </bean>
    
    <bean id="evaluator.doclib.google.docs.doesnothaveaspect" class="org.alfresco.web.evaluator.HasAspectEvaluator">
       <property name="aspects">
@@ -75,7 +75,7 @@
       <property name="evaluators">
          <list>
             <ref bean="evaluator.doclib.action.isNotIE8" />
-            <!-- <ref bean="evaluator.doclib.google.docs.enabled" /> -->
+            <ref bean="evaluator.doclib.google.docs.enabled" />
             <ref bean="evaluator.doclib.google.docs.isNotLocked" />
             <ref bean="evaluator.doclib.google.docs.isNotWorkingCopy" />
             <ref bean="evaluator.doclib.google.docs.mimetype" />
