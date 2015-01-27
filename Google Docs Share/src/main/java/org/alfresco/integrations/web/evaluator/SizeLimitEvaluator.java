@@ -75,7 +75,7 @@ public class SizeLimitEvaluator
             }
             else
             {
-                long size = ((Double)node.get("size")).longValue();
+                long size = ((Number)node.get("size")).longValue();
                 String contentType = getContentType(node.get("mimetype").toString());
 
                 log.debug("NodeRef: " + node.get("nodeRef") + "Contenttype: " + contentType + "; Max file Size: "
