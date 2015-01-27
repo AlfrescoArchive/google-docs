@@ -16,9 +16,12 @@
 package org.alfresco.integrations.google.docs.webscripts;
 
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.services.drive.model.User;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
@@ -29,7 +32,6 @@ import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
-import org.springframework.social.google.api.userinfo.GoogleUserProfile;
 
 
 /**
@@ -65,12 +67,14 @@ public class UserProfile extends DeclarativeWebScript
             authenticated = true;
             try
             {
-                GoogleUserProfile profile = googledocsService.getGoogleUserProfile();
-                model.put(MODEL_EMAIL, profile.getEmail());
-                model.put(MODEL_NAME, profile.getName());
-                model.put(MODEL_FIRSTNAME, profile.getFirstName());
-                model.put(MODEL_LASTNAME, profile.getLastName());
-                model.put(MODEL_ID, profile.getId());
+                Credential credential = googledocsService.getCredential();
+
+                User user = googledocsService.getDriveUser(credential);
+                model.put(MODEL_EMAIL, user.getEmailAddress());
+                model.put(MODEL_NAME, user.getDisplayName());
+                //model.put(MODEL_FIRSTNAME, user.getFirstName()); TODO Get first name?
+                //model.put(MODEL_LASTNAME, profile.getLastName()); TODO Get last name?
+                model.put(MODEL_ID, user.getPermissionId());
             }
             catch (GoogleDocsAuthenticationException gdae)
             {
@@ -90,6 +94,10 @@ public class UserProfile extends DeclarativeWebScript
                 {
                     throw new WebScriptException(gdse.getMessage());
                 }
+            }
+            catch (IOException ioe)
+            {
+                throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, ioe.getMessage());
             }
         }
         

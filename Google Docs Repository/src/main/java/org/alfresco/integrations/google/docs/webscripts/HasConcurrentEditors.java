@@ -19,6 +19,7 @@ package org.alfresco.integrations.google.docs.webscripts;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.api.client.auth.oauth2.Credential;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
@@ -61,7 +62,9 @@ public class HasConcurrentEditors
 
         try
         {
-            model.put(MODEL_CONCURRENT_EDITORS, googledocsService.hasConcurrentEditors(nodeRef));
+            Credential credential = googledocsService.getCredential();
+
+            model.put(MODEL_CONCURRENT_EDITORS, googledocsService.hasConcurrentEditors(credential, nodeRef));
         }
         catch (GoogleDocsAuthenticationException gdae)
         {
