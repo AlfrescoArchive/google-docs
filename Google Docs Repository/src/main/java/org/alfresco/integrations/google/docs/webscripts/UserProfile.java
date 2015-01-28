@@ -37,7 +37,7 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
 /**
  * @author Will Abson
  */
-public class UserProfile extends DeclarativeWebScript
+public class UserProfile extends GoogleDocsWebScripts
 {
     private final static String MODEL_AUTHENTICATED = "authenticated";
     private final static String MODEL_EMAIL = "email";
@@ -58,6 +58,8 @@ public class UserProfile extends DeclarativeWebScript
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
+        getGoogleDocsServiceSubsystem();
+
         Map<String, Object> model = new HashMap<String, Object>();
 
         boolean authenticated = false;
