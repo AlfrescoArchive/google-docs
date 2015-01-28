@@ -39,7 +39,7 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
 
 
 public class RemoveContent
-    extends DeclarativeWebScript
+    extends GoogleDocsWebScripts
 {
     private static final Log    log              = LogFactory.getLog(RemoveContent.class);
 
@@ -74,6 +74,8 @@ public class RemoveContent
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
+        getGoogleDocsServiceSubsystem();
+
         Map<String, Object> model = new HashMap<String, Object>();
 
         boolean success = false;

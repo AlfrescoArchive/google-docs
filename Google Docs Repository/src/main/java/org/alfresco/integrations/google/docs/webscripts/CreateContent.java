@@ -88,7 +88,7 @@ public class CreateContent
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
         // Set Service Beans
-        //this.getGoogleDocsServiceSubsystem(); TODO uncomment when we add the the subsystem to all builds
+        this.getGoogleDocsServiceSubsystem();
 
         Map<String, Object> model = new HashMap<String, Object>();
 

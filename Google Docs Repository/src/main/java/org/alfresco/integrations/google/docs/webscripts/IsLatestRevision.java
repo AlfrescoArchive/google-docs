@@ -47,7 +47,7 @@ import org.springframework.extensions.webscripts.WebScriptRequest;
  * @author Jared Ottley <jared.ottley@alfresco.com>
  */
 public class IsLatestRevision
-    extends DeclarativeWebScript
+    extends GoogleDocsWebScripts
 {
     private static final Log    log                      = LogFactory.getLog(IsLatestRevision.class);
 
@@ -76,6 +76,8 @@ public class IsLatestRevision
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
+        getGoogleDocsServiceSubsystem();
+
         Map<String, Object> model = new HashMap<String, Object>();
 
         /* Get the nodeRef to test */
