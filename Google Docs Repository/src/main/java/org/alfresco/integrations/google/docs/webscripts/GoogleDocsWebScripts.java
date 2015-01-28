@@ -30,7 +30,7 @@ public abstract class GoogleDocsWebScripts
     implements ApplicationContextAware
 {
     protected final static String GOOGLEDOCS_V2_SUBSYSTEM = "googledocs_v2";
-    protected final static String GOOGLEDOCSSERVICE       = "googledocsService";
+    protected final static String GOOGLEDOCSSERVICE       = "GoogleDocsService";
 
     protected ApplicationContext  applicationContext;
 
