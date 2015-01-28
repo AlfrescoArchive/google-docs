@@ -44,10 +44,13 @@
         </property>
         <property name="objectDefinitionSource">
             <value>
+                org.alfresco.integrations.google.docs.service.GoogleDocsService.isEnabled=ACL_ALLOW
+                org.alfresco.integrations.google.docs.service.GoogleDocsService.getCredential=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.isAuthenticated=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.getAuthenticateUrl=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.completeAuthentication=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.getDriveUser=ACL_ALLOW
+                org.alfresco.integrations.google.docs.service.GoogleDocsService.getDriveFile=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.createDocument=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.createSpreadSheet=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.createPresentation=ACL_ALLOW
@@ -55,7 +58,7 @@
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.unDecorateNode=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.isExportable=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.isImportable=ACL_ALLOW
-                org.alfresco.integrations.google.docs.service.GoogleDocsService.getImportFormats=ACL_ALLOWW
+                org.alfresco.integrations.google.docs.service.GoogleDocsService.getImportFormats=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.getContentType=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.getDocument=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.getSpreadSheet=ACL_ALLOW
@@ -69,6 +72,7 @@
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.isLockedByGoogleDocs=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.deleteContent=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.removeContent=ACL_ALLOW
+                org.alfresco.integrations.google.docs.service.GoogleDocsService.getGooglePermissions=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.*=ACL_DENY
             </value>
         </property>
@@ -81,13 +85,16 @@
         <property name="mappedNames">
             <list>
                 <value>isAuthenticated</value>
+                <value>getCredential</value>
                 <value>getDriveUser</value>
+                <value>getDriveFile</value>
                 <value>getContentType</value>
                 <value>hasConcurrentEditors</value>
                 <value>isGoogleDocsLockOwner</value>
                 <value>isLockedByGoogleDocs</value>
                 <value>getDocumentListEntry</value>
                 <value>getLatestRevision</value>
+                <value>getGooglePermissions</value>
             </list>
         </property>
     </bean>
@@ -98,6 +105,7 @@
         </property>
         <property name="mappedNames">
             <list>
+                <value>getCredential</value>
                 <value>completeAuthentication</value>
                 <value>createDocument</value>
                 <value>createSpreadSheet</value>
@@ -304,7 +312,7 @@
             <ref bean="mimetypeService"/>
         </property>
         <property name="fileFolderService">
-            <ref bean="fileFolderService"/>
+            <ref bean="FileFolderService"/>
         </property>
     </bean>
 
@@ -312,7 +320,7 @@
     <bean id="googleDocsImportFormats"
           class="org.alfresco.integrations.google.docs.repo.jscript.app.GoogleDocsCustomResponse">
         <property name="googledocsService">
-            <ref bean="googledocsService" />
+            <ref bean="GoogleDocsService" />
         </property>
     </bean>
 
