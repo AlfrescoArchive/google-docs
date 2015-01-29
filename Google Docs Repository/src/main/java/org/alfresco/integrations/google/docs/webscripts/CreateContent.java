@@ -55,17 +55,18 @@ public class CreateContent
 {
     private static final Log    log           = LogFactory.getLog(CreateContent.class);
 
-    private final static String FILENAMEUTIL  = "fileNameUtil";
+    private final static String FILENAMEUTIL     = "fileNameUtil";
 
     private GoogleDocsService   googledocsService;
     private FileFolderService   fileFolderService;
 
     private FileNameUtil        fileNameUtil;
 
-    private final static String PARAM_TYPE    = "contenttype";
-    private final static String PARAM_PARENT  = "parent";
+    private final static String PARAM_TYPE       = "contenttype";
+    private final static String PARAM_PARENT     = "parent";
 
-    private final static String MODEL_NODEREF = "nodeRef";
+    private final static String MODEL_NODEREF    = "nodeRef";
+    private final static String MODEL_EDITOR_URL = "editorUrl";
 
 
     public void setGoogledocsService(GoogleDocsService googledocsService)
@@ -163,6 +164,7 @@ public class CreateContent
             googledocsService.lockNode(newNode);
 
             model.put(MODEL_NODEREF, newNode.toString());
+            model.put(MODEL_EDITOR_URL, file.getAlternateLink());
 
         }
         else
