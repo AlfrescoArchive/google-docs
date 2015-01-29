@@ -61,14 +61,15 @@ public class UploadContent
     private NodeService         nodeService;
     private VersionService      versionService;
 
-    private static final String PARAM_NODEREF = "nodeRef";
-    private static final String PARAM_PERMISSIONS = "permissions";
-    private static final String PARAM_SEND_EMAIL = "sendEmail";
-    private static final String MODEL_NODEREF = "nodeRef";
+    private static final String PARAM_NODEREF                    = "nodeRef";
+    private static final String PARAM_PERMISSIONS                = "permissions";
+    private static final String PARAM_SEND_EMAIL                 = "sendEmail";
+    private static final String MODEL_NODEREF                    = "nodeRef";
+    private static final String MODEL_EDITOR_URL                 = "editorUrl";
 
     private static final String JSON_KEY_PERMISSIONS             = "permissions";
-    private static final String JSON_KEY_PERMISSIONS_ITEMS             = "items";
-    private static final String JSON_KEY_PERMISSIONS_SEND_EMAIL             = "sendEmail";
+    private static final String JSON_KEY_PERMISSIONS_ITEMS       = "items";
+    private static final String JSON_KEY_PERMISSIONS_SEND_EMAIL  = "sendEmail";
     private static final String JSON_KEY_AUTHORITY_ID            = "authorityId";
     private static final String JSON_KEY_AUTHORITY_TYPE          = "authorityType";
     private static final String JSON_VAL_AUTHORITY_TYPE_DEFAULT  = "user";
@@ -220,6 +221,7 @@ public class UploadContent
         }
 
         model.put(MODEL_NODEREF, nodeRef.toString());
+        model.put(MODEL_EDITOR_URL, file.getAlternateLink());
         
         }
         else
