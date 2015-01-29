@@ -39,12 +39,15 @@
     * @param nodeRef {String} NodeRef of the item being edited
     * @returns null
     */
-   var navigateToEditorPage = function GDA_navigateToEditorPage(nodeRef)
+   var navigateToEditorPage = function GDA_navigateToEditorPage(editorUrl)
    {
-      var returnPath = location.pathname.replace(Alfresco.constants.URL_PAGECONTEXT, "") + location.search + location.hash;
+      /*var returnPath = location.pathname.replace(Alfresco.constants.URL_PAGECONTEXT, "") + location.search + location.hash;
       Alfresco.util.navigateTo(Alfresco.util.siteURL("googledocsEditor?nodeRef=" + encodeURIComponent(nodeRef) + "&return=" + encodeURIComponent(returnPath), {
          site: Alfresco.constants.SITE
-      }, true));
+      }, true));*/
+       console.log(decodeURI(editorUrl));
+       var editor = window.open(decodeURI(editorUrl), '_blank');
+       editor.focus();
    };
    
    /**
@@ -86,7 +89,8 @@
          successCallback: {
             fn: function(response)
             {
-               navigateToEditorPage(response.json.nodeRef);
+               navigateToEditorPage(response.json.editorUrl);
+               location.reload();
             },
             scope : this
          },
@@ -217,7 +221,8 @@
                {
                   fn : function(response)
                   {
-                     navigateToEditorPage(response.json.nodeRef);
+                     navigateToEditorPage(response.json.editorUrl);
+                     location.reload();
                   },
                   scope : this
                },
@@ -416,7 +421,8 @@
                                {
                                   fn : function(response)
                                   {
-                                     navigateToEditorPage(record.nodeRef);
+                                     navigateToEditorPage(response.json.editorUrl);
+                                     location.reload();
                                   },
                                   scope : this
                                },
