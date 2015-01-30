@@ -2464,7 +2464,7 @@ public class GoogleDocsServiceImpl
             {
                 role = GooglePermission.role.reader.toString();
             }
-            else if (roleName.equals(GooglePermission.role.reader.toString()))
+            else if (roleName.equals(GooglePermission.role.writer.toString()))
             {
                 role = GooglePermission.role.writer.toString();
             }
@@ -2507,7 +2507,7 @@ public class GoogleDocsServiceImpl
                 log.debug("Adding permission " + role + " for " + type + " " + p.getAuthorityId() + "");
             }
 
-            drive.permissions().insert(file.getId(), new Permission().setRole(role).setType(type).setAdditionalRoles(additionalRoles).setEmailAddress(p.getAuthorityId())).execute();
+            drive.permissions().insert(file.getId(), new Permission().setRole(role).setType(type).setAdditionalRoles(additionalRoles).setValue(p.getAuthorityId())).execute();
         }
     }
 
