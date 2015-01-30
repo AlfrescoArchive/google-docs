@@ -24,15 +24,21 @@
                 <param name="function">onGoogledocsActionCancel</param>
                 <evaluator>evaluator.doclib.google.docs.resume</evaluator>
             </action>
+            <action id="google-docs-checkin-action-link" type="javascript" icon="document-upload-new-version" label="googledocs.actions.checkin">
+                <param name="function">onGoogledocsActionCheckin</param>
+                <evaluator>evaluator.doclib.google.docs.resume</evaluator>
+            </action>
         </actions>
         <actionGroups>
             <actionGroup id="document-browse">
                 <action index="250" id="google-docs-edit-action-link"/>
+                <action index="250" id="google-docs-checkin-action-link"/>
                 <action index="250" id="google-docs-resume-action-link"/>
                 <action index="250" id="google-docs-cancel-action-link"/>
             </actionGroup>
             <actionGroup id="document-details">
                 <action index="250" id="google-docs-edit-action-link"/>
+                <action index="250" id="google-docs-checkin-action-link"/>
                 <action index="250" id="google-docs-resume-action-link"/>
                 <action index="250" id="google-docs-cancel-action-link"/>
             </actionGroup>
@@ -47,9 +53,11 @@
             </content>
             <content id="google-docs" label="create-content.googledocs.spreadsheet" icon="spreadsheet" index="51" type="javascript">
                 <param name="function">onGoogledocsActionCreateSpreadsheet</param>
+                <evaluator>evaluator.doclib.google.docs.enabled</evaluator>
             </content>
             <content id="google-docs" label="create-content.googledocs.presentation" icon="presentation" index="52" type="javascript">
                 <param name="function">onGoogledocsActionCreatePresentation</param>
+                <evaluator>evaluator.doclib.google.docs.enabled</evaluator>
             </content>
         </create-content>
     </config>
