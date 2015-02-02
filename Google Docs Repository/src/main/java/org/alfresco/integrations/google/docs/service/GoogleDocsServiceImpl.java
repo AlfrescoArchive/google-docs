@@ -484,7 +484,7 @@ public class GoogleDocsServiceImpl
     private GoogleAuthorizationCodeFlow getFlow()
             throws IOException
     {
-        return new GoogleAuthorizationCodeFlow.Builder(httpTransport, jsonFactory, clientSecrets, GoogleDocsConstants.SCOPES).setAccessType("offline").setApprovalPrompt("prompt").build();
+        return new GoogleAuthorizationCodeFlow.Builder(httpTransport, jsonFactory, clientSecrets, GoogleDocsConstants.SCOPES).setAccessType("offline").setApprovalPrompt("auto").build();
     }
 
 
