@@ -7,6 +7,14 @@
         </dependencies>
     </config>
 
+    <config evaluator="string-compare" condition="DocumentLibrary">
+        <indicators>
+            <indicator id="googledrive" index="250" icon="mac-normal.png">
+                <evaluator>evaluator.doclib.google.docs.aspect</evaluator>
+            </indicator>
+        </indicators>
+    </config>
+
     <config evaluator="string-compare" condition="DocLibActions">
         <actions>
             <action id="google-docs-edit-action-link" type="javascript" icon="google-edit-flat" label="googledocs.actions.edit">
@@ -19,10 +27,23 @@
             <action id="google-docs-resume-action-link" type="javascript" icon="google-edit-flat" label="googledocs.actions.resume">
                 <param name="function">onGoogledocsActionResume</param>
                 <evaluator>evaluator.doclib.google.docs.resume</evaluator>
+                <override>document-cancel-editing</override>
+                <override>document-cancel-editing-unlock</override>
+                <override>document-edit-properties</override>
+                <override>document-edit-metadata</override>
+                <override>document-delete</override>
+                <override>document-manage-granular-permissions</override>
+                <override>document-manage-repo-permissions</override>
             </action>
             <action id="google-docs-cancel-action-link" type="javascript" icon="document-cancel-editing" label="googledocs.actions.cancel">
                 <param name="function">onGoogledocsActionCancel</param>
-                <evaluator>evaluator.doclib.google.docs.resume</evaluator>
+                <evaluator>evaluator.doclib.google.docs.cancel</evaluator>
+                <override>document-cancel-editing</override>
+                <override>document-cancel-editing-unlock</override>
+                <override>document-edit-properties</override>
+                <override>document-edit-metadata</override>
+                <override>document-manage-granular-permissions</override>
+                <override>document-manage-repo-permissions</override>
             </action>
             <action id="google-docs-checkin-action-link" type="javascript" icon="document-upload-new-version" label="googledocs.actions.checkin">
                 <param name="function">onGoogledocsActionCheckin</param>
