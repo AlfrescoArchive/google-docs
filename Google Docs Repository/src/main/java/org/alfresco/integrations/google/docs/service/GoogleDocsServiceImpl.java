@@ -59,7 +59,6 @@ import com.google.api.services.drive.model.RevisionList;
 import com.google.api.services.drive.model.User;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfoplus;
-import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
 import org.alfresco.integrations.google.docs.GoogleDocsModel;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
@@ -113,9 +112,7 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.core.io.Resource;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.HttpStatusCodeException;
+
 
 
 /**
@@ -513,9 +510,9 @@ public class GoogleDocsServiceImpl
                 log.debug("Test oAuth Credentials for " + AuthenticationUtil.getFullyAuthenticatedUser());
                 testConnection(credential);
             }
-            catch (HttpClientErrorException hcee)
+            catch(GoogleJsonResponseException e)
             {
-                if (hcee.getStatusCode().value() == HttpStatus.SC_UNAUTHORIZED)
+                if (e.getStatusCode() == HttpStatus.SC_UNAUTHORIZED)
                 {
                     try
                     {
@@ -533,12 +530,12 @@ public class GoogleDocsServiceImpl
                 }
                 else
                 {
-                    throw new GoogleDocsServiceException(hcee.getMessage(), hcee, hcee.getStatusCode().value());
+                    throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
                 }
             }
-            catch (HttpServerErrorException hsee)
+            catch(GoogleDocsServiceException e)
             {
-                throw new GoogleDocsServiceException(hsee.getMessage(), hsee, hsee.getStatusCode().value());
+                throw e;
             }
         }
 
@@ -548,7 +545,8 @@ public class GoogleDocsServiceImpl
 
 
     private void testConnection(Credential credential)
-            throws GoogleDocsServiceException
+            throws GoogleJsonResponseException,
+            GoogleDocsServiceException
     {
         Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credential).build();
         Userinfoplus userInfo = null;
@@ -586,19 +584,19 @@ public class GoogleDocsServiceImpl
 
                 success = credential.refreshToken();
             }
-            catch (HttpClientErrorException hcee)
+            catch (GoogleJsonResponseException e)
             {
-                if (hcee.getStatusCode().value() == HttpStatus.SC_BAD_REQUEST)
+                if (e.getStatusCode() == HttpStatus.SC_BAD_REQUEST)
                 {
-                    throw new GoogleDocsAuthenticationException(hcee.getMessage());
+                    throw new GoogleDocsAuthenticationException(e.getMessage());
                 }
-                else if (hcee.getStatusCode().value() == HttpStatus.SC_UNAUTHORIZED)
+                else if (e.getStatusCode() == HttpStatus.SC_UNAUTHORIZED)
                 {
                     throw new GoogleDocsAuthenticationException("Token Refresh Failed.");
                 }
                 else
                 {
-                    throw new GoogleDocsServiceException(hcee.getMessage(), hcee.getStatusCode().value(), hcee);
+                    throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
                 }
 
             }
@@ -967,9 +965,9 @@ public class GoogleDocsServiceImpl
                 log.debug("Temporary Aspect Removed");
             }
         }
-        catch (HttpStatusCodeException hsce)
+        catch (GoogleJsonResponseException e)
         {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
+            throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
         }
         catch (JSONException jsonException)
         {
@@ -1085,14 +1083,14 @@ public class GoogleDocsServiceImpl
         {
             throw ioe;
         }
-        catch (HttpStatusCodeException hsce)
-        {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
-        }
         catch (JSONException jsonException)
         {
             throw new GoogleDocsAuthenticationException(
                     "Unable to create activity entry: " + jsonException.getMessage(), jsonException);
+        }
+        catch (Exception e)
+        {
+            throw new GoogleDocsServiceException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
         }
     }
 
@@ -1204,15 +1202,16 @@ public class GoogleDocsServiceImpl
         {
             throw ioe;
         }
-        catch (HttpStatusCodeException hsce)
-        {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
-        }
         catch (JSONException jsonException)
         {
             throw new GoogleDocsAuthenticationException(
                     "Unable to create activity entry: " + jsonException.getMessage(), jsonException);
         }
+        catch (Exception e)
+        {
+            throw new GoogleDocsServiceException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
+        }
+
     }
 
 
@@ -1305,9 +1304,9 @@ public class GoogleDocsServiceImpl
         {
             throw ioe;
         }
-        catch (HttpStatusCodeException hsce)
+        catch (Exception e)
         {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
+            throw new GoogleDocsServiceException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
         }
         finally
         {
@@ -1436,9 +1435,9 @@ public class GoogleDocsServiceImpl
             unDecorateNode(nodeRef);
             deleted = true;
         }
-        catch (HttpStatusCodeException hsce)
+        catch (GoogleJsonResponseException e)
         {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
+            throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
         }
 
         log.debug("Deleted: " + deleted);
@@ -1473,9 +1472,9 @@ public class GoogleDocsServiceImpl
                 revision = getLatestRevision(credential, file);
             }
         }
-        catch (HttpStatusCodeException hsce)
+        catch (GoogleJsonResponseException e)
         {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
+            throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
         }
 
         return revision;
@@ -1506,9 +1505,9 @@ public class GoogleDocsServiceImpl
                 revision = fileRevisions.get(fileRevisions.size() - 1);
             }
         }
-        catch (HttpStatusCodeException hsce)
+        catch (GoogleJsonResponseException e)
         {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
+            throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
         }
 
         return revision;
@@ -1999,9 +1998,9 @@ public class GoogleDocsServiceImpl
             }
 
         }
-        catch (HttpStatusCodeException hsce)
+        catch (GoogleJsonResponseException e)
         {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
+            throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
         }
 
         log.debug("Concurrent Edits: " + concurrentChange);
@@ -2025,10 +2024,6 @@ public class GoogleDocsServiceImpl
         try
         {
             file = drive.files().get(resourceID.substring(resourceID.lastIndexOf(':') + 1)).execute();
-        }
-        catch (HttpStatusCodeException hsce)
-        {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value(), hsce);
         }
         catch(GoogleJsonResponseException e)
         {
@@ -2113,9 +2108,9 @@ public class GoogleDocsServiceImpl
             About about = drive.about().get().execute();
             user = about.getUser();
         }
-        catch (HttpStatusCodeException hsce)
+        catch (GoogleJsonResponseException e)
         {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
+            throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
         }
 
         return user;
@@ -2651,9 +2646,9 @@ public class GoogleDocsServiceImpl
             file = new File().setMimeType(GoogleDocsConstants.FOLDER_MIMETYPE).setParents(Arrays.asList(new ParentReference().setId(parentId))).setTitle(folderName).setDescription(description);
             file = drive.files().insert(file).execute();
         }
-        catch (HttpStatusCodeException hsce)
+        catch (GoogleJsonResponseException e)
         {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce, hsce.getStatusCode().value());
+            throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
         }
 
         return file;
@@ -2702,9 +2697,9 @@ public class GoogleDocsServiceImpl
                 }
                 while (fileList.getNextPageToken() != null && fileList.getNextPageToken().length() > 0);
             }
-            catch (HttpStatusCodeException hsce)
+            catch (GoogleJsonResponseException e)
             {
-                throw new GoogleDocsServiceException(hsce.getMessage(), hsce, hsce.getStatusCode().value());
+                throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
             }
         }
 
@@ -2733,10 +2728,6 @@ public class GoogleDocsServiceImpl
         try
         {
             drive.files().delete(folderId).execute();
-        }
-        catch (HttpStatusCodeException hsce)
-        {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce, hsce.getStatusCode().value());
         }
         catch(GoogleJsonResponseException e)
         {
