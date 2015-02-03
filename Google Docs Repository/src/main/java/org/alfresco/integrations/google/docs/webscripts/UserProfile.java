@@ -28,7 +28,6 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceExcepti
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.apache.commons.httpclient.HttpStatus;
 import org.springframework.extensions.webscripts.Cache;
-import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
