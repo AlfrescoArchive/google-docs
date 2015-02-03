@@ -40,6 +40,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.FileContent;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpResponse;
@@ -58,6 +59,7 @@ import com.google.api.services.drive.model.RevisionList;
 import com.google.api.services.drive.model.User;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfoplus;
+import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
 import org.alfresco.integrations.google.docs.GoogleDocsModel;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
@@ -1423,10 +1425,13 @@ public class GoogleDocsServiceImpl
 
         try
         {
-            drive.files().delete(file.getId()).execute();
+            if (file != null)
+            {
+                drive.files().delete(file.getId()).execute();
 
-            // Delete the Working directory in Google Drive (if it exists....this should handle any migration issues)
-            deleteWorkingDirectory(credential, nodeRef);
+                // Delete the Working directory in Google Drive (if it exists....this should handle any migration issues)
+                deleteWorkingDirectory(credential, nodeRef);
+            }
 
             unDecorateNode(nodeRef);
             deleted = true;
@@ -2023,7 +2028,11 @@ public class GoogleDocsServiceImpl
         }
         catch (HttpStatusCodeException hsce)
         {
-            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value());
+            throw new GoogleDocsServiceException(hsce.getMessage(), hsce.getStatusCode().value(), hsce);
+        }
+        catch(GoogleJsonResponseException e)
+        {
+            file = null;
         }
 
         return file;
@@ -2728,6 +2737,17 @@ public class GoogleDocsServiceImpl
         catch (HttpStatusCodeException hsce)
         {
             throw new GoogleDocsServiceException(hsce.getMessage(), hsce, hsce.getStatusCode().value());
+        }
+        catch(GoogleJsonResponseException e)
+        {
+            if (HttpStatus.SC_NOT_FOUND == e.getStatusCode())
+            {
+                log.debug("Directory not found in Google Drive.");
+            }
+            else
+            {
+                throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
+            }
         }
     }
 }
