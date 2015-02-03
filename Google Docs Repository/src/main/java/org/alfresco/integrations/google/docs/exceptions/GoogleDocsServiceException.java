@@ -81,12 +81,4 @@ public class GoogleDocsServiceException
     {
         super(message, cause);
     }
-
-
-    public GoogleDocsServiceException(String message, Throwable cause, int passedStatusCode)
-    {
-        super(message, cause);
-        this.passedStatusCode = passedStatusCode;
-    }
-
 }
