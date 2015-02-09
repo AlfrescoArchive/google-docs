@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.google.api.client.auth.oauth2.Credential;
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
+import org.alfresco.integrations.google.docs.exceptions.ConcurrentEditorException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
@@ -135,8 +136,8 @@ public class SaveContent
                     log.debug("Check for Concurent Users.");
                     if (googledocsService.hasConcurrentEditors(credential, nodeRef))
                     {
-                        throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString()
-                                                                             + " has concurrent editors.");
+                        throw new ConcurrentEditorException("Node: " + nodeRef.toString()
+                                                            + " has concurrent editors.");
                     }
                 }
 
@@ -250,22 +251,22 @@ public class SaveContent
         }
         catch (GoogleDocsAuthenticationException gdae)
         {
-            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdae.getMessage());
+            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdae.getMessage(), gdae);
         }
         catch (GoogleDocsServiceException gdse)
         {
             if (gdse.getPassedStatusCode() > -1)
             {
-                throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage());
+                throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage(), gdse);
             }
             else
             {
-                throw new WebScriptException(gdse.getMessage());
+                throw new WebScriptException(gdse.getMessage(), gdse);
             }
         }
         catch (GoogleDocsRefreshTokenException gdrte)
         {
-            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage());
+            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage(), gdrte);
         }
         catch (ConstraintException ce)
         {
@@ -309,6 +310,10 @@ public class SaveContent
             });
 
             throw new WebScriptException(HttpStatus.SC_FORBIDDEN, ade.getMessage(), ade);
+        }
+        catch (ConcurrentEditorException e)
+        {
+            throw new WebScriptException(HttpStatus.SC_CONFLICT, e.getMessage(), e);
         }
         catch (Exception e)
         {
