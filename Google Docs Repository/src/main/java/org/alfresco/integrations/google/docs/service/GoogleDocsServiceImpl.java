@@ -203,12 +203,6 @@ public class GoogleDocsServiceImpl
     }
 
 
-    /*public void setConnectionFactory(GoogleConnectionFactory connectionFactory)
-    {
-        this.connectionFactory = connectionFactory;
-    }*/
-
-
     public void setFileFolderService(FileFolderService fileFolderService)
     {
         this.fileFolderService = fileFolderService;
@@ -1945,13 +1939,13 @@ public class GoogleDocsServiceImpl
                     for (int i = workingList.size() - 1; i >= 0; i--)
                     {
                         Revision revision = workingList.get(i);
-                        String name = getDriveUser(credential).getDisplayName();
+                        String emailAddress = getDriveUser(credential).getEmailAddress();
 
                         // if there is no author -- the entry is the initial
                         // creation
-                        if (revision.getLastModifyingUserName() != null)
+                        if (revision.getLastModifyingUser().getEmailAddress() != null)
                         {
-                            if (revision.getLastModifyingUserName().equals(name))
+                            if (revision.getLastModifyingUser().getEmailAddress().equals(emailAddress))
                             {
                                 workingList.remove(i);
                             }
@@ -1974,15 +1968,15 @@ public class GoogleDocsServiceImpl
             }
             else
             {
-                String name = getDriveUser(credential).getDisplayName();
+                String emailAddress = getDriveUser(credential).getEmailAddress();
 
 
                 // if the authors list is empty -- the author was the original
                 // creator and it is the initial copy
-                if (revisions.get(0).getLastModifyingUserName() != null)
+                if (revisions.get(0).getLastModifyingUser().getEmailAddress() != null)
                 {
 
-                    if (!revisions.get(0).getLastModifyingUserName().equals(name))
+                    if (!revisions.get(0).getLastModifyingUser().getEmailAddress().equals(emailAddress))
                     {
                         Calendar bufferTime = Calendar.getInstance();
                         bufferTime.add(Calendar.SECOND, -idleThreshold);
