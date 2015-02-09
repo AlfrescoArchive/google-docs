@@ -40,11 +40,6 @@
      * @returns null
      */
     var navigateToEditorPage = function GDA_navigateToEditorPage(editorUrl) {
-        /*var returnPath = location.pathname.replace(Alfresco.constants.URL_PAGECONTEXT, "") + location.search + location.hash;
-         Alfresco.util.navigateTo(Alfresco.util.siteURL("googledocsEditor?nodeRef=" + encodeURIComponent(nodeRef) + "&return=" + encodeURIComponent(returnPath), {
-         site: Alfresco.constants.SITE
-         }, true));*/
-        console.log(decodeURI(editorUrl));
         var editor = window.open(decodeURI(editorUrl), '_blank');
         editor.focus();
     };
@@ -372,7 +367,8 @@
         fn: function dlA_onGoogledocsActionCheckin(record) {
 
             var me = this,
-                saveDiscardConfirmed = false;;
+                saveDiscardConfirmed = false,
+                actionUrl = Alfresco.constants.PROXY_URI + 'googledocs/saveContent';
 
             Alfresco.GoogleDocs.showMessage({
                 text: this.msg("googledocs.actions.checkin"),
@@ -381,6 +377,7 @@
             });
 
             var checkinDocument = function Googledocs_checkinDocument(p_obj) {
+                this.hide();
                 Alfresco.GoogleDocs.showMessage({
                     text: me.msg("googledocs.actions.checkin"),
                     displayTime: 0,
@@ -388,15 +385,15 @@
                 });
 
                 Alfresco.GoogleDocs.request.call(this, {
-                    url: Alfresco.constants.PROXY_URI + 'googledocs/saveContent',
+                    url: actionUrl,
                     method: "POST",
                     requestContentType: Alfresco.util.Ajax.JSON,
                     dataObj: {
                         nodeRef: record.nodeRef,
-                        override: saveDiscardConfirmed,
+                        override: this.getData().override,
                         removeFromDrive: true,
-                        majorVersion: false,
-                        description: ""
+                        majorVersion: this.getData().majorVersion,
+                        description: this.getData().description
                     },
                     beforeRequestCallback: {
                         fn: function (response) {
@@ -422,31 +419,34 @@
                             {
                                 Alfresco.util.PopupManager.displayPrompt(
                                     {
-                                        title: me.msg("googledocs.concurrentEditors.title"),
-                                        text: me.msg("googledocs.concurrentEditors.text"),
+                                        title: this.msg("googledocs.concurrentEditors.title"),
+                                        text: this.msg("googledocs.concurrentEditors.text"),
                                         noEscape: true,
                                         buttons: [
                                             {
-                                                text: me.msg("button.ok"),
+                                                text: this.msg("button.ok"),
                                                 handler: function submitDiscard() {
                                                     // Close the confirmation pop-up
                                                     this.destroy();
-                                                    if (me.configDialog) {
+                                                    if (this.configDialog) {
                                                         // Set the override form field value
-                                                        Dom.get(me.configDialog.id + "-override").value = "true";
+                                                        Dom.get(this.configDialog.id + "-override").value = "true";
                                                         // Re-submit the form
-                                                        me.configDialog.widgets.okButton.fireEvent("click", {});
+                                                        this.configDialog.widgets.okButton.fireEvent("click", {});
                                                     }
                                                     else {
                                                         // Assume POST needed without form (node not
                                                         // versioned)
-                                                        me.saveDiscardConfirmed = true;
+                                                        this.saveDiscardConfirmed = true;
                                                         // Redo the POST
                                                         Alfresco.util.Ajax.jsonPost({
                                                             url: actionUrl,
                                                             dataObj: {
-                                                                nodeRef: me.options.nodeRef,
-                                                                override: me.saveDiscardConfirmed
+                                                                nodeRef: this.getData().nodeRef,
+                                                                override: this.saveDiscardConfirmed,
+                                                                removeFromDrive: true,
+                                                                majorVersion: this.getData().majorVersion,
+                                                                description: this.getData().description
                                                             },
                                                             successCallback: success,
                                                             failureCallback: failure
@@ -455,8 +455,9 @@
                                                 }
                                             },
                                             {
-                                                text: me.msg("button.cancel"),
+                                                text: this.msg("button.cancel"),
                                                 handler: function cancelSave() {
+                                                    Alfresco.GoogleDocs.hideMessage();
                                                     this.destroy();
                                                 },
                                                 isDefault: true
@@ -537,6 +538,11 @@
                 });
             };
 
+            var handleCancel = function () {
+                this.cancel();
+                Alfresco.GoogleDocs.hideMessage();
+            };
+
             Alfresco.GoogleDocs.requestOAuthURL.call(this, {
                 nodeRef: record.nodeRef,
                 onComplete: {
@@ -544,7 +550,7 @@
                         Alfresco.GoogleDocs.checkGoogleLogin.call(this, {
                             onLoggedIn: {
                                 fn: function () {
-                                    if (this.options.isVersioned) {
+                                    if (record.jsNode.hasAspect("cm:versionable")) {
                                         if (!this.versionDialog) {
                                             this.versionDialog = new YAHOO.widget.SimpleDialog(this.id + "-new-version-dialog", {
                                                 postmethod: "manual",
@@ -553,20 +559,19 @@
                                                 effect: null,
                                                 modal: true,
                                                 visible: false,
-                                                context: [this.id + "-googledocs-saveTo-button", "tr", "tr", ["beforeShow", "windowResize"], [0, 43]],
+                                                fixedcenter: true,
                                                 width: "30em",
                                                 zIndex: 250,
-                                                buttons: [{text: me.msg("button.ok"), handler: handleSubmit, isDefault: true},
-                                                    {text: me.msg("button.cancel"), handler: handleCancel}]
+                                                buttons: [{text: this.msg("button.ok"), handler: checkinDocument, isDefault: true},
+                                                    {text: this.msg("button.cancel"), handler: handleCancel}]
                                             });
 
-                                            this.versionDialog.render();
-
+                                            this.versionDialog.render(document.body);
                                         }
 
                                         var majorVersion, minorVersion;
 
-                                        var majorMinor = this.options.version.split(".");
+                                        var majorMinor = record.version.split(".");
                                         if (majorMinor.length == 2) {
                                             // Set the version label in the dialog
                                             minorVersion = majorMinor[0] + "." + (parseInt(majorMinor[1]) + 1),
@@ -574,36 +579,46 @@
                                         }
 
                                         this.versionDialog.setBody('<div id="' + this.id +
-                                        '-dialog" class="google-docs-version"><div class="hd">' + me.msg("label.header") +
+                                        '-dialog" class="google-docs-version"><div class="hd">' + this.msg("label.header") +
                                         '</div><div class="bd"><form id="' + this.id +
                                         '-form" action="' + actionUrl +
                                         '" method="POST"><div id="' + this.id +
-                                        '-versionSection-div"><div class="yui-gd"><div class="yui-u first"><span>' + me.msg("label.version") +
+                                        '-versionSection-div"><div class="yui-gd"><div class="yui-u first"><span>' + this.msg("label.version") +
                                         '</span></div><div class="yui-u"><input id="' + this.id +
                                         '-minorVersion-radioButton" type="radio" name="majorVersion" value="false" checked="checked" tabindex="0"/><label for="' + this.id +
                                         '-minorVersion-radioButton" id="' + this.id +
-                                        '-minorVersion">' + me.msg("label.minorVersion", minorVersion) +
+                                        '-minorVersion">' + this.msg("label.minorVersion", minorVersion) +
                                         '</label></div></div><div class="yui-gd"><div class="yui-u first">&nbsp;</div><div class="yui-u"><input id="' + this.id +
                                         '-majorVersion-radioButton" type="radio" name="majorVersion" value="true" tabindex="0"/><label for="' + this.id +
                                         '-majorVersion-radioButton" id="' + this.id +
-                                        '-majorVersion">' + me.msg("label.majorVersion", majorVersion) +
+                                        '-majorVersion">' + this.msg("label.majorVersion", majorVersion) +
                                         '</label></div></div><div class="yui-gd"><div class="yui-u first"><label for="' + this.id +
-                                        '-description-textarea">' + me.msg("label.comments") +
+                                        '-description-textarea">' + this.msg("label.comments") +
                                         '</label></div><div class="yui-u"><textarea id="' + this.id +
                                         '-description-textarea" name="description" cols="80" rows="4" tabindex="0"></textarea></div></div></div><div class="bdft"><input id="' + this.id +
-                                        '-nodeRef" type="hidden" name="nodeRef" value="' + this.options.nodeRef + '" /><input id="' + this.id +
+                                        '-nodeRef" type="hidden" name="nodeRef" value="' + record.nodeRef + '" /><input id="' + this.id +
                                         '-override" type="hidden" name="override" value="false" /></div></form></div></div>');
 
                                         this.versionDialog.show();
                                     }
-                                    else {
+                                    else
+                                    {
                                         Alfresco.GoogleDocs.showMessage({
                                             text: this.msg("googledocs.actions.checkin"),
                                             displayTime: 0,
                                             showSpinner: true
                                         });
 
-                                        checkinDocument.call(this, record);
+                                        Alfresco.GoogleDocs.request({
+                                            url: actionUrl,
+                                            method: "POST",
+                                            dataObj: {
+                                                nodeRef: record.nodeRef,
+                                                override: saveDiscardConfirmed
+                                            },
+                                            successCallback: success,
+                                            failureCallback: failure
+                                        });
 
                                     }
                                 },
