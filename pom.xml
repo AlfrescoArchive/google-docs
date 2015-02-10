@@ -26,24 +26,6 @@
       <env>local</env>
    </properties>
 
-   <profiles>
-      <profile>
-         <id>enterprise</id>
-         <properties>
-            <alfresco.version>${alfresco-enterprise.version}</alfresco.version>
-         </properties>
-      </profile>
-      <profile>
-         <id>community</id>
-         <activation>
-            <activeByDefault>true</activeByDefault>
-         </activation>
-         <properties>
-            <alfresco.version>${alfresco-community.version}</alfresco.version>
-         </properties>
-      </profile>
-   </profiles>
-
    <dependencyManagement>
       <dependencies>
          <dependency>
