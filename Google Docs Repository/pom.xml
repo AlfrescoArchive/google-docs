@@ -2,14 +2,14 @@
    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <modelVersion>4.0.0</modelVersion>
    <artifactId>alfresco-googledocs-repo</artifactId>
-   <version>2.0.9</version>
+   <version>3.0.0-${buildnumber}</version>
    <packaging>amp</packaging>
    <name>Alfresco / Google Docs Repo Module</name>
 
    <parent>
       <groupId>org.alfresco.integrations</groupId>
       <artifactId>alfresco-GoogleDocs</artifactId>
-      <version>2.0.9-${buildnumber}</version>
+      <version>3.0.0-${buildnumber}</version>
    </parent>
 
    <properties>
