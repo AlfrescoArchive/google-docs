@@ -319,7 +319,6 @@
                     successCallback: success,
                     failureCallback: failure
                 });
-
             };
 
             Alfresco.GoogleDocs.requestOAuthURL.call(this, {
