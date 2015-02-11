@@ -279,7 +279,7 @@
                   // TODO Must pass authurl response through here
                   Alfresco.GoogleDocs.doOAuth(response.json.authURL, {
                      onComplete: {
-                        fn: config.onComplete.fn,
+                        fn: config.onComplete.fn.bind(config.onComplete.scope, response),
                         scope: config.onComplete.scope
                      }
                      /*onComplete: {
