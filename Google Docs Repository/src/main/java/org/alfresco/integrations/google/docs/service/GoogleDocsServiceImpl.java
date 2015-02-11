@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
 import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.auth.oauth2.TokenResponseException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeRequestUrl;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
@@ -96,6 +97,7 @@ import org.alfresco.service.cmr.repository.ContentWriter;
 import org.alfresco.service.cmr.repository.MimetypeService;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.repository.Path;
 import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.cmr.security.PersonService.PersonInfo;
@@ -112,7 +114,6 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.core.io.Resource;
-
 
 
 /**
@@ -504,7 +505,7 @@ public class GoogleDocsServiceImpl
                 log.debug("Test oAuth Credentials for " + AuthenticationUtil.getFullyAuthenticatedUser());
                 testConnection(credential);
             }
-            catch(GoogleJsonResponseException e)
+            catch (GoogleJsonResponseException e)
             {
                 if (e.getStatusCode() == HttpStatus.SC_UNAUTHORIZED)
                 {
@@ -527,7 +528,23 @@ public class GoogleDocsServiceImpl
                     throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
                 }
             }
-            catch(GoogleDocsServiceException e)
+            catch (TokenResponseException e)
+            {
+                try
+                {
+                    credential = refreshAccessToken();
+                    testConnection(credential);
+                }
+                catch (GoogleDocsRefreshTokenException gdrte)
+                {
+                    throw gdrte;
+                }
+                catch (GoogleDocsServiceException gdse)
+                {
+                    throw gdse;
+                }
+            }
+            catch (GoogleDocsServiceException e)
             {
                 throw e;
             }
@@ -540,6 +557,7 @@ public class GoogleDocsServiceImpl
 
     private void testConnection(Credential credential)
             throws GoogleJsonResponseException,
+            TokenResponseException,
             GoogleDocsServiceException
     {
         Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credential).build();
@@ -548,9 +566,14 @@ public class GoogleDocsServiceImpl
         {
             userInfo = userInfoService.userinfo().get().execute();
         }
+        catch (TokenResponseException e)
+        {
+            //rethrow before it hits IOException (parent object of TokenResponseException
+            throw e;
+        }
         catch (IOException e)
         {
-            throw new GoogleDocsServiceException("Error creating Connection: " + e.getMessage());
+            throw new GoogleDocsServiceException("Error creating Connection: " + e.getMessage(), e);
         }
         if (userInfo == null || userInfo.getId() == null)
         {
@@ -574,7 +597,8 @@ public class GoogleDocsServiceImpl
             boolean success = false;
             try
             {
-                credential = new Credential(BearerToken.authorizationHeaderAccessMethod()).setAccessToken(credentialInfo.getOAuthAccessToken()).setRefreshToken(credentialInfo.getOAuthRefreshToken()).setExpirationTimeMilliseconds(credentialInfo.getOAuthTicketExpiresAt().getTime());
+                credential = new Credential.Builder(BearerToken.authorizationHeaderAccessMethod()).setJsonFactory(jsonFactory).setTransport(httpTransport).setClientAuthentication(new ClientParametersAuthentication(clientSecrets.getDetails().getClientId(), clientSecrets.getDetails().getClientSecret())).setTokenServerEncodedUrl(clientSecrets.getDetails().getTokenUri()).build();
+                credential.setAccessToken(credentialInfo.getOAuthAccessToken()).setRefreshToken(credentialInfo.getOAuthRefreshToken()).setExpirationTimeMilliseconds(credentialInfo.getOAuthTicketExpiresAt().getTime());
 
                 success = credential.refreshToken();
             }
@@ -653,7 +677,15 @@ public class GoogleDocsServiceImpl
 
         if (credentialInfo != null)
         {
-            authenticated = true;
+            try
+            {
+                getCredential();
+                authenticated = true;
+            }
+            catch (Exception e)
+            {
+                authenticated = false;
+            }
         }
 
         log.debug("Authenticated: " + authenticated);
@@ -688,7 +720,7 @@ public class GoogleDocsServiceImpl
             throws GoogleDocsServiceException,
             IOException
     {
-       boolean authenticationComplete = false;
+        boolean authenticationComplete = false;
 
         GoogleTokenResponse response = getFlow().newTokenRequest(authorizationCode).setRedirectUri(GoogleDocsConstants.REDIRECT_URI).execute();
 
@@ -2019,7 +2051,7 @@ public class GoogleDocsServiceImpl
         {
             file = drive.files().get(resourceID.substring(resourceID.lastIndexOf(':') + 1)).execute();
         }
-        catch(GoogleJsonResponseException e)
+        catch (GoogleJsonResponseException e)
         {
             file = null;
         }
@@ -2554,7 +2586,38 @@ public class GoogleDocsServiceImpl
         }
 
         // create working directory
-        return createFolder(credential, file.getId(), nodeRef.getId(), null);
+        String folderName = null;
+        SiteInfo siteInfo = siteService.getSite(nodeRef);
+
+        //Is the node in a site?
+        if (siteInfo != null)
+        {
+            folderName = siteInfo.getShortName();
+        }
+        else
+        {
+            Path path = nodeService.getPath(nodeRef);
+
+            //Get the element in the path that should be Shared Files node
+            Path.Element element = path.get(2);
+            if (element.toString().equals(GoogleDocsConstants.ALF_SHARED_PATH_FQNS_ELEMENT))
+            {
+                folderName = GoogleDocsConstants.ALF_SHARED_FILES_FOLDER;
+            }
+            else
+            {
+                //If it is not in a site or in Shared Files it is pulled My Files.
+                folderName = GoogleDocsConstants.ALF_MY_FILES_FOLDER;
+            }
+        }
+
+        //If the foldername is never set, which it should always be, place it directly the working directory
+        if (folderName != null)
+        {
+            file = createFolder(credential, file.getId(), folderName, null);
+        }
+
+        return file;
     }
 
 
@@ -2666,8 +2729,9 @@ public class GoogleDocsServiceImpl
 
         if (drive != null)
         {
-            String query =  "title = '" + folderName + "' and mimeType = '" + GoogleDocsConstants.FOLDER_MIMETYPE + "' and '" + parentId
-                            + "' in parents";
+            String query =
+                    "title = '" + folderName + "' and mimeType = '" + GoogleDocsConstants.FOLDER_MIMETYPE + "' and '" + parentId
+                    + "' in parents";
             log.debug("Get folder query string: " + query);
             Drive.Files.List request = drive.files().list().setQ(query);
             try
@@ -2723,7 +2787,7 @@ public class GoogleDocsServiceImpl
         {
             drive.files().delete(folderId).execute();
         }
-        catch(GoogleJsonResponseException e)
+        catch (GoogleJsonResponseException e)
         {
             if (HttpStatus.SC_NOT_FOUND == e.getStatusCode())
             {
