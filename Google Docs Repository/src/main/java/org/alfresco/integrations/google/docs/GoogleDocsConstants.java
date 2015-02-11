@@ -38,13 +38,7 @@ public interface GoogleDocsConstants
     public static final List<String> SCOPES = Collections.unmodifiableList(Arrays.asList("https://www.googleapis.com/auth/drive.file","https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/userinfo.profile","https://www.googleapis.com/auth/userinfo.email"));
 
     // Google docsService Client Name
-    public static final String APPLICATION_NAME = "Alfresco-GoogleDocs/2.0";
-
-    // Google Document List API EndPoints
-    public static final String BASE_URL             = "https://docs.google.com/feeds";
-    public static final String METADATA_URL         = BASE_URL + "/metadata/default";
-    public static final String BASE_SPREADSHEET_URL = "https://spreadsheets.google.com/feeds";
-    public static final String URL_BASE_FEED        = BASE_URL + "/default/private/full";
+    public static final String APPLICATION_NAME = "Alfresco-GoogleDocs/3.0";
 
     // Google contentTypes
     public static final String DOCUMENT_TYPE     = "document";
@@ -72,8 +66,13 @@ public interface GoogleDocsConstants
     public static final String ROOT_FOLDER_ID = "root";
 
     // Google Drive Alfresco Working Directory
-    public static final String ALF_TEMP_FOLDER      = "Alfresco Temporary Files";
-    public static final String ALF_TEMP_FOLDER_DESC = "Alfresco Google Docs Temporary Work Files";
+    public static final String ALF_TEMP_FOLDER      = "Alfresco Working Directory";
+    public static final String ALF_TEMP_FOLDER_DESC = "Alfresco - Google Docs Working Directory";
+
+    public static final String ALF_SHARED_FILES_FOLDER = "Shared Files";
+    public static final String ALF_MY_FILES_FOLDER = "My Files";
+
+    public static final String ALF_SHARED_PATH_FQNS_ELEMENT = "{http://www.alfresco.org/model/application/1.0}shared";
 
     /*
      * There is no standard 419. Some say not set (like Alfresco); Apache says WebDav INSUFFICIENT_SPACE_ON_RESOURCE.
