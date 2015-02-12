@@ -418,54 +418,52 @@
                             {
                                 Alfresco.util.PopupManager.displayPrompt(
                                     {
-                                        title: this.msg("googledocs.concurrentEditors.title"),
-                                        text: this.msg("googledocs.concurrentEditors.text"),
+                                        title: me.msg("googledocs.concurrentEditors.title"),
+                                        text: me.msg("googledocs.concurrentEditors.text"),
                                         noEscape: true,
                                         buttons: [
                                             {
-                                                text: this.msg("button.ok"),
+                                                text: me.msg("button.ok"),
                                                 handler: function submitDiscard() {
                                                     // Close the confirmation pop-up
-                                                    this.destroy();
-                                                    if (this.configDialog) {
+                                                    if (me.versionDialog) {
                                                         // Set the override form field value
-                                                        Dom.get(this.configDialog.id + "-override").value = "true";
+                                                        Dom.get(me.id + "-override").value = "true";
                                                         // Re-submit the form
-                                                        this.configDialog.widgets.okButton.fireEvent("click", {});
+                                                        me.versionDialog.getButtons()[0].fireEvent("click", {});
                                                     }
                                                     else {
                                                         // Assume POST needed without form (node not
                                                         // versioned)
-                                                        this.saveDiscardConfirmed = true;
+                                                        me.saveDiscardConfirmed = true;
                                                         // Redo the POST
                                                         Alfresco.util.Ajax.jsonPost({
                                                             url: actionUrl,
                                                             dataObj: {
-                                                                nodeRef: this.getData().nodeRef,
-                                                                override: this.saveDiscardConfirmed,
+                                                                nodeRef: me.getData().nodeRef,
+                                                                override: me.saveDiscardConfirmed,
                                                                 removeFromDrive: true,
-                                                                majorVersion: this.getData().majorVersion,
-                                                                description: this.getData().description
+                                                                majorVersion: me.getData().majorVersion,
+                                                                description: me.getData().description
                                                             },
                                                             successCallback: success,
                                                             failureCallback: failure
                                                         });
                                                     }
+                                                    this.hide();
                                                 }
                                             },
                                             {
-                                                text: this.msg("button.cancel"),
+                                                text: me.msg("button.cancel"),
                                                 handler: function cancelSave() {
                                                     Alfresco.GoogleDocs.hideMessage();
-                                                    this.destroy();
+                                                    this.hide();
                                                 },
                                                 isDefault: true
                                             }]
                                     });
                             }
-                            else if (response.serverResponse.status == 419) // Invalid
-                            // Filename
-                            // warning
+                            else if (response.serverResponse.status == 419) // Invalid Filename warning
                             {
                                 Alfresco.util.PopupManager.displayPrompt(
                                     {
@@ -478,14 +476,12 @@
                                                 handler: function submitDiscard() {
                                                     // Close the confirmation pop-up
                                                     Alfresco.GoogleDocs.hideMessage();
-                                                    this.destroy();
                                                 },
                                                 isDefault: true
                                             }]
                                     });
                             }
-                            else if (response.serverResponse.status == 403) // Access Denied
-                            // warning
+                            else if (response.serverResponse.status == 403) // Access Denied warning
                             {
                                 Alfresco.util.PopupManager.displayPrompt(
                                     {
@@ -516,7 +512,7 @@
                                         onComplete: {
                                             fn: function () {
                                                 // Re-submit the form
-                                                me.versionDialog.widgets.okButton.fireEvent("click", {});
+                                                me.versionDialog.getButtons()[0].fireEvent("click", {});
                                             },
                                             scope: this
                                         },
