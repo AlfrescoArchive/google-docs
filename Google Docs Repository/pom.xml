@@ -162,6 +162,18 @@
                         </executions>
                     </plugin>
                 </plugins>
+                <resources>
+                    <resource>
+                        <targetPath>${app.amp.output.folder}</targetPath>
+                        <directory>src/main/amp</directory>
+                        <includes>
+                            <include>**/*</include>
+                        </includes>
+                        <excludes>
+                            <exclude>config/alfresco/enterprise/**</exclude>
+                        </excludes>
+                    </resource>
+                </resources>
             </build>
         </profile>
         <profile>
@@ -221,6 +233,18 @@
                         </executions>
                     </plugin>
                 </plugins>
+                <resources>
+                    <resource>
+                        <targetPath>${app.amp.output.folder}</targetPath>
+                        <directory>src/main/amp</directory>
+                        <includes>
+                            <include>**/*</include>
+                        </includes>
+                        <excludes>
+                            <exclude>config/alfresco/enterprise/**</exclude>
+                        </excludes>
+                    </resource>
+                </resources>
             </build>
         </profile>
     </profiles>
