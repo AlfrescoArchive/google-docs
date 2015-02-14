@@ -370,10 +370,27 @@ public interface GoogleDocsService
      * @throws GoogleDocsAuthenticationException
      * @throws GoogleDocsServiceException
      * @throws GoogleDocsRefreshTokenException
+     * @throws IOException
      */
     @Auditable(parameters = { "nodeRef", "driveFile" })
     public boolean deleteContent(Credential credential, NodeRef nodeRef, File file)
         throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException;
+
+    /**
+     * @param credential
+     * @param nodeRef
+     * @return
+     * @throws GoogleDocsAuthenticationException
+     * @throws GoogleDocsServiceException
+     * @throws GoogleDocsRefreshTokenException
+     * @throws IOException
+     */
+    @Auditable(parameters = { "nodeRef" })
+    public boolean deleteContent(Credential credential, NodeRef nodeRef)
+            throws GoogleDocsAuthenticationException,
             GoogleDocsServiceException,
             GoogleDocsRefreshTokenException,
             IOException;

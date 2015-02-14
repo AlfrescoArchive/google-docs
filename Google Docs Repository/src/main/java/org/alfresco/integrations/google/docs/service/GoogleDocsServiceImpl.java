@@ -1042,7 +1042,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getDocument(credential, nodeRef, resourceID, true);
+        getDocument(credential, nodeRef, resourceID, false);
     }
 
 
@@ -1161,7 +1161,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getSpreadSheet(credential, nodeRef, resourceID, true);
+        getSpreadSheet(credential, nodeRef, resourceID, false);
     }
 
 
@@ -1281,7 +1281,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getPresentation(credential, nodeRef, resourceID, true);
+        getPresentation(credential, nodeRef, resourceID, false);
     }
 
 
@@ -1468,6 +1468,20 @@ public class GoogleDocsServiceImpl
 
         log.debug("Deleted: " + deleted);
         return deleted;
+    }
+
+    public boolean deleteContent(Credential credential, NodeRef nodeRef)
+            throws GoogleDocsAuthenticationException,
+            GoogleDocsServiceException,
+            GoogleDocsRefreshTokenException,
+            IOException
+    {
+        //Get the users drive credential if not provided;
+        credential = credential == null ? getCredential() : credential;
+
+        File file = getDriveFile(credential, nodeRef);
+
+        return deleteContent(credential, nodeRef, file);
     }
 
 

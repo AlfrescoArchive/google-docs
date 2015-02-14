@@ -152,15 +152,8 @@ public class SaveContent
                     if (googledocsService.isGoogleDocsLockOwner(nodeRef))
                     {
                         googledocsService.unlockNode(nodeRef);
+                        googledocsService.getDocument(credential, nodeRef);
 
-                        if (removeFromDrive)
-                        {
-                            googledocsService.getDocument(credential, nodeRef);
-                        }
-                        else
-                        {
-                            googledocsService.getDocument(credential, nodeRef, removeFromDrive);
-                        }
                         success = true; // TODO Make getDocument return boolean
                     }
                     else
@@ -173,17 +166,9 @@ public class SaveContent
                     if (googledocsService.isGoogleDocsLockOwner(nodeRef))
                     {
                         googledocsService.unlockNode(nodeRef);
+                        googledocsService.getSpreadSheet(credential, nodeRef);
 
-                        if (removeFromDrive)
-                        {
-                            googledocsService.getSpreadSheet(credential, nodeRef);
-                        }
-                        else
-                        {
-                            googledocsService.getSpreadSheet(credential, nodeRef, removeFromDrive);
-                        }
-                        success = true; // TODO Make getSpreadsheet return
-                                        // boolean
+                        success = true; // TODO Make getSpreadsheet return boolean
                     }
                     else
                     {
@@ -195,17 +180,9 @@ public class SaveContent
                     if (googledocsService.isGoogleDocsLockOwner(nodeRef))
                     {
                         googledocsService.unlockNode(nodeRef);
+                        googledocsService.getPresentation(credential, nodeRef);
 
-                        if (removeFromDrive)
-                        {
-                            googledocsService.getPresentation(credential, nodeRef);
-                        }
-                        else
-                        {
-                            googledocsService.getPresentation(credential, nodeRef, removeFromDrive);
-                        }
-                        success = true; // TODO Make getPresentation return
-                                        // boolean
+                        success = true; // TODO Make getPresentation return boolean
                     }
                     else
                     {
@@ -240,6 +217,10 @@ public class SaveContent
                 if (!removeFromDrive)
                 {
                     googledocsService.lockNode(nodeRef);
+                }
+                else
+                {
+                    googledocsService.deleteContent(credential, nodeRef);
                 }
                 
             }
