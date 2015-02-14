@@ -2214,75 +2214,6 @@ public class GoogleDocsServiceImpl
 
 
     /**
-     * Return a GData resource list entry representing the item with the given ID
-     *
-     * TODO: Migrate fully to Google Drive API and Spring Social Google when the Drive API supports all the capabilities we require
-     *
-     * @param resourceID Identifier for the file on Google
-     * @return
-     * @throws IOException
-     * @throws GoogleDocsServiceException
-     * @throws GoogleDocsAuthenticationException
-     * @throws GoogleDocsRefreshTokenException
-     */
-   /* private DocumentListEntry getDocumentListEntry(String resourceID)
-        throws IOException,
-            GoogleDocsServiceException,
-            GoogleDocsAuthenticationException,
-            GoogleDocsRefreshTokenException
-    {
-        log.debug("Get Document list entry for resource " + resourceID);
-        DocumentListEntry documentListEntry = null;
-
-        try
-        {
-            documentListEntry = getDocsService(getConnection()).getEntry(new URL(GoogleDocsConstants.URL_BASE_FEED
-                                                                                 + "/"
-                                                                                 + resourceID.substring(resourceID.lastIndexOf(':') + 1)), DocumentListEntry.class);
-        }
-        catch (IOException ioe)
-        {
-            throw ioe;
-        }
-        catch (ServiceException se)
-        {
-            throw new GoogleDocsServiceException(se.getMessage(), se.getHttpErrorCodeOverride());
-        }
-        return documentListEntry;
-    } */
-
-
-    /**
-     * Construct a GData service instance for use by methods which require this.
-     * <p/>
-     * <p>
-     * It is expected that the user is authenticated when this method is called. The authentication from the supplied connection
-     * will be applied to the service.
-     * </p>
-     * <p/>
-     * <p/>
-     * TODO: Migrate fully to Google Drive API and Spring Social Google when the Drive API supports all the capabilities we require
-     * <p/>
-     *
-     * @return GData Service instance
-     */
-    /*private DocsService getDocsService(Connection<Google> connection)
-        throws GoogleDocsServiceException,
-            GoogleDocsAuthenticationException,
-            GoogleDocsRefreshTokenException
-    {
-        DocsService docsService = new DocsService(GoogleDocsConstants.APPLICATION_NAME);
-
-        Google google = connection.getApi(); // after authentication
-        google.applyAuthentication(docsService);
-
-        log.debug("Google Docs Client initiated");
-        return docsService;
-
-    }/*
-
-
-    /**
      * Retrieve the file's ACL from Google and return a list of users who are listed in the ACL along with their roles.
      * 
      * @param resourceId Identifier for the file on Google
@@ -2301,19 +2232,6 @@ public class GoogleDocsServiceImpl
         //Get the users drive credential if not provided;
         credential = credential == null ? getCredential() : credential;
         Drive drive = getDriveApi(credential);
-
-
-        // TODO The Drive API does not yet return the email/username of document collborators.
-        // Use the Drive API when they make this possible!
-
-       /* PermissionList permissionList = drive.permissions().list(resourceId).execute();
-        //Get the googleMetadata to reference the Node
-        ArrayList<String> permissionsList = new ArrayList<String>(permissionList.getItems().size());
-        List<Permission> permissions = permissionList.getItems();
-        for (Permission userPermission : permissions)
-        {
-        permissionsList.add(userPermission.getName() + "|" + userPermission.getRole());
-        }*/
 
         List<GooglePermission> permissionsMap = new ArrayList<GooglePermission>();
 
