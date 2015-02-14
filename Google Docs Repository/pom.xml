@@ -173,6 +173,12 @@
                             <exclude>config/alfresco/enterprise/**</exclude>
                         </excludes>
                     </resource>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>org/alfresco/integrations/google/docs/service/client_secret.json</include>
+                        </includes>
+                    </resource>
                 </resources>
             </build>
         </profile>
@@ -238,11 +244,16 @@
                         <targetPath>${app.amp.output.folder}</targetPath>
                         <directory>src/main/amp</directory>
                         <includes>
-                            <include>**/*</include>
                         </includes>
                         <excludes>
                             <exclude>config/alfresco/enterprise/**</exclude>
                         </excludes>
+                    </resource>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>org/alfresco/integrations/google/docs/service/client_secret.json</include>
+                        </includes>
                     </resource>
                 </resources>
             </build>
