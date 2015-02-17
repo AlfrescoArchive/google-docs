@@ -370,7 +370,7 @@
                 actionUrl = Alfresco.constants.PROXY_URI + 'googledocs/saveContent';
 
             Alfresco.GoogleDocs.showMessage({
-                text: this.msg("googledocs.actions.checkin"),
+                text: this.msg("googledocs.actions.checkingin"),
                 displayTime: 0,
                 showSpinner: true
             });
@@ -378,7 +378,7 @@
             var checkinDocument = function Googledocs_checkinDocument(p_obj) {
                 this.hide();
                 Alfresco.GoogleDocs.showMessage({
-                    text: me.msg("googledocs.actions.checkin"),
+                    text: me.msg("googledocs.actions.checkingin"),
                     displayTime: 0,
                     showSpinner: true
                 });
@@ -397,7 +397,7 @@
                     beforeRequestCallback: {
                         fn: function (response) {
                             Alfresco.GoogleDocs.showMessage({
-                                text: this.msg("googledocs.actions.checkin"),
+                                text: this.msg("googledocs.actions.checkingin"),
                                 displayTime: 0,
                                 showSpinner: true
                             });
@@ -599,7 +599,7 @@
                                     else
                                     {
                                         Alfresco.GoogleDocs.showMessage({
-                                            text: this.msg("googledocs.actions.checkin"),
+                                            text: this.msg("googledocs.actions.checkingin"),
                                             displayTime: 0,
                                             showSpinner: true
                                         });
