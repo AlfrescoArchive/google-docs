@@ -916,7 +916,7 @@
                 return;
             }
 
-            // Hide the wait message - this will be re-displayed later if Skip or Continue are pressed, but should not be there if the dialog is closed
+            // Hide the wait message - this will be re-displayed later if Cancel or Continue are pressed, but should not be there if the dialog is closed
             Alfresco.GoogleDocs.hideMessage();
 
             // Inject the template from the XHR request into a new DIV element
@@ -935,7 +935,7 @@
 
             // Save a reference to HTMLElements
             this.widgets.headerText = Dom.get(this.id + "-header-span");
-            this.widgets.skipButton = Alfresco.util.createYUIButton(this, "skip-button", this.onSkipButtonClick);
+            this.widgets.cancelButton = Alfresco.util.createYUIButton(this, "cancel-button", this.onCancelButtonClick);
             this.widgets.continueButton = Alfresco.util.createYUIButton(this, "continue-button", this.onContinueButtonClick);
             this.widgets.formContainer = Dom.get(this.id + "-form");
 
@@ -988,16 +988,10 @@
          * Fired when the user clicks the cancel button.
          * Closes the panel.
          *
-         * @method onSkipButtonClick
+         * @method onCancelButtonClick
          */
-        onSkipButtonClick: function GDRS_onSkipButtonClick() {
+        onCancelButtonClick: function GDRS_onCancelButtonClick() {
             this.closeDialogue();
-            if (this.config.onComplete && this.config.onComplete.fn && typeof this.config.onComplete.fn == "function") {
-                this.config.onComplete.fn.call(this.config.onComplete.scope || window, {});
-            }
-            else {
-                throw new Error("No continue function was defined");
-            }
         },
 
         /**
