@@ -41,7 +41,7 @@
 
          <div class="bdft">
             <input id="${el}-continue-button" type="button" value="${msg("resumeSharing.button.continue")}" />
-            <input id="${el}-skip-button" type="button" value="${msg("resumeSharing.button.skip")}" />
+            <input id="${el}-cancel-button" type="button" value="${msg("resumeSharing.button.cancel")}" />
          </div>
 
       </form>
