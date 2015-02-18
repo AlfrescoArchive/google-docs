@@ -375,6 +375,134 @@
                 showSpinner: true
             });
 
+
+            var success = {
+                fn: function (response) {
+                    location.reload();
+                },
+                scope: this
+            };
+
+            var failure = {
+                fn: function (response) {
+                    if (response.serverResponse.status == 409) // Concurrent
+                    // editors warning
+                    {
+                        Alfresco.util.PopupManager.displayPrompt(
+                            {
+                                title: me.msg("googledocs.concurrentEditors.title"),
+                                text: me.msg("googledocs.concurrentEditors.text"),
+                                noEscape: true,
+                                buttons: [
+                                    {
+                                        text: me.msg("button.ok"),
+                                        handler: function submitDiscard() {
+                                            // Close the confirmation pop-up
+                                            if (me.versionDialog) {
+                                                // Set the override form field value
+                                                Dom.get(me.id + "-override").value = "true";
+                                                // Re-submit the form
+                                                me.versionDialog.getButtons()[0].fireEvent("click", {});
+                                            }
+                                            else {
+                                                // Assume POST needed without form (node not
+                                                // versioned)
+                                                me.saveDiscardConfirmed = true;
+                                                // Redo the POST
+                                                Alfresco.util.Ajax.jsonPost({
+                                                    url: actionUrl,
+                                                    dataObj: {
+                                                        nodeRef: me.getData().nodeRef,
+                                                        override: me.saveDiscardConfirmed,
+                                                        removeFromDrive: true,
+                                                        majorVersion: me.getData().majorVersion,
+                                                        description: me.getData().description
+                                                    },
+                                                    successCallback: success,
+                                                    failureCallback: failure
+                                                });
+                                            }
+                                            this.hide();
+                                        }
+                                    },
+                                    {
+                                        text: me.msg("button.cancel"),
+                                        handler: function cancelSave() {
+                                            Alfresco.GoogleDocs.hideMessage();
+                                            this.hide();
+                                        },
+                                        isDefault: true
+                                    }]
+                            });
+                    }
+                    else if (response.serverResponse.status == 419) // Invalid Filename warning
+                    {
+                        Alfresco.util.PopupManager.displayPrompt(
+                            {
+                                title: me.msg("googledocs.invalidFilename.title"),
+                                text: me.msg("googledocs.invalidFilename.text"),
+                                noEscape: true,
+                                buttons: [
+                                    {
+                                        text: me.msg("button.ok"),
+                                        handler: function submitDiscard() {
+                                            // Close the confirmation pop-up
+                                            Alfresco.GoogleDocs.hideMessage();
+                                        },
+                                        isDefault: true
+                                    }]
+                            });
+                    }
+                    else if (response.serverResponse.status == 403) // Access Denied warning
+                    {
+                        Alfresco.util.PopupManager.displayPrompt(
+                            {
+                                title: me.msg("googledocs.accessDenied.title"),
+                                text: me.msg("googledocs.accessDenied.text"),
+                                noEscape: true,
+                                buttons: [
+                                    {
+                                        text: me.msg("button.ok"),
+                                        handler: function submitDiscard() {
+                                            // Close the confirmation pop-up
+                                            Alfresco.GoogleDocs.hideMessage();
+                                            this.destroy();
+                                            window.location.href = Alfresco.util.uriTemplate("userdashboardpage",
+                                                {
+                                                    userid: encodeURIComponent(Alfresco.constants.USERNAME)
+                                                });
+                                        },
+                                        isDefault: true
+                                    }]
+                            });
+                    }
+                    else {
+                        if (response.serverResponse.status == 502 && me.versionDialog) // 502s
+                        // may be returned here if the POST call is made by the dialog (and is not wrapped)
+                        {
+                            Alfresco.GoogleDocs.requestOAuthURL({
+                                onComplete: {
+                                    fn: function () {
+                                        // Re-submit the form
+                                        me.versionDialog.getButtons()[0].fireEvent("click", {});
+                                    },
+                                    scope: this
+                                },
+                                override: true
+                            });
+                        }
+                        else {
+                            Alfresco.GoogleDocs.showMessage({
+                                text: me.msg("googledocs.actions.checkin.failure"),
+                                displayTime: 2.5,
+                                showSpinner: false
+                            });
+                        }
+                    }
+                },
+                scope: this
+            };
+
             var checkinDocument = function Googledocs_checkinDocument(p_obj) {
                 this.hide();
                 Alfresco.GoogleDocs.showMessage({
@@ -404,132 +532,8 @@
                         },
                         scope: this
                     },
-                    successCallback: {
-                        fn: function (response) {
-                            //navigateToEditorPage(response.json.editorUrl);
-                            location.reload();
-                        },
-                        scope: this
-                    },
-                    failureCallback: {
-                        fn: function (response) {
-                            if (response.serverResponse.status == 409) // Concurrent
-                            // editors warning
-                            {
-                                Alfresco.util.PopupManager.displayPrompt(
-                                    {
-                                        title: me.msg("googledocs.concurrentEditors.title"),
-                                        text: me.msg("googledocs.concurrentEditors.text"),
-                                        noEscape: true,
-                                        buttons: [
-                                            {
-                                                text: me.msg("button.ok"),
-                                                handler: function submitDiscard() {
-                                                    // Close the confirmation pop-up
-                                                    if (me.versionDialog) {
-                                                        // Set the override form field value
-                                                        Dom.get(me.id + "-override").value = "true";
-                                                        // Re-submit the form
-                                                        me.versionDialog.getButtons()[0].fireEvent("click", {});
-                                                    }
-                                                    else {
-                                                        // Assume POST needed without form (node not
-                                                        // versioned)
-                                                        me.saveDiscardConfirmed = true;
-                                                        // Redo the POST
-                                                        Alfresco.util.Ajax.jsonPost({
-                                                            url: actionUrl,
-                                                            dataObj: {
-                                                                nodeRef: me.getData().nodeRef,
-                                                                override: me.saveDiscardConfirmed,
-                                                                removeFromDrive: true,
-                                                                majorVersion: me.getData().majorVersion,
-                                                                description: me.getData().description
-                                                            },
-                                                            successCallback: success,
-                                                            failureCallback: failure
-                                                        });
-                                                    }
-                                                    this.hide();
-                                                }
-                                            },
-                                            {
-                                                text: me.msg("button.cancel"),
-                                                handler: function cancelSave() {
-                                                    Alfresco.GoogleDocs.hideMessage();
-                                                    this.hide();
-                                                },
-                                                isDefault: true
-                                            }]
-                                    });
-                            }
-                            else if (response.serverResponse.status == 419) // Invalid Filename warning
-                            {
-                                Alfresco.util.PopupManager.displayPrompt(
-                                    {
-                                        title: me.msg("googledocs.invalidFilename.title"),
-                                        text: me.msg("googledocs.invalidFilename.text"),
-                                        noEscape: true,
-                                        buttons: [
-                                            {
-                                                text: me.msg("button.ok"),
-                                                handler: function submitDiscard() {
-                                                    // Close the confirmation pop-up
-                                                    Alfresco.GoogleDocs.hideMessage();
-                                                },
-                                                isDefault: true
-                                            }]
-                                    });
-                            }
-                            else if (response.serverResponse.status == 403) // Access Denied warning
-                            {
-                                Alfresco.util.PopupManager.displayPrompt(
-                                    {
-                                        title: me.msg("googledocs.accessDenied.title"),
-                                        text: me.msg("googledocs.accessDenied.text"),
-                                        noEscape: true,
-                                        buttons: [
-                                            {
-                                                text: me.msg("button.ok"),
-                                                handler: function submitDiscard() {
-                                                    // Close the confirmation pop-up
-                                                    Alfresco.GoogleDocs.hideMessage();
-                                                    this.destroy();
-                                                    window.location.href = Alfresco.util.uriTemplate("userdashboardpage",
-                                                        {
-                                                            userid: encodeURIComponent(Alfresco.constants.USERNAME)
-                                                        });
-                                                },
-                                                isDefault: true
-                                            }]
-                                    });
-                            }
-                            else {
-                                if (response.serverResponse.status == 502 && me.versionDialog) // 502s
-                                // may be returned here if the POST call is made by the dialog (and is not wrapped)
-                                {
-                                    Alfresco.GoogleDocs.requestOAuthURL({
-                                        onComplete: {
-                                            fn: function () {
-                                                // Re-submit the form
-                                                me.versionDialog.getButtons()[0].fireEvent("click", {});
-                                            },
-                                            scope: this
-                                        },
-                                        override: true
-                                    });
-                                }
-                                else {
-                                    Alfresco.GoogleDocs.showMessage({
-                                        text: me.msg("googledocs.actions.checkin.failure"),
-                                        displayTime: 2.5,
-                                        showSpinner: false
-                                    });
-                                }
-                            }
-                        },
-                        scope: this
-                    }
+                    successCallback: success,
+                    failureCallback: failure
                 });
             };
 
