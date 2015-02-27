@@ -448,6 +448,7 @@
                                         handler: function submitDiscard() {
                                             // Close the confirmation pop-up
                                             Alfresco.GoogleDocs.hideMessage();
+                                            this.hide();
                                         },
                                         isDefault: true
                                     }]
