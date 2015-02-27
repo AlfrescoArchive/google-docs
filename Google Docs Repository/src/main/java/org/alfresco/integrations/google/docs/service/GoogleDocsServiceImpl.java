@@ -949,7 +949,6 @@ public class GoogleDocsServiceImpl
         log.debug("Get Google Document for node: " + nodeRef);
         //Get the users drive credential if not provided;
         credential = credential == null ? getCredential() : credential;
-
         Drive drive = getDriveApi(credential);
 
         try
@@ -961,8 +960,7 @@ public class GoogleDocsServiceImpl
                       + "; Mimetype of Google Doc: " + mimetype);
             log.debug("Export format: " + mimetype);
 
-            File file = new File().setId(resourceID.substring(resourceID.lastIndexOf(':') + 1));
-            file = drive.files().get(resourceID.substring(resourceID.lastIndexOf(':') + 1)).execute();
+            File file = drive.files().get(resourceID.substring(resourceID.lastIndexOf(':') + 1)).execute();
 
             InputStream inputstream = getFileInputStream(credential, file, mimetype);
 
@@ -1105,18 +1103,14 @@ public class GoogleDocsServiceImpl
                 log.debug("Temporary Aspect Removed");
             }
         }
-        catch (IOException ioe)
+        catch (GoogleJsonResponseException e)
         {
-            throw ioe;
+            throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
         }
         catch (JSONException jsonException)
         {
             throw new GoogleDocsAuthenticationException(
                     "Unable to create activity entry: " + jsonException.getMessage(), jsonException);
-        }
-        catch (Exception e)
-        {
-            throw new GoogleDocsServiceException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
         }
     }
 
@@ -1224,20 +1218,15 @@ public class GoogleDocsServiceImpl
                 log.debug("Temporary Aspect Removed");
             }
         }
-        catch (IOException ioe)
+        catch (GoogleJsonResponseException e)
         {
-            throw ioe;
+            throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(),e);
         }
         catch (JSONException jsonException)
         {
             throw new GoogleDocsAuthenticationException(
                     "Unable to create activity entry: " + jsonException.getMessage(), jsonException);
         }
-        catch (Exception e)
-        {
-            throw new GoogleDocsServiceException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, e);
-        }
-
     }
 
 
