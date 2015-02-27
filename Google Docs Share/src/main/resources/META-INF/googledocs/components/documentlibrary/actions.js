@@ -467,11 +467,9 @@
                                         handler: function submitDiscard() {
                                             // Close the confirmation pop-up
                                             Alfresco.GoogleDocs.hideMessage();
-                                            this.destroy();
-                                            window.location.href = Alfresco.util.uriTemplate("userdashboardpage",
-                                                {
-                                                    userid: encodeURIComponent(Alfresco.constants.USERNAME)
-                                                });
+                                            this.hide();
+                                            //Refresh the page to hopefully update what actions are available to the current user
+                                            location.reload();
                                         },
                                         isDefault: true
                                     }]
