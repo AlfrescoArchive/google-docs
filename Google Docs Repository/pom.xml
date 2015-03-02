@@ -258,6 +258,35 @@
                 </resources>
             </build>
         </profile>
+        <profile>
+            <id>4</id>
+            <properties>
+                <alfresco-community.version>4.2.f</alfresco-community.version>
+                <alfresco-enterprise.version>4.2.4</alfresco-enterprise.version>
+                <alfresco.min.version>4.2.0</alfresco.min.version>
+                <alfresco.max.version>4.99.99</alfresco.max.version>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                    <version>2.3.2</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.alfresco.maven.plugin</groupId>
+                        <artifactId>alfresco-maven-plugin</artifactId>
+                        <version>1.1.1</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <classifier>4.2</classifier>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
 </project>
