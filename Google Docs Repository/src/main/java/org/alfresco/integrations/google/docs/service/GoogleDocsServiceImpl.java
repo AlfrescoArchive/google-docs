@@ -983,7 +983,7 @@ public class GoogleDocsServiceImpl
 
             postActivity(nodeRef);
 
-            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY) && removeFromDrive)
+            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
                 log.debug("Temporary Aspect Removed");
@@ -1097,7 +1097,7 @@ public class GoogleDocsServiceImpl
 
             postActivity(nodeRef);
 
-            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY) && removeFromDrive)
+            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
                 log.debug("Temporary Aspect Removed");
@@ -1212,7 +1212,7 @@ public class GoogleDocsServiceImpl
 
             postActivity(nodeRef);
 
-            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY) && removeFromDrive)
+            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
             {
                 nodeService.removeAspect(nodeRef, ContentModel.ASPECT_TEMPORARY);
                 log.debug("Temporary Aspect Removed");
