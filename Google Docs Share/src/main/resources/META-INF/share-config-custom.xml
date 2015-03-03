@@ -48,6 +48,9 @@
             <action id="google-docs-checkin-action-link" type="javascript" icon="document-upload-new-version" label="googledocs.actions.checkin">
                 <param name="function">onGoogledocsActionCheckin</param>
                 <evaluator>evaluator.doclib.google.docs.resume</evaluator>
+                <permissions>
+                    <permission allow="true">Write</permission>
+                </permissions>
             </action>
         </actions>
         <actionGroups>
