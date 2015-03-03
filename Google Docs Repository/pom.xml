@@ -287,6 +287,22 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>5</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.alfresco.maven.plugin</groupId>
+                        <artifactId>alfresco-maven-plugin</artifactId>
+                        <version>1.1.1</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <classifier>5.0</classifier>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
 </project>
