@@ -696,7 +696,9 @@
                     displayTime: 0,
                     showSpinner: true
                 });
-                var displayName = record.displayName;
+                var me = this,
+                    displayName = record.displayName,
+                    actionUrl = Alfresco.constants.PROXY_URI + "googledocs/discardContent";
 
                 var success =
                 {
@@ -708,18 +710,59 @@
                 var failure =
                 {
                     fn: function (response) {
-                        location.reload();
+                        if (response.serverResponse.status == 409) // Concurrent
+                        // editors warning
+                        {
+                            Alfresco.util.PopupManager.displayPrompt(
+                                {
+                                    title: me.msg("googledocs.concurrentEditors.title"),
+                                    text: me.msg("googledocs.concurrentEditors.text"),
+                                    noEscape: true,
+                                    buttons: [
+                                        {
+                                            text: me.msg("button.ok"),
+                                            handler: function submitDiscard() {
+                                                // Close the confirmation pop-up
+                                                Alfresco.GoogleDocs.request({
+                                                    url: actionUrl,
+                                                    method: "POST",
+                                                    dataObj: {
+                                                        nodeRef: record.nodeRef,
+                                                        override: true
+                                                    },
+                                                    successCallback: success,
+                                                    failureCallback: failure
+                                                });
+                                                this.hide();
+                                                location.reload();
+                                            }
+                                        },
+                                        {
+                                            text: me.msg("button.cancel"),
+                                            handler: function cancelSave() {
+                                                Alfresco.GoogleDocs.hideMessage();
+                                                this.hide();
+                                            },
+                                            isDefault: true
+                                        }]
+                                });
+                        }
+                        else {
+                            Alfresco.GoogleDocs.showMessage({
+                                text: me.msg("googledocs.actions.cancel.failure"),
+                                displayTime: 2.5,
+                                showSpinner: false
+                            });
+                        }
                     }
                 };
-
-                var actionUrl = Alfresco.constants.PROXY_URI + "googledocs/discardContent";
 
                 Alfresco.GoogleDocs.request({
                     url: actionUrl,
                     method: "POST",
                     dataObj: {
                         nodeRef: record.nodeRef,
-                        override: true
+                        override: false
                     },
                     successCallback: success,
                     failureCallback: failure
