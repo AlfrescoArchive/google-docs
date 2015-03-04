@@ -114,6 +114,9 @@ public class DiscardContent
                 if (!Boolean.valueOf(map.get(JSON_KEY_OVERRIDE).toString()))
                 {
                     SiteInfo siteInfo = siteService.getSite(nodeRef);
+                    //The second part of this test maybe too exclusive.  What if the user has write permissions to the node
+                    // but not membership in the containing site? Should the test just ask if the user has write permission
+                    // to the node?
                     if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
                     {
                         if (googledocsService.hasConcurrentEditors(credential, nodeRef))
@@ -151,8 +154,8 @@ public class DiscardContent
             }
             catch (GoogleDocsServiceException gdse)
             {
-            	if (gdse.getPassedStatusCode() == HttpStatus.SC_NOT_FOUND)
-            	{
+                if (gdse.getPassedStatusCode() == HttpStatus.SC_NOT_FOUND)
+                {
                     // This code will make changes after the rollback has occurred to clean up the node: remove the lock and the Google
                     // Docs aspect. If it has the temporary aspect it will also remove the node from Alfresco
                     AlfrescoTransactionSupport.bindListener(new TransactionListenerAdapter()
@@ -187,7 +190,7 @@ public class DiscardContent
                         }
                     });
                     model.put(MODEL_SUCCESS, true);
-            	} else
+                } else
                 if (gdse.getPassedStatusCode() > -1)
                 {
                     throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage());
@@ -241,10 +244,6 @@ public class DiscardContent
                 });
 
                 throw new WebScriptException(HttpStatus.SC_FORBIDDEN, ade.getMessage(), ade);
-            }
-            catch (Exception e)
-            {
-                throw new WebScriptException(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage(), e);
             }
         }
         else
