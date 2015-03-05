@@ -1,6 +1,6 @@
 <webscript>
-    <shortname>Admin Console - Google Docs</shortname>
-    <description><![CDATA[Admin Console WebScript that displays the Google Docs page.]]></description>
+    <shortname>Google Docs Console</shortname>
+    <description><![CDATA[Page to administer the Google Docs integration.]]></description>
     <url>/enterprise/admin/admin-googledocs</url>
     <family>AdminConsole</family>
     <format default="html">argument</format>
