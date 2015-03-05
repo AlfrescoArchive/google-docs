@@ -1,139 +1,145 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-   <modelVersion>4.0.0</modelVersion>
-   <artifactId>alfresco-googledocs-repo</artifactId>
-   <version>3.0.0-${buildnumber}</version>
-   <packaging>amp</packaging>
-   <name>Alfresco / Google Docs Repo Module</name>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>alfresco-googledocs-repo</artifactId>
+    <version>3.0.0-${buildnumber}</version>
+    <packaging>amp</packaging>
+    <name>Alfresco / Google Docs Repo Module</name>
 
-   <parent>
-      <groupId>org.alfresco.integrations</groupId>
-      <artifactId>alfresco-GoogleDocs</artifactId>
-      <version>3.0.0-${buildnumber}</version>
-   </parent>
+    <parent>
+        <groupId>org.alfresco.integrations</groupId>
+        <artifactId>alfresco-GoogleDocs</artifactId>
+        <version>3.0.0-${buildnumber}</version>
+    </parent>
 
-   <properties>
-      <project.build.finalName>${project.build.finalName}-${buildnumber}.amp</project.build.finalName>
-      <org.springframework.social-google-version>1.0.0.RELEASE</org.springframework.social-google-version>
-   </properties>
+    <properties>
+        <project.build.finalName>${project.build.finalName}-${buildnumber}.amp</project.build.finalName>
+        <org.springframework.social-google-version>1.0.0.RELEASE</org.springframework.social-google-version>
+    </properties>
 
-   <dependencies>
-      <dependency>
-         <groupId>org.springframework</groupId>
-         <artifactId>spring-core</artifactId>
-         <version>3.2.10.RELEASE</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.alfresco</groupId>
-         <artifactId>alfresco-repository</artifactId>
-         <version>${alfresco.version}</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.alfresco</groupId>
-         <artifactId>alfresco-core</artifactId>
-         <version>${alfresco.version}</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.alfresco</groupId>
-         <artifactId>alfresco-data-model</artifactId>
-         <version>${alfresco.version}</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.springframework.extensions.surf</groupId>
-         <artifactId>spring-webscripts-api</artifactId>
-         <version>5.0-SNAPSHOT</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>com.google.apis</groupId>
-         <artifactId>google-api-services-oauth2</artifactId>
-         <version>v2-rev86-1.19.1</version>
-      </dependency>
-      <dependency>
-         <groupId>com.google.apis</groupId>
-         <artifactId>google-api-services-drive</artifactId>
-         <version>v2-rev157-1.19.1</version>
-      </dependency>
-      <dependency>
-         <groupId>com.googlecode.json-simple</groupId>
-         <artifactId>json-simple</artifactId>
-         <version>1.1.1</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.acegisecurity</groupId>
-         <artifactId>acegi-security</artifactId>
-         <version>0.8.2_patched</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>commons-logging</groupId>
-         <artifactId>commons-logging</artifactId>
-         <version>1.1.1</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>com.google.code.findbugs</groupId>
-         <artifactId>jsr305</artifactId>
-         <version>1.3.9</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>commons-codec</groupId>
-         <artifactId>commons-codec</artifactId>
-         <version>1.9</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.httpcomponents</groupId>
-         <artifactId>httpclient</artifactId>
-         <version>4.3.3</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.httpcomponents</groupId>
-         <artifactId>httpcore</artifactId>
-         <version>4.0.1</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>com.fasterxml.jackson.core</groupId>
-         <artifactId>jackson-core</artifactId>
-         <version>2.3.2</version>
-         <scope>provided</scope>
-      </dependency>
-   </dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>3.2.10.RELEASE</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.alfresco</groupId>
+            <artifactId>alfresco-repository</artifactId>
+            <version>${alfresco.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.alfresco</groupId>
+            <artifactId>alfresco-core</artifactId>
+            <version>${alfresco.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.alfresco</groupId>
+            <artifactId>alfresco-data-model</artifactId>
+            <version>${alfresco.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.extensions.surf</groupId>
+            <artifactId>spring-webscripts-api</artifactId>
+            <version>5.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-oauth2</artifactId>
+            <version>v2-rev86-1.19.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava-jdk5</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-drive</artifactId>
+            <version>v2-rev157-1.19.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>1.1.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.acegisecurity</groupId>
+            <artifactId>acegi-security</artifactId>
+            <version>0.8.2_patched</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.1.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>1.3.9</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.9</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.3.3</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>4.0.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.3.2</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 
-   <build>
-      <finalName>${project.artifactId}-${project.version}</finalName>
-      <plugins>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>${compiler-plugin.version}</version>
-            <configuration>
-               <source>${java.version}</source>
-               <target>${java.version}</target>
-               <encoding>${project.build.sourceEncoding}</encoding>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-resources-plugin</artifactId>
-            <configuration>
-               <nonFilteredFileExtensions>
-                  <nonFilteredFileExtension>pptx</nonFilteredFileExtension>
-                  <nonFilteredFileExtension>docx</nonFilteredFileExtension>
-                  <nonFilteredFileExtension>xlsx</nonFilteredFileExtension>
-               </nonFilteredFileExtensions>
-            </configuration>
-         </plugin>
-      </plugins>
-   </build>
+    <build>
+        <finalName>${project.artifactId}-${project.version}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler-plugin.version}</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <nonFilteredFileExtensions>
+                        <nonFilteredFileExtension>pptx</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>docx</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>xlsx</nonFilteredFileExtension>
+                    </nonFilteredFileExtensions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
     <profiles>
         <profile>
@@ -155,7 +161,8 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
-                                        <copy file="src/main/oauth-client-resources/client_secret-cloud.json" tofile="src/main/resources/org/alfresco/integrations/google/docs/service/client_secret.json" />
+                                        <copy file="src/main/oauth-client-resources/client_secret-cloud.json"
+                                              tofile="src/main/resources/org/alfresco/integrations/google/docs/service/client_secret.json"/>
                                     </tasks>
                                 </configuration>
                             </execution>
@@ -201,7 +208,8 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
-                                        <copy file="src/main/oauth-client-resources/client_secret-enterprise.json" tofile="src/main/resources/org/alfresco/integrations/google/docs/service/client_secret.json" />
+                                        <copy file="src/main/oauth-client-resources/client_secret-enterprise.json"
+                                              tofile="src/main/resources/org/alfresco/integrations/google/docs/service/client_secret.json"/>
                                     </tasks>
                                 </configuration>
                             </execution>
@@ -232,7 +240,8 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
-                                        <copy file="src/main/oauth-client-resources/client_secret-community.json" tofile="src/main/resources/org/alfresco/integrations/google/docs/service/client_secret.json" />
+                                        <copy file="src/main/oauth-client-resources/client_secret-community.json"
+                                              tofile="src/main/resources/org/alfresco/integrations/google/docs/service/client_secret.json"/>
                                     </tasks>
                                 </configuration>
                             </execution>
