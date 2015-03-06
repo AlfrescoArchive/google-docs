@@ -117,7 +117,7 @@
                     <plugin>
                         <groupId>org.alfresco.maven.plugin</groupId>
                         <artifactId>alfresco-maven-plugin</artifactId>
-                        <version>1.1.1</version>
+                        <version>2.0.0</version>
                         <extensions>true</extensions>
                         <configuration>
                             <classifier>4.2</classifier>
@@ -133,7 +133,7 @@
                     <plugin>
                         <groupId>org.alfresco.maven.plugin</groupId>
                         <artifactId>alfresco-maven-plugin</artifactId>
-                        <version>1.1.1</version>
+                        <version>2.0.0</version>
                         <extensions>true</extensions>
                         <configuration>
                             <classifier>5.0</classifier>
