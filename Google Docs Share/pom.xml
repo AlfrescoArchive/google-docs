@@ -4,6 +4,7 @@
     <groupId>org.alfresco.integrations</groupId>
     <artifactId>alfresco-googledocs-share</artifactId>
     <version>3.0.0-${buildnumber}</version>
+    <packaging>amp</packaging>
     <name>Alfresco / Google Docs Share Module</name>
 
     <properties>

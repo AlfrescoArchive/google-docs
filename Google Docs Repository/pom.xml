@@ -1,6 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <groupId>org.alfresco.integrations</groupId>
     <artifactId>alfresco-googledocs-repo</artifactId>
     <version>3.0.0-${buildnumber}</version>
     <packaging>amp</packaging>
@@ -173,6 +174,7 @@
                     <resource>
                         <targetPath>${app.amp.output.folder}</targetPath>
                         <directory>src/main/amp</directory>
+                        <filtering>true</filtering>
                         <includes>
                             <include>**/*</include>
                         </includes>
@@ -251,6 +253,7 @@
                 <resources>
                     <resource>
                         <targetPath>${app.amp.output.folder}</targetPath>
+                        <filtering>true</filtering>
                         <directory>src/main/amp</directory>
                         <includes>
                         </includes>
