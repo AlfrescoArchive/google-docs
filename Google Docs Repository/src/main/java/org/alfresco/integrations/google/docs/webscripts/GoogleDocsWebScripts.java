@@ -29,7 +29,7 @@ public abstract class GoogleDocsWebScripts
     extends DeclarativeWebScript
     implements ApplicationContextAware
 {
-    protected final static String GOOGLEDOCS_V2_SUBSYSTEM = "googledocs_v2";
+    protected final static String GOOGLEDOCS_DEFAULT_SUBSYSTEM = "googledocs_default";
     protected final static String GOOGLEDOCSSERVICE       = "GoogleDocsService";
 
     protected ApplicationContext  applicationContext;
@@ -48,7 +48,7 @@ public abstract class GoogleDocsWebScripts
     {
         try
         {
-            ApplicationContextFactory subsystem = (ApplicationContextFactory)applicationContext.getBean(GOOGLEDOCS_V2_SUBSYSTEM);
+            ApplicationContextFactory subsystem = (ApplicationContextFactory)applicationContext.getBean(GOOGLEDOCS_DEFAULT_SUBSYSTEM);
             ConfigurableApplicationContext childContext = (ConfigurableApplicationContext)subsystem.getApplicationContext();
             setGoogledocsService((GoogleDocsService)childContext.getBean(GOOGLEDOCSSERVICE));
         }
