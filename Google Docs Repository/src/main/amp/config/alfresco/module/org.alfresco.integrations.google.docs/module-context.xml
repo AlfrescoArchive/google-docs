@@ -3,17 +3,17 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-    <!-- Google Docs v2 subsystem -->
+    <!-- Google Docs default subsystem -->
     <bean id="googledocs_v2" class="org.alfresco.repo.management.subsystems.ChildApplicationContextFactory"
           parent="abstractPropertyBackedBean">
         <property name="category">
             <value>googledocs</value>
         </property>
         <property name="typeName">
-            <value>v2</value>
+            <value>default</value>
         </property>
         <property name="instancePath">
-            <value>v2</value>
+            <value>default</value>
         </property>
         <property name="autoStart">
             <value>true</value>
