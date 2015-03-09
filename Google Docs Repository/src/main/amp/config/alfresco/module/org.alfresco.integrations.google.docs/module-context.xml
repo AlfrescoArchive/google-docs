@@ -4,7 +4,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <!-- Google Docs default subsystem -->
-    <bean id="googledocs_v2" class="org.alfresco.repo.management.subsystems.ChildApplicationContextFactory"
+    <bean id="googledocs_default" class="org.alfresco.repo.management.subsystems.ChildApplicationContextFactory"
           parent="abstractPropertyBackedBean">
         <property name="category">
             <value>googledocs</value>
