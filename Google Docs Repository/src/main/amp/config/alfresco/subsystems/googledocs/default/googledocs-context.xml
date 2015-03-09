@@ -8,7 +8,7 @@
           depends-on="dictionaryBootstrap">
         <property name="models">
             <list>
-                <value>alfresco/subsystems/googledocs/v2/googledocs-model.xml</value>
+                <value>alfresco/subsystems/googledocs/default/googledocs-model.xml</value>
             </list>
         </property>
     </bean>
