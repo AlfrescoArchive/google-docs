@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.drive.model.File;
 import org.alfresco.integrations.google.docs.GoogleDocsModel;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
@@ -103,35 +104,97 @@ public class DiscardContent
         final NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
 
         final Credential credential;
+        boolean deleted = false;
 
         if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
         {
             try
             {
-                credential = googledocsService.getCredential();
-                boolean deleted = false;
-
-                if (!Boolean.valueOf(map.get(JSON_KEY_OVERRIDE).toString()))
+                //if the user is the lock owner run as the calling user else if the calling user is a Site Admin masquerade as the
+                // Google Docs lock owner
+                if (googledocsService.isGoogleDocsLockOwner(nodeRef))
                 {
-                    SiteInfo siteInfo = siteService.getSite(nodeRef);
-                    //The second part of this test maybe too exclusive.  What if the user has write permissions to the node
-                    // but not membership in the containing site? Should the test just ask if the user has write permission
-                    // to the node?
-                    if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
+                    credential = googledocsService.getCredential();
+
+                    if (!Boolean.valueOf(map.get(JSON_KEY_OVERRIDE).toString()))
                     {
-                        if (googledocsService.hasConcurrentEditors(credential, nodeRef))
+                        SiteInfo siteInfo = siteService.getSite(nodeRef);
+                        //The second part of this test maybe too exclusive.  What if the user has write permissions to the node
+                        // but not membership in the containing site? Should the test just ask if the user has write permission
+                        // to the node?
+                        if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
                         {
-                            throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString()
-                                                                                 + " has concurrent editors.");
+                            if (googledocsService.hasConcurrentEditors(credential, nodeRef))
+                            {
+                                throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString()
+                                                                                     + " has concurrent editors.");
+                            }
+                        }
+                        else
+                        {
+                            throw new AccessDeniedException("Access Denied.  You do not have the appropriate permissions to perform this operation.");
                         }
                     }
-                    else
+
+                        deleted = delete(credential, nodeRef);
+                }
+                else if (siteService.isSiteAdmin(AuthenticationUtil.getFullyAuthenticatedUser()))
+                {
+                    final String lockOwner = googledocsService.getGoogleDocsLockOwner(nodeRef);
+
+                    if (lockOwner != null)
                     {
-                        throw new AccessDeniedException("Access Denied.  You do not have the appropriate permissions to perform this operation.");
+                        deleted = AuthenticationUtil.runAs(new AuthenticationUtil.RunAsWork<Boolean>()
+                        {
+                            @Override public Boolean doWork()
+                                    throws Exception
+                            {
+                                boolean deletedAsUser = false;
+
+                                try
+                                {
+                                    deletedAsUser = delete(null, nodeRef);
+                                }
+                                catch (GoogleDocsServiceException e)
+                                {
+                                    Throwable thrown = e.getCause();
+
+                                    if (thrown != null && thrown instanceof GoogleJsonResponseException)
+                                    {
+                                        if (((GoogleJsonResponseException)thrown).getStatusCode() == HttpStatus.SC_UNAUTHORIZED)
+                                        {
+                                            log.info("Unable to access " + nodeRef +" as " + lockOwner);
+                                            googledocsService.unlockNode(nodeRef);
+                                            googledocsService.unDecorateNode(nodeRef);
+
+                                            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+                                            {
+                                                nodeService.deleteNode(nodeRef);
+                                            }
+                                        }
+
+                                        deletedAsUser =  true;
+                                    }
+                                }
+                                catch (IllegalStateException e)
+                                {
+                                    log.info("Unable to access " + nodeRef +" as " + lockOwner);
+                                    googledocsService.unlockNode(nodeRef);
+                                    googledocsService.unDecorateNode(nodeRef);
+
+                                    if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
+                                    {
+                                        nodeService.deleteNode(nodeRef);
+                                    }
+
+                                    deletedAsUser =  true;
+                                }
+
+                                return deletedAsUser;
+                            }
+                        }, lockOwner);
                     }
                 }
-
-                deleted = delete(credential, nodeRef);
 
                 model.put(MODEL_SUCCESS, deleted);
 
