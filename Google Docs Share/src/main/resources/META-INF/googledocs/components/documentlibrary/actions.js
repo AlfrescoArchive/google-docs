@@ -749,7 +749,7 @@
                         }
                         else {
                             Alfresco.GoogleDocs.showMessage({
-                                text: me.msg("googledocs.error.text"),
+                                text: me.msg("googledocs.actions.cancel.failure"),
                                 displayTime: 2.5,
                                 showSpinner: false
                             });
@@ -757,16 +757,45 @@
                     }
                 };
 
-                Alfresco.GoogleDocs.request({
-                    url: actionUrl,
-                    method: "POST",
-                    dataObj: {
-                        nodeRef: record.nodeRef,
-                        override: false
-                    },
-                    successCallback: success,
-                    failureCallback: failure
-                });
+                Alfresco.util.PopupManager.displayPrompt(
+                    {
+                        title: this.msg("googledocs.cancelAction.title"),
+                        text: this.msg("googledocs.cancelAction.text"),
+                        noEscape: true,
+                        buttons: [
+                            {
+                                text: me.msg("button.ok"),
+                                handler: function submitDiscard() {
+                                    this.hide();
+
+                                    Alfresco.GoogleDocs.showMessage({
+                                        text: me.msg("googledocs.actions.cancel"),
+                                        displayTime: 0,
+                                        showSpinner: true
+                                    });
+
+                                    Alfresco.GoogleDocs.request.call(this, {
+                                        url: actionUrl,
+                                        method: "POST",
+                                        dataObj: {
+                                            nodeRef: record.nodeRef,
+                                            override: false
+                                        },
+                                        successCallback: success,
+                                        failureCallback: failure
+                                    });
+                                },
+                                isDefault: true
+                            },
+                            {
+                                text: me.msg("button.cancel"),
+                                handler: function cancelSave() {
+                                    Alfresco.GoogleDocs.hideMessage();
+                                    this.hide();
+                                },
+                                isDefault: true
+                            }]
+                    });
             }
         }),
 
