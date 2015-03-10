@@ -749,7 +749,7 @@
                         }
                         else {
                             Alfresco.GoogleDocs.showMessage({
-                                text: me.msg("googledocs.actions.cancel.failure"),
+                                text: me.msg("googledocs.error.text"),
                                 displayTime: 2.5,
                                 showSpinner: false
                             });
