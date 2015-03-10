@@ -707,13 +707,30 @@ public class GoogleDocsServiceImpl
 
         if (state != null)
         {
-            GoogleAuthorizationCodeRequestUrl urlBuilder = getFlow().newAuthorizationUrl().setRedirectUri(GoogleDocsConstants.REDIRECT_URI).setState(state);
+            GoogleAuthorizationCodeRequestUrl urlBuilder = null;
+
+            if (StringUtils.isBlank(getGoogleUserName()))
+            {
+                urlBuilder = getFlow().newAuthorizationUrl().setRedirectUri(GoogleDocsConstants.REDIRECT_URI).setState(state);
+            }
+            else
+            {
+                urlBuilder = getFlow().newAuthorizationUrl().setRedirectUri(GoogleDocsConstants.REDIRECT_URI).setState(state).set("login_hint", getGoogleUserName());
+            }
 
             authenticateUrl = urlBuilder.build();
         }
 
         log.debug("Authentication URL: " + authenticateUrl);
         return authenticateUrl;
+    }
+
+
+    private String getGoogleUserName()
+    {
+        NodeRef person = personService.getPerson(AuthenticationUtil.getRunAsUser());
+
+        return (String)nodeService.getProperty(person, ContentModel.PROP_GOOGLEUSERNAME);
     }
 
 
