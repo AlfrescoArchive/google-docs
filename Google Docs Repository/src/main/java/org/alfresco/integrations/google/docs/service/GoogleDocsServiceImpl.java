@@ -76,6 +76,7 @@ import org.alfresco.query.CannedQueryPageDetails;
 import org.alfresco.query.PagingRequest;
 import org.alfresco.query.PagingResults;
 import org.alfresco.repo.content.MimetypeMap;
+import org.alfresco.repo.lock.mem.LockState;
 import org.alfresco.repo.policy.BehaviourFilter;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.site.SiteServiceImpl;
@@ -1745,6 +1746,25 @@ public class GoogleDocsServiceImpl
         }
 
         return isOwner;
+    }
+
+
+    /**
+     * @param nodeRef
+     * @return Return the Google Docs Lock Owner
+     */
+    public String getGoogleDocsLockOwner(NodeRef nodeRef)
+    {
+        String lockOwner = null;
+
+        if(isLockedByGoogleDocs(nodeRef))
+        {
+            LockState lockState = lockservice.getLockState(nodeRef);
+
+            lockOwner = lockState.getOwner();
+        }
+
+        return lockOwner;
     }
 
 

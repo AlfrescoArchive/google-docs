@@ -70,6 +70,7 @@
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.unlockNode=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.isGoogleDocsLockOwner=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.isLockedByGoogleDocs=ACL_ALLOW
+                org.alfresco.integrations.google.docs.service.GoogleDocsService.getGoogleDocsLockOwner=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.deleteContent=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.removeContent=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.getGooglePermissions=ACL_ALLOW
@@ -93,6 +94,7 @@
                 <value>hasConcurrentEditors</value>
                 <value>isGoogleDocsLockOwner</value>
                 <value>isLockedByGoogleDocs</value>
+                <value>getGoogleDocsLockOwner</value>
                 <value>getDocumentListEntry</value>
                 <value>getLatestRevision</value>
                 <value>getGooglePermissions</value>

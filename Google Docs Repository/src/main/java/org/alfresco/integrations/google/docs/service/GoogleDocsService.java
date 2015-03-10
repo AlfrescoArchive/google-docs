@@ -493,6 +493,14 @@ public interface GoogleDocsService
     @Auditable(parameters = { "nodeRef" })
     public boolean isGoogleDocsLockOwner(NodeRef nodeRef);
 
+    /**
+     *
+     * @param nodeRef
+     * @return
+     */
+    @Auditable(parameters = { "nodeRef" })
+    public String getGoogleDocsLockOwner(NodeRef nodeRef);
+
 
     /**
      * List the saved Google permissions currently stored for this object.
