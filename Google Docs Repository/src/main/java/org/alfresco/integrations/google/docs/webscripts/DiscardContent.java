@@ -38,6 +38,8 @@ import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransacti
 import org.alfresco.service.cmr.repository.InvalidNodeRefException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.security.AuthorityService;
+import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.transaction.TransactionService;
@@ -62,6 +64,10 @@ public class DiscardContent
     private NodeService         nodeService;
     private TransactionService  transactionService;
     private SiteService         siteService;
+
+    //added because 4.2's SiteService does not have isSiteAdmin
+    private PermissionService   permissionService;
+    private AuthorityService    authorityService;
 
     private static final String JSON_KEY_NODEREF  = "nodeRef";
     private static final String JSON_KEY_OVERRIDE = "override";
@@ -90,6 +96,18 @@ public class DiscardContent
     public void setSiteService(SiteService siteService)
     {
         this.siteService = siteService;
+    }
+
+
+    public void setPermissionService(PermissionService permissionService)
+    {
+        this.permissionService = permissionService;
+    }
+
+
+    public void setAuthorityService(AuthorityService authorityService)
+    {
+        this.authorityService = authorityService;
     }
 
 
@@ -138,7 +156,7 @@ public class DiscardContent
 
                         deleted = delete(credential, nodeRef);
                 }
-                else if (siteService.isSiteAdmin(AuthenticationUtil.getFullyAuthenticatedUser()))
+                else if (isSiteAdmin(AuthenticationUtil.getFullyAuthenticatedUser()))
                 {
                     final String lockOwner = googledocsService.getGoogleDocsLockOwner(nodeRef);
 
@@ -414,6 +432,28 @@ public class DiscardContent
         }
 
         return result;
+    }
+
+
+    /**
+     * Alfresco 4.2's SiteService does not contain isSiteAdmin.
+     * To maintain a single code base we've implemented the method here
+     *
+     * @param userName
+     * @return
+     */
+    private boolean isSiteAdmin(String userName)
+    {
+        final String SITE_ADMINISTRATORS_AUTHORITY = "SITE_ADMINISTRATORS";
+        final String GROUP_SITE_ADMINISTRATORS_AUTHORITY = PermissionService.GROUP_PREFIX + SITE_ADMINISTRATORS_AUTHORITY;
+
+        if (userName == null)
+        {
+            return false;
+        }
+        return this.authorityService.isAdminAuthority(userName)
+               || this.authorityService.getAuthoritiesForUser(userName).contains(
+                GROUP_SITE_ADMINISTRATORS_AUTHORITY);
     }
 
 }
