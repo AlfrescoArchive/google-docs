@@ -156,7 +156,7 @@ public class DiscardContent
 
                         deleted = delete(credential, nodeRef);
                 }
-                else if (isSiteAdmin(AuthenticationUtil.getFullyAuthenticatedUser()))
+                else if (googledocsService.isSiteManager(nodeRef, AuthenticationUtil.getFullyAuthenticatedUser()))
                 {
                     final String lockOwner = googledocsService.getGoogleDocsLockOwner(nodeRef);
 
@@ -433,27 +433,4 @@ public class DiscardContent
 
         return result;
     }
-
-
-    /**
-     * Alfresco 4.2's SiteService does not contain isSiteAdmin.
-     * To maintain a single code base we've implemented the method here
-     *
-     * @param userName
-     * @return
-     */
-    private boolean isSiteAdmin(String userName)
-    {
-        final String SITE_ADMINISTRATORS_AUTHORITY = "SITE_ADMINISTRATORS";
-        final String GROUP_SITE_ADMINISTRATORS_AUTHORITY = PermissionService.GROUP_PREFIX + SITE_ADMINISTRATORS_AUTHORITY;
-
-        if (userName == null)
-        {
-            return false;
-        }
-        return this.authorityService.isAdminAuthority(userName)
-               || this.authorityService.getAuthoritiesForUser(userName).contains(
-                GROUP_SITE_ADMINISTRATORS_AUTHORITY);
-    }
-
 }
