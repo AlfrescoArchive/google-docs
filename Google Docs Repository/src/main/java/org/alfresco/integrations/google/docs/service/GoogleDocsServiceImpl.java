@@ -1419,7 +1419,7 @@ public class GoogleDocsServiceImpl
      * @param authorityName
      * @return
      */
-    private boolean isSiteManager(NodeRef nodeRef, String authorityName)
+    public boolean isSiteManager(NodeRef nodeRef, String authorityName)
     {
         boolean isSiteManager = false;
 

@@ -525,6 +525,9 @@ public interface GoogleDocsService
             GoogleDocsRefreshTokenException,
             IOException;
 
+    @Auditable(parameters = { "nodeRef", "authorityName"})
+    public boolean isSiteManager(NodeRef nodeRef, String authorityName);
+
 
     public Serializable buildPermissionsPropertyValue(List<GooglePermission> permissions);
 

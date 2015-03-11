@@ -75,6 +75,7 @@
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.removeContent=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.getGooglePermissions=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.addRemotePermissions=ACL_ALLOW
+                org.alfresco.integrations.google.docs.service.GoogleDocsService.isSiteManager=ACL_ALLOW
                 org.alfresco.integrations.google.docs.service.GoogleDocsService.*=ACL_DENY
             </value>
         </property>
@@ -98,6 +99,7 @@
                 <value>getDocumentListEntry</value>
                 <value>getLatestRevision</value>
                 <value>getGooglePermissions</value>
+                <value>isSiteManager</value>
             </list>
         </property>
     </bean>
