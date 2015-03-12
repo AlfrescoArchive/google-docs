@@ -254,7 +254,7 @@ public class CreateContent
 
     protected void getGoogleDocsServiceSubsystem()
     {
-        ApplicationContextFactory subsystem = (ApplicationContextFactory)applicationContext.getBean(GOOGLEDOCS_DEFAULT_SUBSYSTEM);
+        ApplicationContextFactory subsystem = (ApplicationContextFactory)applicationContext.getBean(GOOGLEDOCS_DRIVE_SUBSYSTEM);
         ConfigurableApplicationContext childContext = (ConfigurableApplicationContext)subsystem.getApplicationContext();
         setGoogledocsService((GoogleDocsService)childContext.getBean(GOOGLEDOCSSERVICE));
         setFileNameUtil((FileNameUtil)childContext.getBean(FILENAMEUTIL));
