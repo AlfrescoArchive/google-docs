@@ -764,7 +764,7 @@
                         noEscape: true,
                         buttons: [
                             {
-                                text: me.msg("button.ok"),
+                                text: me.msg("button.yes"),
                                 handler: function submitDiscard() {
                                     this.hide();
 
@@ -788,7 +788,7 @@
                                 isDefault: true
                             },
                             {
-                                text: me.msg("button.cancel"),
+                                text: me.msg("button.no"),
                                 handler: function cancelSave() {
                                     Alfresco.GoogleDocs.hideMessage();
                                     this.hide();
