@@ -6,7 +6,7 @@
  * GoogleDocs GET method
  */
 Admin.initModel(
-    "Alfresco:Type=Configuration,Category=googledocs,id1=default",
+    "Alfresco:Type=Configuration,Category=googledocs,id1=drive",
     ["googledocs.enabled", "googledocs.version", "integration.googleDocs.idleThresholdSeconds"],
     "admin-googledocs"
 );
