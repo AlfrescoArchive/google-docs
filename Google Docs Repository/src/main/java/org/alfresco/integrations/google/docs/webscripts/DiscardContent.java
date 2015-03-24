@@ -24,6 +24,7 @@ import java.util.Map;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.drive.model.File;
+import org.alfresco.integrations.google.docs.GoogleDocsConstants;
 import org.alfresco.integrations.google.docs.GoogleDocsModel;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
@@ -38,8 +39,6 @@ import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransacti
 import org.alfresco.service.cmr.repository.InvalidNodeRefException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
-import org.alfresco.service.cmr.security.AuthorityService;
-import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.transaction.TransactionService;
@@ -61,13 +60,8 @@ public class DiscardContent
     private static final Log    log               = LogFactory.getLog(DiscardContent.class);
 
     private GoogleDocsService   googledocsService;
-    private NodeService         nodeService;
     private TransactionService  transactionService;
     private SiteService         siteService;
-
-    //added because 4.2's SiteService does not have isSiteAdmin
-    private PermissionService   permissionService;
-    private AuthorityService    authorityService;
 
     private static final String JSON_KEY_NODEREF  = "nodeRef";
     private static final String JSON_KEY_OVERRIDE = "override";
@@ -98,19 +92,6 @@ public class DiscardContent
         this.siteService = siteService;
     }
 
-
-    public void setPermissionService(PermissionService permissionService)
-    {
-        this.permissionService = permissionService;
-    }
-
-
-    public void setAuthorityService(AuthorityService authorityService)
-    {
-        this.authorityService = authorityService;
-    }
-
-
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
@@ -136,7 +117,14 @@ public class DiscardContent
 
                     if (!Boolean.valueOf(map.get(JSON_KEY_OVERRIDE).toString()))
                     {
-                        SiteInfo siteInfo = siteService.getSite(nodeRef);
+                        SiteInfo siteInfo = null;
+                        String pathElement = getPathElement(nodeRef, 2);
+
+                        //Is the node in a site?
+                        if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
+                        {
+                            siteInfo = siteService.getSite(nodeRef);
+                        }
                         //The second part of this test maybe too exclusive.  What if the user has write permissions to the node
                         // but not membership in the containing site? Should the test just ask if the user has write permission
                         // to the node?

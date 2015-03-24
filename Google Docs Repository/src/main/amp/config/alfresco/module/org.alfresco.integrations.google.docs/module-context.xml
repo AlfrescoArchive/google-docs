@@ -99,12 +99,6 @@
         <property name="siteService">
             <ref bean="SiteService"/>
         </property>
-        <property name="permissionService">
-            <ref bean="PermissionService"/>
-        </property>
-        <property name="authorityService">
-            <ref bean="AuthorityService"/>
-        </property>
     </bean>
 
     <bean id="webscript.org.alfresco.integrations.google.docs.UserProfile.get"

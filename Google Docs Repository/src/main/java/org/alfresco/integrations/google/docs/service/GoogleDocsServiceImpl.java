@@ -2191,7 +2191,16 @@ public class GoogleDocsServiceImpl
         {
             try
             {
-                SiteInfo siteInfo = siteService.getSite(nodeRef);
+                SiteInfo siteInfo = null;
+                String pathElement = getPathElement(nodeRef, 2);
+
+                //Is the node in a site?
+                if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
+                {
+                    siteInfo = siteService.getSite(nodeRef);
+                }
+
+                //If this is not in a site following current behaviour we will not updated the activity stream
                 if (siteInfo != null)
                 {
                     String activityType = FILE_UPDATED;
@@ -2545,20 +2554,19 @@ public class GoogleDocsServiceImpl
 
         // create working directory
         String folderName = null;
-        SiteInfo siteInfo = siteService.getSite(nodeRef);
+        String pathElement = getPathElement(nodeRef, 2);
+        SiteInfo siteInfo = null;
 
-        //Is the node in a site?
-        if (siteInfo != null)
+        //Is the node located under a site?
+        if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
         {
+            siteInfo = siteService.getSite(nodeRef);
             folderName = siteInfo.getShortName();
         }
         else
         {
-            Path path = nodeService.getPath(nodeRef);
-
-            //Get the element in the path that should be Shared Files node
-            Path.Element element = path.get(2);
-            if (element.toString().equals(GoogleDocsConstants.ALF_SHARED_PATH_FQNS_ELEMENT))
+            //is it in the shared folder path?
+            if (pathElement.equals(GoogleDocsConstants.ALF_SHARED_PATH_FQNS_ELEMENT))
             {
                 folderName = GoogleDocsConstants.ALF_SHARED_FILES_FOLDER;
             }
@@ -2576,6 +2584,15 @@ public class GoogleDocsServiceImpl
         }
 
         return file;
+    }
+
+
+    private String getPathElement(NodeRef nodeRef, int position)
+    {
+        Path path = nodeService.getPath(nodeRef);
+        Path.Element element = path.get(position);
+
+        return element.toString();
     }
 
 

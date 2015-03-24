@@ -43,7 +43,6 @@ public class RemoveContent
     private static final Log    log              = LogFactory.getLog(RemoveContent.class);
 
     private GoogleDocsService   googledocsService;
-    private NodeService         nodeService;
     private TransactionService  transactionService;
 
     private static final String JSON_KEY_NODEREF = "nodeRef";
