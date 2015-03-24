@@ -58,7 +58,6 @@ public class UploadContent
     private static final Log    log           = LogFactory.getLog(UploadContent.class);
 
     private GoogleDocsService   googledocsService;
-    private NodeService         nodeService;
     private VersionService      versionService;
 
     private static final String PARAM_NODEREF                    = "nodeRef";

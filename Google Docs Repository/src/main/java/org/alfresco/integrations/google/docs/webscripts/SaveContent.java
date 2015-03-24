@@ -65,7 +65,6 @@ public class SaveContent
     private static final Log    log                      = LogFactory.getLog(SaveContent.class);
 
     private GoogleDocsService   googledocsService;
-    private NodeService         nodeService;
     private VersionService      versionService;
     private TransactionService  transactionService;
     private SiteService         siteService;
@@ -127,7 +126,15 @@ public class SaveContent
         {
             Credential credential = googledocsService.getCredential();
 
-            SiteInfo siteInfo = siteService.getSite(nodeRef);
+            SiteInfo siteInfo = null;
+            String pathElement = getPathElement(nodeRef, 2);
+
+            //Is the node in a site?
+            if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
+            {
+                siteInfo = siteService.getSite(nodeRef);
+            }
+
             if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
             {
 

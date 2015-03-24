@@ -73,6 +73,7 @@ public interface GoogleDocsConstants
     public static final String ALF_MY_FILES_FOLDER = "My Files";
 
     public static final String ALF_SHARED_PATH_FQNS_ELEMENT = "{http://www.alfresco.org/model/application/1.0}shared";
+    public static final String ALF_SITES_PATH_FQNS_ELEMENT = "{http://www.alfresco.org/model/site/1.0}sites";
 
     /*
      * There is no standard 419. Some say not set (like Alfresco); Apache says WebDav INSUFFICIENT_SPACE_ON_RESOURCE.

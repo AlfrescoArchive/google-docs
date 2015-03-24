@@ -51,7 +51,6 @@ public class IsLatestRevision
     private static final Log    log                      = LogFactory.getLog(IsLatestRevision.class);
 
     private GoogleDocsService   googledocsService;
-    private NodeService         nodeService;
 
     private boolean             isLatestRevision         = false;
 
