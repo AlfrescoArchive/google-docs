@@ -321,6 +321,15 @@
         </property>
     </bean>
 
+    <bean id="editinginGoogleAspect" class="org.alfresco.integrations.google.docs.model.EditingInGoogleAspect" init-method="init">
+        <property name="policyComponent">
+            <ref bean="policyComponent"/>
+        </property>
+        <property name="nodeService">
+            <ref bean="NodeService"/>
+        </property>
+    </bean>
+
     <!-- Custom Response -->
     <bean id="googleDocsImportFormats"
           class="org.alfresco.integrations.google.docs.repo.jscript.app.GoogleDocsCustomResponse">
