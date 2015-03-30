@@ -496,6 +496,14 @@
                                 displayTime: 2.5,
                                 showSpinner: false
                             });
+
+                            //GOOGLEDOCS-305 reload the page after error message is shown.
+                            window.setTimeout(
+                                function()
+                                {
+                                    location.reload();
+                                },
+                                2500);
                         }
                     }
                 },
@@ -753,6 +761,14 @@
                                 displayTime: 2.5,
                                 showSpinner: false
                             });
+
+                            //GOOGLEDOCS-305 reload the page after error message is shown.
+                            window.setTimeout(
+                                function()
+                                {
+                                    location.reload();
+                                },
+                                2500);
                         }
                     }
                 };
