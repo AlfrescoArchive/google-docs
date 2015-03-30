@@ -93,6 +93,7 @@ import org.alfresco.service.cmr.model.FileInfo;
 import org.alfresco.service.cmr.oauth2.OAuth2CredentialsStoreService;
 import org.alfresco.service.cmr.remotecredentials.OAuth2CredentialsInfo;
 import org.alfresco.service.cmr.remoteticket.NoSuchSystemException;
+import org.alfresco.service.cmr.repository.AspectMissingException;
 import org.alfresco.service.cmr.repository.ContentReader;
 import org.alfresco.service.cmr.repository.ContentWriter;
 import org.alfresco.service.cmr.repository.MimetypeService;
@@ -1965,108 +1966,116 @@ public class GoogleDocsServiceImpl
         credential = credential == null ? getCredential() : credential;
         Drive drive = getDriveApi(credential);
 
-        String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
-
         boolean concurrentChange = false;
 
-        try
+        if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
         {
-            RevisionList revisionList = drive.revisions().list(resourceID.substring(resourceID.lastIndexOf(':') + 1)).execute();
-            List<Revision> revisions = revisionList.getItems();
 
-            if (revisions.size() > 1)
+            String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
+
+            try
             {
+                RevisionList revisionList = drive.revisions().list(resourceID.substring(resourceID.lastIndexOf(':') + 1)).execute();
+                List<Revision> revisions = revisionList.getItems();
 
-
-                log.debug("Revisions Found");
-                Collections.sort(revisions, Collections.reverseOrder(new FileRevisionComparator()));
-
-                // Find any revisions occurring within the last 'idleThreshold'
-                // seconds
-                List<Revision> workingList = new ArrayList<Revision>();
-
-                Calendar bufferTime = Calendar.getInstance();
-                bufferTime.add(Calendar.SECOND, -idleThreshold);
-
-                for (Revision entry : revisions)
+                if (revisions.size() > 1)
                 {
-                    Date d = new Date(entry.getModifiedDate().getValue());
-                    if (d.after(new Date(bufferTime.getTimeInMillis())))
-                    {
-                        workingList.add(entry);
-                    }
-                    else
-                    {
-                        // once we past 'idleThreshold' seconds get out of here
-                        break;
-                    }
-                }
 
-                // If there any revisions that occurred within the last
-                // 'idleThreshold' seconds of time....
-                if (workingList.size() > 0)
-                {
-                    log.debug("Revisions within threshhold found");
-                    // Filter the current user from the list
-                    for (int i = workingList.size() - 1; i >= 0; i--)
-                    {
-                        Revision revision = workingList.get(i);
-                        String emailAddress = getDriveUser(credential).getEmailAddress();
 
-                        // if there is no author -- the entry is the initial
-                        // creation
-                        if (revision.getLastModifyingUser().getEmailAddress() != null)
+                    log.debug("Revisions Found");
+                    Collections.sort(revisions, Collections.reverseOrder(new FileRevisionComparator()));
+
+                    // Find any revisions occurring within the last 'idleThreshold'
+                    // seconds
+                    List<Revision> workingList = new ArrayList<Revision>();
+
+                    Calendar bufferTime = Calendar.getInstance();
+                    bufferTime.add(Calendar.SECOND, -idleThreshold);
+
+                    for (Revision entry : revisions)
+                    {
+                        Date d = new Date(entry.getModifiedDate().getValue());
+                        if (d.after(new Date(bufferTime.getTimeInMillis())))
                         {
-                            if (revision.getLastModifyingUser().getEmailAddress().equals(emailAddress))
+                            workingList.add(entry);
+                        }
+                        else
+                        {
+                            // once we past 'idleThreshold' seconds get out of here
+                            break;
+                        }
+                    }
+
+                    // If there any revisions that occurred within the last
+                    // 'idleThreshold' seconds of time....
+                    if (workingList.size() > 0)
+                    {
+                        log.debug("Revisions within threshhold found");
+                        // Filter the current user from the list
+                        for (int i = workingList.size() - 1; i >= 0; i--)
+                        {
+                            Revision revision = workingList.get(i);
+                            String emailAddress = getDriveUser(credential).getEmailAddress();
+
+                            // if there is no author -- the entry is the initial
+                            // creation
+                            if (revision.getLastModifyingUser().getEmailAddress() != null)
+                            {
+                                if (revision.getLastModifyingUser().getEmailAddress().equals(emailAddress))
+                                {
+                                    workingList.remove(i);
+                                }
+                            }
+                            else
                             {
                                 workingList.remove(i);
                             }
                         }
-                        else
-                        {
-                            workingList.remove(i);
-                        }
                     }
-                }
 
-                // Are there are changes by other users within the last
-                // 'idleThreshold' seconds
-                if (workingList.size() > 0)
-                {
-                    log.debug("Revisions not made by current user found.");
-                    concurrentChange = true;
-                }
-
-            }
-            else
-            {
-                String emailAddress = getDriveUser(credential).getEmailAddress();
-
-
-                // if the authors list is empty -- the author was the original
-                // creator and it is the initial copy
-                if (revisions.get(0).getLastModifyingUser().getEmailAddress() != null)
-                {
-
-                    if (!revisions.get(0).getLastModifyingUser().getEmailAddress().equals(emailAddress))
+                    // Are there are changes by other users within the last
+                    // 'idleThreshold' seconds
+                    if (workingList.size() > 0)
                     {
-                        Calendar bufferTime = Calendar.getInstance();
-                        bufferTime.add(Calendar.SECOND, -idleThreshold);
+                        log.debug("Revisions not made by current user found.");
+                        concurrentChange = true;
+                    }
 
-                        Date dt = new Date(revisions.get(0).getModifiedDate().getValue());
-                        if (dt.before(new Date(bufferTime.getTimeInMillis())))
+                }
+                else
+                {
+                    String emailAddress = getDriveUser(credential).getEmailAddress();
+
+
+                    // if the authors list is empty -- the author was the original
+                    // creator and it is the initial copy
+                    if (revisions.get(0).getLastModifyingUser().getEmailAddress() != null)
+                    {
+
+                        if (!revisions.get(0).getLastModifyingUser().getEmailAddress().equals(emailAddress))
                         {
-                            log.debug("Revisions not made by current user found.");
-                            concurrentChange = true;
+                            Calendar bufferTime = Calendar.getInstance();
+                            bufferTime.add(Calendar.SECOND, -idleThreshold);
+
+                            Date dt = new Date(revisions.get(0).getModifiedDate().getValue());
+                            if (dt.before(new Date(bufferTime.getTimeInMillis())))
+                            {
+                                log.debug("Revisions not made by current user found.");
+                                concurrentChange = true;
+                            }
                         }
                     }
                 }
-            }
 
+            }
+            catch (GoogleJsonResponseException e)
+            {
+                throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
+            }
         }
-        catch (GoogleJsonResponseException e)
+        else
         {
-            throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
+            throw new AspectMissingException(GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE, nodeRef);
         }
 
         log.debug("Concurrent Edits: " + concurrentChange);
