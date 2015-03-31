@@ -74,7 +74,6 @@
    <bean id="evaluator.doclib.google.docs.edit" parent="evaluator.doclib.action.chainedMatchAll">
       <property name="evaluators">
          <list>
-            <ref bean="evaluator.doclib.action.isNotIE8" />
             <ref bean="evaluator.doclib.google.docs.enabled" />
             <ref bean="evaluator.doclib.google.docs.isNotLocked" />
             <ref bean="evaluator.doclib.google.docs.isNotWorkingCopy" />
@@ -88,7 +87,6 @@
    <bean id="evaluator.doclib.google.docs.resume" parent="evaluator.doclib.action.chainedMatchAll">
       <property name="evaluators">
          <list>
-            <ref bean="evaluator.doclib.action.isNotIE8" />
             <ref bean="evaluator.doclib.google.docs.aspect"/>
             <ref bean="evaluator.doclib.indicator.lockOwner"/>
          </list>
