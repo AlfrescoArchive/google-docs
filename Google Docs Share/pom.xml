@@ -104,10 +104,10 @@
             </properties>
         </profile>
         <profile>
-            <id>4</id>
+            <id>42</id>
             <properties>
                 <alfresco-community.version>4.2.e</alfresco-community.version>
-                <alfresco-enterprise.version>4.2</alfresco-enterprise.version>
+                <alfresco-enterprise.version>4.2.0</alfresco-enterprise.version>
                 <alfresco.min.version>4.2.0</alfresco.min.version>
                 <alfresco.max.version>4.2.3</alfresco.max.version>
             </properties>
