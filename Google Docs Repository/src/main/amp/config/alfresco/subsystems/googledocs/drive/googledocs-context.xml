@@ -13,6 +13,8 @@
         </property>
     </bean>
 
+    <import resource="google-customResponse-context.xml" />
+
     <!-- Googledocs Service -->
     <bean id="GoogleDocsService" class="org.springframework.aop.framework.ProxyFactoryBean">
         <property name="proxyInterfaces">
@@ -327,23 +329,6 @@
         </property>
         <property name="nodeService">
             <ref bean="NodeService"/>
-        </property>
-    </bean>
-
-    <!-- Custom Response -->
-    <bean id="googleDocsImportFormats"
-          class="org.alfresco.integrations.google.docs.repo.jscript.app.GoogleDocsCustomResponse">
-        <property name="googledocsService">
-            <ref bean="GoogleDocsService" />
-        </property>
-    </bean>
-
-    <bean id="googleDocsCustomResponses" parent="registerSlingshotCustomResponse">
-        <property name="key">
-            <value>googledocs</value>
-        </property>
-        <property name="value">
-            <ref bean="googleDocsImportFormats"/>
         </property>
     </bean>
 
