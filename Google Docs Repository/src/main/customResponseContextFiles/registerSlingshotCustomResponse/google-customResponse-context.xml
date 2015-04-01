@@ -7,7 +7,7 @@
     <bean id="googleDocsImportFormats"
           class="org.alfresco.integrations.google.docs.repo.jscript.app.GoogleDocsCustomResponse">
         <property name="googledocsService">
-            <ref bean="GoogleDocsService" />
+            <ref bean="GoogleDocsService"/>
         </property>
     </bean>
 
