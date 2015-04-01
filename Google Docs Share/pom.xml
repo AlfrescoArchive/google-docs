@@ -78,6 +78,20 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>2.6.1</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>src/main/amp/config/alfresco/web-extension</directory>
+                            <includes>
+                                <include>**/custom-slingshot-googledocs-context.xml</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -122,6 +136,25 @@
                             <classifier>4.2</classifier>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>include-documentLibraryConfig</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy file="src/main/documentLibrary-config/withoutManagerCancel/custom-slingshot-googledocs-context.xml"
+                                              tofile="src/main/amp/config/alfresco/web-extension/custom-slingshot-googledocs-context.xml"/>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -144,6 +177,25 @@
                             <classifier>4.2.4</classifier>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>include-documentLibraryConfig</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy file="src/main/documentLibrary-config/withManagerCancel/custom-slingshot-googledocs-context.xml"
+                                              tofile="src/main/amp/config/alfresco/web-extension/custom-slingshot-googledocs-context.xml"/>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -159,6 +211,25 @@
                         <configuration>
                             <classifier>5.0</classifier>
                         </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>include-documentLibraryConfig</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy file="src/main/documentLibrary-config/withManagerCancel/custom-slingshot-googledocs-context.xml"
+                                              tofile="src/main/amp/config/alfresco/web-extension/custom-slingshot-googledocs-context.xml"/>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
