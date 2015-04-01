@@ -93,10 +93,20 @@
       </property>
    </bean>
 
+    <bean id="evaluator.doclib.google.docs.cancel.manager" parent="evaluator.doclib.action.chainedMatchAll">
+        <property name="evaluators">
+            <list>
+                <ref bean="evaluator.doclib.google.docs.aspect" />
+                <ref bean="evaluator.doclib.action.isSiteManager" />
+            </list>
+        </property>
+    </bean>
+
     <bean id="evaluator.doclib.google.docs.cancel" parent="evaluator.doclib.action.chainedMatchOne">
         <property name="evaluators">
             <list>
                 <ref bean="evaluator.doclib.google.docs.resume" />
+                <ref bean="evaluator.doclib.google.docs.cancel.manager" />
             </list>
         </property>
     </bean>
