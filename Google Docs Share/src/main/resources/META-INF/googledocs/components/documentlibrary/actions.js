@@ -412,11 +412,9 @@
                                                 Alfresco.util.Ajax.jsonPost({
                                                     url: actionUrl,
                                                     dataObj: {
-                                                        nodeRef: me.getData().nodeRef,
+                                                        nodeRef: record.nodeRef,
                                                         override: me.saveDiscardConfirmed,
-                                                        removeFromDrive: true,
-                                                        majorVersion: me.getData().majorVersion,
-                                                        description: me.getData().description
+                                                        removeFromDrive: true
                                                     },
                                                     successCallback: success,
                                                     failureCallback: failure
