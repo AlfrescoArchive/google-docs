@@ -132,7 +132,18 @@ public class SaveContent
             //Is the node in a site?
             if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
             {
-                siteInfo = siteService.getSite(nodeRef);
+                try
+                {
+                    siteInfo = siteService.getSite(nodeRef);
+                }
+                catch (org.alfresco.repo.security.permissions.AccessDeniedException e)
+                {
+                    // When the user does not have permission to access the site node
+                    // We can't get the name of the site that the node is located in
+                    // So we can't place it in a site specific folder.
+                    // It will be placed in the root of the Working Directory
+                    log.debug("User does not have access to the containing sites info.  The document will be retrieved from the root of the working directory. {" + nodeRef.toString() + "}");
+                }
             }
 
             if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
