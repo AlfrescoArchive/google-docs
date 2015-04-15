@@ -75,6 +75,8 @@ public interface GoogleDocsConstants
     public static final String ALF_SHARED_PATH_FQNS_ELEMENT = "{http://www.alfresco.org/model/application/1.0}shared";
     public static final String ALF_SITES_PATH_FQNS_ELEMENT = "{http://www.alfresco.org/model/site/1.0}sites";
 
+    public static final String GOOGLE_ERROR_UNMUTABLE = "File not mutable";
+
     /*
      * There is no standard 419. Some say not set (like Alfresco); Apache says WebDav INSUFFICIENT_SPACE_ON_RESOURCE.
      * 
