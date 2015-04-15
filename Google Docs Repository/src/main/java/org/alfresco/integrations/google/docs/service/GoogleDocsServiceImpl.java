@@ -562,7 +562,7 @@ public class GoogleDocsServiceImpl
             TokenResponseException,
             GoogleDocsServiceException
     {
-        Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credential).build();
+        Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credential).setApplicationName(GoogleDocsConstants.APPLICATION_NAME).build();
         Userinfoplus userInfo = null;
         try
         {
@@ -2786,11 +2786,18 @@ public class GoogleDocsServiceImpl
         {
             if (HttpStatus.SC_NOT_FOUND == e.getStatusCode())
             {
-                log.debug("Directory not found in Google Drive.");
+                log.debug("Directory not found in Google Drive. This is not a fatal issue.");
+            }
+            else if(HttpStatus.SC_FORBIDDEN == e.getStatusCode())
+            {
+                if (e.getMessage().equals(GoogleDocsConstants.GOOGLE_ERROR_UNMUTABLE))
+                {
+                    log.debug("Unable to delete remote file. Google claims it is unmutable.");
+                }
             }
             else
             {
-                throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
+                log.debug("Google has reported an issue deleting the folder.  This is not a fatal issue. " + e.getDetails());
             }
         }
     }
