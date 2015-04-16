@@ -1424,7 +1424,7 @@ public class GoogleDocsServiceImpl
     {
         boolean isSiteManager = false;
 
-        SiteInfo siteInfo = siteService.getSite(nodeRef);
+        SiteInfo siteInfo = filenameUtil.resolveSiteInfo(nodeRef);
 
         if (siteInfo != null)
         {
@@ -2206,7 +2206,7 @@ public class GoogleDocsServiceImpl
                 //Is the node in a site?
                 if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
                 {
-                    siteInfo = siteService.getSite(nodeRef);
+                    siteInfo = filenameUtil.resolveSiteInfo(nodeRef);
                 }
 
                 //If this is not in a site following current behaviour we will not updated the activity stream
@@ -2569,18 +2569,10 @@ public class GoogleDocsServiceImpl
         //Is the node located under a site?
         if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
         {
-            try
+            siteInfo = filenameUtil.resolveSiteInfo(nodeRef);
+            if (siteInfo != null)
             {
-                siteInfo = siteService.getSite(nodeRef);
                 folderName = siteInfo.getShortName();
-            }
-            catch (org.alfresco.repo.security.permissions.AccessDeniedException e)
-            {
-                // When the user does not have permission to access the site node
-                // We can't get the name of the site that the node is located in
-                // So we can't place it in a site specific folder.
-                // It will be placed in the root of the Working Directory
-                log.debug("User does not have access to the containing sites info.  The document will be created in the root of the working directory. {" + nodeRef.toString() + "}");
             }
         }
         else
