@@ -989,7 +989,7 @@ public class GoogleDocsServiceImpl
 
             renameNode(nodeRef, file.getTitle());
 
-            saveSharedInfo(credential, nodeRef, resourceID);
+            saveSharedInfo(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1));
 
             if (removeFromDrive)
             {
@@ -1040,7 +1040,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getDocument(credential, nodeRef, resourceID, removeFromDrive);
+        getDocument(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1), removeFromDrive);
     }
 
 
@@ -1059,7 +1059,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getDocument(credential, nodeRef, resourceID, false);
+        getDocument(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1), false);
     }
 
 
@@ -1103,7 +1103,7 @@ public class GoogleDocsServiceImpl
 
             renameNode(nodeRef, file.getTitle());
 
-            saveSharedInfo(credential, nodeRef, resourceID);
+            saveSharedInfo(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1));
 
             if (removeFromDrive)
             {
@@ -1149,7 +1149,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getSpreadSheet(credential, nodeRef, resourceID, removeFromDrive);
+        getSpreadSheet(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1), removeFromDrive);
     }
 
 
@@ -1174,7 +1174,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getSpreadSheet(credential, nodeRef, resourceID, false);
+        getSpreadSheet(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1), false);
     }
 
 
@@ -1218,7 +1218,7 @@ public class GoogleDocsServiceImpl
 
             renameNode(nodeRef, file.getTitle());
 
-            saveSharedInfo(credential, nodeRef, resourceID);
+            saveSharedInfo(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1));
 
             if (removeFromDrive)
             {
@@ -1264,7 +1264,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getPresentation(credential, nodeRef, resourceID, removeFromDrive);
+        getPresentation(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1), removeFromDrive);
     }
 
 
@@ -1289,7 +1289,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getPresentation(credential, nodeRef, resourceID, false);
+        getPresentation(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1), false);
     }
 
 
@@ -2089,7 +2089,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             IOException
     {
-        log.debug("Get Document list entry for resource " + resourceID);
+        log.debug("Get Document list entry for resource " + resourceID.substring(resourceID.lastIndexOf(':') + 1));
         //Get the users drive credential if not provided;
         credential = credential == null ? getCredential() : credential;
         Drive drive = getDriveApi(credential);
@@ -2119,14 +2119,14 @@ public class GoogleDocsServiceImpl
         credential = credential == null ? getCredential() : credential;
 
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
-        log.debug("Node " + nodeRef + " maps to Resource ID " + resourceID);
+        log.debug("Node " + nodeRef + " maps to Resource ID " + resourceID.substring(resourceID.lastIndexOf(':') + 1));
 
         if (resourceID == null)
         {
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        return getDriveFile(credential, resourceID);
+        return getDriveFile(credential, resourceID.substring(resourceID.lastIndexOf(':') + 1));
     }
 
 
@@ -2287,7 +2287,7 @@ public class GoogleDocsServiceImpl
             }
             User user = getDriveUser(credential);
             log.debug("Fetching permissions for file with resource ID " + resourceId);
-            PermissionList permissionList = drive.permissions().list(resourceId).execute();
+            PermissionList permissionList = drive.permissions().list(resourceId.substring(resourceId.lastIndexOf(':') + 1)).execute();
 
             for (Permission permission : permissionList.getItems())
             {
@@ -2358,7 +2358,7 @@ public class GoogleDocsServiceImpl
         //Get the users drive credential if not provided;
         credential = credential == null ? getCredential() : credential;
 
-        List<GooglePermission> permissionsMap = getFilePermissions(credential, resourceId);
+        List<GooglePermission> permissionsMap = getFilePermissions(credential, resourceId.substring(resourceId.lastIndexOf(':') + 1));
         Serializable permissionsList = buildPermissionsPropertyValue(permissionsMap);
         Map<QName, Serializable> aspectProperties = new HashMap<QName, Serializable>();
         aspectProperties.put(GoogleDocsModel.PROP_PERMISSIONS, permissionsList);
