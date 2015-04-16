@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  * 
  * This file is part of Alfresco
  * 
@@ -21,11 +21,14 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.api.client.auth.oauth2.Credential;
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
+import org.alfresco.integrations.google.docs.exceptions.ConcurrentEditorException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
+import org.alfresco.integrations.google.docs.utils.FileNameUtil;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.security.permissions.AccessDeniedException;
@@ -63,10 +66,10 @@ public class SaveContent
     private static final Log    log                      = LogFactory.getLog(SaveContent.class);
 
     private GoogleDocsService   googledocsService;
-    private NodeService         nodeService;
     private VersionService      versionService;
     private TransactionService  transactionService;
     private SiteService         siteService;
+    private FileNameUtil        filenameUtil;
 
     private static final String JSON_KEY_NODEREF         = "nodeRef";
     private static final String JSON_KEY_MAJORVERSION    = "majorVersion";
@@ -108,6 +111,12 @@ public class SaveContent
     }
 
 
+    public void setFilenameUtil(FileNameUtil filenameUtil)
+    {
+        this.filenameUtil = filenameUtil;
+    }
+
+
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
@@ -123,17 +132,27 @@ public class SaveContent
 
         try
         {
-            SiteInfo siteInfo = siteService.getSite(nodeRef);
+            Credential credential = googledocsService.getCredential();
+
+            SiteInfo siteInfo = null;
+            String pathElement = getPathElement(nodeRef, 2);
+
+            //Is the node in a site?
+            if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
+            {
+                siteInfo = filenameUtil.resolveSiteInfo(nodeRef);
+            }
+
             if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
             {
 
                 if (!(Boolean)map.get(JSON_KEY_OVERRIDE))
                 {
                     log.debug("Check for Concurent Users.");
-                    if (googledocsService.hasConcurrentEditors(nodeRef))
+                    if (googledocsService.hasConcurrentEditors(credential, nodeRef))
                     {
-                        throw new WebScriptException(HttpStatus.SC_CONFLICT, "Node: " + nodeRef.toString()
-                                                                             + " has concurrent editors.");
+                        throw new ConcurrentEditorException("Node: " + nodeRef.toString()
+                                                            + " has concurrent editors.");
                     }
                 }
 
@@ -148,15 +167,8 @@ public class SaveContent
                     if (googledocsService.isGoogleDocsLockOwner(nodeRef))
                     {
                         googledocsService.unlockNode(nodeRef);
+                        googledocsService.getDocument(credential, nodeRef);
 
-                        if (removeFromDrive)
-                        {
-                            googledocsService.getDocument(nodeRef);
-                        }
-                        else
-                        {
-                            googledocsService.getDocument(nodeRef, removeFromDrive);
-                        }
                         success = true; // TODO Make getDocument return boolean
                     }
                     else
@@ -169,17 +181,9 @@ public class SaveContent
                     if (googledocsService.isGoogleDocsLockOwner(nodeRef))
                     {
                         googledocsService.unlockNode(nodeRef);
+                        googledocsService.getSpreadSheet(credential, nodeRef);
 
-                        if (removeFromDrive)
-                        {
-                            googledocsService.getSpreadSheet(nodeRef);
-                        }
-                        else
-                        {
-                            googledocsService.getSpreadSheet(nodeRef, removeFromDrive);
-                        }
-                        success = true; // TODO Make getSpreadsheet return
-                                        // boolean
+                        success = true; // TODO Make getSpreadsheet return boolean
                     }
                     else
                     {
@@ -191,17 +195,9 @@ public class SaveContent
                     if (googledocsService.isGoogleDocsLockOwner(nodeRef))
                     {
                         googledocsService.unlockNode(nodeRef);
+                        googledocsService.getPresentation(credential, nodeRef);
 
-                        if (removeFromDrive)
-                        {
-                            googledocsService.getPresentation(nodeRef);
-                        }
-                        else
-                        {
-                            googledocsService.getPresentation(nodeRef, removeFromDrive);
-                        }
-                        success = true; // TODO Make getPresentation return
-                                        // boolean
+                        success = true; // TODO Make getPresentation return boolean
                     }
                     else
                     {
@@ -237,6 +233,10 @@ public class SaveContent
                 {
                     googledocsService.lockNode(nodeRef);
                 }
+                else
+                {
+                    googledocsService.deleteContent(credential, nodeRef);
+                }
                 
             }
             else
@@ -247,22 +247,22 @@ public class SaveContent
         }
         catch (GoogleDocsAuthenticationException gdae)
         {
-            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdae.getMessage());
+            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdae.getMessage(), gdae);
         }
         catch (GoogleDocsServiceException gdse)
         {
             if (gdse.getPassedStatusCode() > -1)
             {
-                throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage());
+                throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage(), gdse);
             }
             else
             {
-                throw new WebScriptException(gdse.getMessage());
+                throw new WebScriptException(gdse.getMessage(), gdse);
             }
         }
         catch (GoogleDocsRefreshTokenException gdrte)
         {
-            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage());
+            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage(), gdrte);
         }
         catch (ConstraintException ce)
         {
@@ -306,6 +306,10 @@ public class SaveContent
             });
 
             throw new WebScriptException(HttpStatus.SC_FORBIDDEN, ade.getMessage(), ade);
+        }
+        catch (ConcurrentEditorException e)
+        {
+            throw new WebScriptException(HttpStatus.SC_CONFLICT, e.getMessage(), e);
         }
         catch (Exception e)
         {
@@ -380,7 +384,7 @@ public class SaveContent
         }
         catch (final JSONException je)
         {
-            throw new WebScriptException(HttpStatus.SC_BAD_REQUEST, "Unable to parse JSON: " + jsonStr);
+            throw new WebScriptException(HttpStatus.SC_BAD_REQUEST, "Unable to parse JSON: " + jsonStr, je);
         }
         catch (final WebScriptException wse)
         {

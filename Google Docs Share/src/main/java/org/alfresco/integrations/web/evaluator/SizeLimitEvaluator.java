@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  * 
  * This file is part of Alfresco
  * 
@@ -75,7 +75,7 @@ public class SizeLimitEvaluator
             }
             else
             {
-                long size = ((Double)node.get("size")).longValue();
+                long size = ((Number)node.get("size")).longValue();
                 String contentType = getContentType(node.get("mimetype").toString());
 
                 log.debug("NodeRef: " + node.get("nodeRef") + "Contenttype: " + contentType + "; Max file Size: "

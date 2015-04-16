@@ -1,0 +1,114 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE beans PUBLIC '-//SPRING//DTD BEAN//EN' 'http://www.springframework.org/dtd/spring-beans.dtd'>
+
+<beans>
+
+   <bean id="google.docs.custom.resources" class="org.springframework.extensions.surf.util.ResourceBundleBootstrapComponent">
+      <property name="resourceBundles">
+         <list>
+            <value>alfresco.messages.googledocs</value>
+         </list>
+      </property>
+   </bean>
+   
+   <bean id="evaluator.doclib.metadata.isMimetype" class="org.alfresco.integrations.web.evaluator.IsMimetypeEvaluator"/>
+   <bean id="evaluator.doclib.metadata.sizeLimit" class="org.alfresco.integrations.web.evaluator.SizeLimitEvaluator">
+      <property name="maxDocumentSize" value="2097152"/>
+      <property name="maxSpreadsheetSize" value="20971520"/>
+      <property name="maxPresentationSize" value="52428800"/>
+   </bean>
+   
+   <bean id="evaluator.doclib.google.docs.mimetype" parent="evaluator.doclib.metadata.isMimetype">
+      <property name="mimetypes" value="custom.googledocs.importFormats"/>
+   </bean>
+   
+   <bean id="evaluator.doclib.google.docs.maxsize" parent="evaluator.doclib.metadata.sizeLimit">
+   	  <property name="importFormats" value="custom.googledocs.importFormats"/>
+   </bean>
+
+   <bean id="evaluator.doclib.google.docs.enabled" parent="evaluator.doclib.action.metadataValue">
+      <property name="accessor" value="custom.googledocs.enabled"/>
+      <property name="comparator">
+         <bean class="org.alfresco.web.evaluator.StringEqualsComparator">
+            <property name="value" value="true" />
+         </bean>
+      </property>
+   </bean>
+   
+   <bean id="evaluator.doclib.google.docs.doesnothaveaspect" class="org.alfresco.web.evaluator.HasAspectEvaluator">
+      <property name="aspects">
+         <list>
+            <value>gd2:editingInGoogle</value>
+         </list>
+      </property>
+      <property name="negateOutput" value="true" />
+   </bean>
+   
+   <bean id="evaluator.doclib.google.docs.aspect" class="org.alfresco.web.evaluator.HasAspectEvaluator">
+      <property name="aspects">
+         <list>
+            <value>gd2:editingInGoogle</value>
+         </list>
+      </property>
+   </bean>
+
+   <bean id="evaluator.doclib.google.docs.isNotLocked" parent="evaluator.doclib.action.value">
+      <property name="accessor" value="node.isLocked"/>
+      <property name="comparator">
+         <bean class="org.alfresco.web.evaluator.StringEqualsComparator">
+            <property name="value" value="false" />
+         </bean>
+      </property>
+   </bean>
+
+   <!-- Added to fix GOOGLEDOCS-242. Same as evaluator.doclib.action.isNotWorkingCopy, but this was only added in 4.2.d -->
+   <bean id="evaluator.doclib.google.docs.isNotWorkingCopy" parent="evaluator.doclib.action.chainedMatchAll">
+      <property name="evaluators">
+         <list>
+            <ref bean="evaluator.doclib.action.isWorkingCopy" />
+         </list>
+      </property>
+      <property name="negateOutput" value="true" />
+   </bean>
+   
+   <bean id="evaluator.doclib.google.docs.edit" parent="evaluator.doclib.action.chainedMatchAll">
+      <property name="evaluators">
+         <list>
+            <ref bean="evaluator.doclib.google.docs.enabled" />
+            <ref bean="evaluator.doclib.google.docs.isNotLocked" />
+            <ref bean="evaluator.doclib.google.docs.isNotWorkingCopy" />
+            <ref bean="evaluator.doclib.google.docs.mimetype" />
+            <ref bean="evaluator.doclib.google.docs.doesnothaveaspect" />
+            <ref bean="evaluator.doclib.google.docs.maxsize" />
+         </list>
+      </property>
+   </bean>
+   
+   <bean id="evaluator.doclib.google.docs.resume" parent="evaluator.doclib.action.chainedMatchAll">
+      <property name="evaluators">
+         <list>
+            <ref bean="evaluator.doclib.google.docs.aspect"/>
+            <ref bean="evaluator.doclib.indicator.lockOwner"/>
+         </list>
+      </property>
+   </bean>
+
+    <bean id="evaluator.doclib.google.docs.cancel.manager" parent="evaluator.doclib.action.chainedMatchAll">
+        <property name="evaluators">
+            <list>
+                <ref bean="evaluator.doclib.google.docs.aspect" />
+                <ref bean="evaluator.doclib.action.isSiteManager" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="evaluator.doclib.google.docs.cancel" parent="evaluator.doclib.action.chainedMatchOne">
+        <property name="evaluators">
+            <list>
+                <ref bean="evaluator.doclib.google.docs.resume" />
+                <ref bean="evaluator.doclib.google.docs.cancel.manager" />
+            </list>
+        </property>
+    </bean>
+
+</beans>

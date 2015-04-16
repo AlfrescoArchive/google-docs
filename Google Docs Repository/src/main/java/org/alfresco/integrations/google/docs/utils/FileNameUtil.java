@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  * 
  * This file is part of Alfresco
  * 
@@ -19,9 +19,14 @@ package org.alfresco.integrations.google.docs.utils;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.alfresco.repo.security.permissions.AccessDeniedException;
+import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransactionCallback;
 import org.alfresco.service.cmr.model.FileFolderService;
 import org.alfresco.service.cmr.repository.MimetypeService;
 import org.alfresco.service.cmr.repository.NodeRef;
+import org.alfresco.service.cmr.site.SiteInfo;
+import org.alfresco.service.cmr.site.SiteService;
+import org.alfresco.service.transaction.TransactionService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -33,12 +38,15 @@ public class FileNameUtil
 {
     private static final Log    log          = LogFactory.getLog(FileNameUtil.class);
 
+    private final static String FULL_PATTERN_WITH_EXT = "(.+?)(\\-(\\d+))?(\\.\\w+)?";
     private final static String FULL_PATTERN = "\\-\\d++\\.";
     private final static String FIRST_DUP    = "-1.";
     private final static String DUP_NUMBER   = "\\d++";
 
     private MimetypeService     mimetypeService;
     private FileFolderService   filefolderService;
+    private SiteService         siteService;
+    private TransactionService  transactionService;
 
 
     public void setMimetypeService(MimetypeService mimetypeService)
@@ -50,6 +58,18 @@ public class FileNameUtil
     public void setFileFolderService(FileFolderService filefolderService)
     {
         this.filefolderService = filefolderService;
+    }
+
+
+    public void setSiteService(SiteService siteService)
+    {
+        this.siteService = siteService;
+    }
+
+
+    public void setTransactionService(TransactionService transactionService)
+    {
+        this.transactionService = transactionService;
     }
 
 
@@ -121,4 +141,86 @@ public class FileNameUtil
         return newname;
     }
 
+
+    /**
+     * Increment the number in the given file name, or add a -1 suffix to the file name,
+     * regardless of the mimetype of the file
+     *
+     * @param name
+     * @return
+     */
+    public String incrementFileName(String name)
+    {
+        String newname = null;
+
+        Pattern p = Pattern.compile(FULL_PATTERN_WITH_EXT);
+        Matcher m = p.matcher(name);
+
+        if (m.matches())
+        {
+            String fileExt = m.group(4), fileName = m.group(1), number = m.group(3);
+            log.debug("Matching filename: " + name + ", base: " + fileName + ", number: " + number + ", extension: " + fileExt);
+
+            int newNumber = 1;
+
+            if (number != null && !number.equals(""))
+            {
+                newNumber = Integer.parseInt(number) + 1;
+            }
+
+            newname = fileName + "-" + newNumber + fileExt;
+            log.debug("Increment filename from: " + name + " to: " + newname);
+        }
+
+        return newname;
+    }
+
+
+    /**
+     * Return default file extension for the given mimetype
+     *
+     * @param mimetype
+     * @return
+     */
+    public String getExtension(String mimetype)
+    {
+        return mimetypeService.getExtension(mimetype);
+    }
+
+
+    /**
+     * This method gets the {@link SiteInfo} for the Share Site which contains the given NodeRef.
+     * If the given NodeRef is not contained within a Share Site or current user has no access to site,
+     * then <code>null</code> is returned.
+     * 
+     * @param nodeRef   the node whose containing site's info is to be found.
+     * @return SiteInfo  site information for the containing site or <code>null</code> if node is not in a site
+     * or user has no permissions to access site information.
+     */
+    public SiteInfo resolveSiteInfo(final NodeRef nodeRef)
+    {
+        SiteInfo siteInfo = null;
+        try
+        {
+            // MNT-13804 fix, resolve site in separate transaction, so that in case of ADE it will not fail main transaction
+            siteInfo = transactionService.getRetryingTransactionHelper().doInTransaction(new RetryingTransactionCallback<SiteInfo>()
+            {
+                @Override
+                public SiteInfo execute() throws Throwable
+                {
+                    return siteService.getSite(nodeRef);
+                }
+            }, true, true);
+        }
+        catch (org.alfresco.repo.security.permissions.AccessDeniedException e)
+        {
+            // When the user does not have permission to access the site node
+            // We can't get the name of the site that the node is located in
+            // So we can't place it in a site specific folder.
+            // It will be placed in the root of the Working Directory
+            log.debug("User does not have access to the containing sites info.  The document will be created in the root of the working directory. {" + nodeRef.toString() + "}");
+        }
+        
+        return siteInfo;
+    }
 }
