@@ -30,6 +30,7 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthentication
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
+import org.alfresco.integrations.google.docs.utils.FileNameUtil;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.security.permissions.AccessDeniedException;
@@ -62,6 +63,7 @@ public class DiscardContent
     private GoogleDocsService   googledocsService;
     private TransactionService  transactionService;
     private SiteService         siteService;
+    private FileNameUtil        filenameUtil;
 
     private static final String JSON_KEY_NODEREF  = "nodeRef";
     private static final String JSON_KEY_OVERRIDE = "override";
@@ -91,6 +93,13 @@ public class DiscardContent
     {
         this.siteService = siteService;
     }
+
+
+    public void setFilenameUtil(FileNameUtil filenameUtil)
+    {
+        this.filenameUtil = filenameUtil;
+    }
+
 
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
@@ -123,18 +132,7 @@ public class DiscardContent
                         //Is the node in a site?
                         if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
                         {
-                            try
-                            {
-                                siteInfo = siteService.getSite(nodeRef);
-                            }
-                            catch (org.alfresco.repo.security.permissions.AccessDeniedException e)
-                            {
-                                // When the user does not have permission to access the site node
-                                // We can't get the name of the site that the node is located in
-                                // So we can't place it in a site specific folder.
-                                // It will be placed in the root of the Working Directory
-                                log.debug("User does not have access to the containing sites info.  The document will be deleted from the root of the working directory. {" + nodeRef.toString() + "}");
-                            }
+                            siteInfo = filenameUtil.resolveSiteInfo(nodeRef);
                         }
                         //The second part of this test maybe too exclusive.  What if the user has write permissions to the node
                         // but not membership in the containing site? Should the test just ask if the user has write permission
