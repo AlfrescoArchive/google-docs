@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  * 
  * This file is part of Alfresco
  * 
@@ -57,6 +57,13 @@ public class GoogleDocsServiceException
     }
 
 
+    public GoogleDocsServiceException(String message, int passedStatusCode, Throwable cause)
+    {
+        super(message, cause);
+        this.passedStatusCode = passedStatusCode;
+    }
+
+
     public GoogleDocsServiceException(Throwable cause)
     {
         super(cause);
@@ -74,12 +81,4 @@ public class GoogleDocsServiceException
     {
         super(message, cause);
     }
-
-
-    public GoogleDocsServiceException(String message, Throwable cause, int passedStatusCode)
-    {
-        super(message, cause);
-        this.passedStatusCode = passedStatusCode;
-    }
-
 }

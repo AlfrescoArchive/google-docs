@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  * 
  * This file is part of Alfresco
  * 
@@ -252,7 +252,9 @@
     */
    Alfresco.GoogleDocs.requestOAuthURL = function GDA_requestOAuthURL(config)
    {
-      if (Alfresco.logger.isDebugEnabled())
+      var me = this;
+
+       if (Alfresco.logger.isDebugEnabled())
       {
          Alfresco.logger.debug("Checking Google authorization status");
          Alfresco.logger.debug("Override status: " + config.override);
@@ -266,33 +268,59 @@
          },
          successCallback: {
             fn: function(response) {
-               if (Alfresco.logger.isDebugEnabled())
-               {
-                  Alfresco.logger.debug("Authorized: " + response.json.authenticated);
-               }
-               if (!response.json.authenticated || config.override == true)
-               {
-                  if (Alfresco.logger.isDebugEnabled())
-                  {
-                     Alfresco.logger.debug("Authorizing using URL: " + response.json.authURL);
-                  }
-                  // TODO Must pass authurl response through here
-                  Alfresco.GoogleDocs.doOAuth(response.json.authURL, {
-                     onComplete: {
-                        fn: config.onComplete.fn,
-                        scope: config.onComplete.scope
-                     }
-                     /*onComplete: {
-                        fn: function() {
-                           Alfresco.GoogleDocs.requestOAuthURL.call(this); // Recursively call outer function
+
+                if (response.json.status != null ) {
+                    if (response.json.status.code == 401)
+                    {
+                        Alfresco.util.PopupManager.displayPrompt(
+                            {
+                                title: me.msg("googledocs.accessDenied.title"),
+                                text: me.msg("googledocs.accessDenied.text"),
+                                noEscape: true,
+                                buttons: [
+                                    {
+                                        text: me.msg("button.ok"),
+                                        handler: function submitDiscard() {
+                                            // Close the confirmation pop-up
+                                            Alfresco.GoogleDocs.hideMessage();
+                                            this.hide();
+                                            //Send the user to the login page
+                                            Alfresco.GoogleDocs.request({
+                                                url: Alfresco.constants.URL_PAGECONTEXT + "dologout",
+                                                method: "POST"
+                                            });
+                                        },
+                                        isDefault: true
+                                    }]
+                            });
+                    }
+                }
+                else
+                {
+                    if (Alfresco.logger.isDebugEnabled()) {
+                        Alfresco.logger.debug("Authorized: " + response.json.authenticated);
+                    }
+                    if (!response.json.authenticated || config.override == true) {
+                        if (Alfresco.logger.isDebugEnabled()) {
+                            Alfresco.logger.debug("Authorizing using URL: " + response.json.authURL);
                         }
-                     }*/
-                  });
-               }
-               else
-               {
-                  config.onComplete.fn.call(config.onComplete.scope, response);
-               }
+                        // TODO Must pass authurl response through here
+                        Alfresco.GoogleDocs.doOAuth(response.json.authURL, {
+                            onComplete: {
+                                fn: config.onComplete.fn.bind(config.onComplete.scope, response),
+                                scope: config.onComplete.scope
+                            }
+                            /*onComplete: {
+                             fn: function() {
+                             Alfresco.GoogleDocs.requestOAuthURL.call(this); // Recursively call outer function
+                             }
+                             }*/
+                        });
+                    }
+                    else {
+                        config.onComplete.fn.call(config.onComplete.scope, response);
+                    }
+                }
             },
             scope: this
          },

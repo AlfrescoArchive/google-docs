@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  * 
  * This file is part of Alfresco
  * 
@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.services.drive.model.File;
 import org.alfresco.integrations.google.docs.GoogleDocsModel;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
@@ -45,7 +47,6 @@ import org.springframework.extensions.webscripts.Cache;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
-import org.springframework.social.google.api.drive.DriveFile;
 
 
 /**
@@ -57,17 +58,17 @@ public class UploadContent
     private static final Log    log           = LogFactory.getLog(UploadContent.class);
 
     private GoogleDocsService   googledocsService;
-    private NodeService         nodeService;
     private VersionService      versionService;
 
-    private static final String PARAM_NODEREF = "nodeRef";
-    private static final String PARAM_PERMISSIONS = "permissions";
-    private static final String PARAM_SEND_EMAIL = "sendEmail";
-    private static final String MODEL_NODEREF = "nodeRef";
+    private static final String PARAM_NODEREF                    = "nodeRef";
+    private static final String PARAM_PERMISSIONS                = "permissions";
+    private static final String PARAM_SEND_EMAIL                 = "sendEmail";
+    private static final String MODEL_NODEREF                    = "nodeRef";
+    private static final String MODEL_EDITOR_URL                 = "editorUrl";
 
     private static final String JSON_KEY_PERMISSIONS             = "permissions";
-    private static final String JSON_KEY_PERMISSIONS_ITEMS             = "items";
-    private static final String JSON_KEY_PERMISSIONS_SEND_EMAIL             = "sendEmail";
+    private static final String JSON_KEY_PERMISSIONS_ITEMS       = "items";
+    private static final String JSON_KEY_PERMISSIONS_SEND_EMAIL  = "sendEmail";
     private static final String JSON_KEY_AUTHORITY_ID            = "authorityId";
     private static final String JSON_KEY_AUTHORITY_TYPE          = "authorityType";
     private static final String JSON_VAL_AUTHORITY_TYPE_DEFAULT  = "user";
@@ -108,19 +109,21 @@ public class UploadContent
 
         Map<String, Serializable> jsonParams = parseContent(req);
 
-        DriveFile driveFile;
+        File file;
         try
         {
+            Credential credential = googledocsService.getCredential();
+
             if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
             {
                 // Check the doc exists in Google - it may have been removed accidentally
                 try
                 {
-                    driveFile = googledocsService.getDriveFile(nodeRef);
+                    file = googledocsService.getDriveFile(credential, nodeRef);
                 }
                 catch(GoogleDocsServiceException gdse)
                 {
-                    driveFile = googledocsService.uploadFile(nodeRef);
+                    file = googledocsService.uploadFile(credential, nodeRef);
                     if (log.isDebugEnabled())
                     {
                         log.debug(nodeRef + " Uploaded to Google.");
@@ -128,17 +131,16 @@ public class UploadContent
                     // Re-apply the previous permissions, if they exist
                     if (nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_CURRENT_PERMISSIONS) != null)
                     {
-                        googledocsService.addRemotePermissions(
-                                driveFile,
-                                googledocsService.getGooglePermissions(nodeRef, GoogleDocsModel.PROP_CURRENT_PERMISSIONS),
-                                true
+                        googledocsService.addRemotePermissions(credential,
+                                file,
+                                googledocsService.getGooglePermissions(nodeRef, GoogleDocsModel.PROP_CURRENT_PERMISSIONS)
                         );
                     }
                 }
             }
             else
             {
-                driveFile = googledocsService.uploadFile(nodeRef);
+                file = googledocsService.uploadFile(credential, nodeRef);
                 if (log.isDebugEnabled())
                 {
                     log.debug(nodeRef + " Uploaded to Google.");
@@ -151,10 +153,9 @@ public class UploadContent
                 {
                     log.debug("Adding permissions to remote object");
                 }
-                googledocsService.addRemotePermissions(
-                        driveFile,
-                        (List<GooglePermission>) jsonParams.get(PARAM_PERMISSIONS),
-                        ((Boolean) jsonParams.get(PARAM_SEND_EMAIL)).booleanValue()
+                googledocsService.addRemotePermissions(credential,
+                        file,
+                        (List<GooglePermission>) jsonParams.get(PARAM_PERMISSIONS)
                 );
             }
 
@@ -182,18 +183,23 @@ public class UploadContent
                 googledocsService.unlockNode(nodeRef);
             }
 
-            googledocsService.decorateNode(nodeRef, driveFile, googledocsService.getLatestRevision(driveFile), (List<GooglePermission>) jsonParams.get(PARAM_PERMISSIONS), false);
+            // The alternateLink returned by an uploaded file directs the user to a preview. Need to get the alternateLink
+            // provided by a straight file get if we want to direct a user to an editor UI. Make the request with the known
+            // ID as it as not yet been set on the node yet
+            //file = googledocsService.getDriveFile(credential, file.getId());
+
+            googledocsService.decorateNode(nodeRef, file, googledocsService.getLatestRevision(credential, file), (List<GooglePermission>) jsonParams.get(PARAM_PERMISSIONS), false);
             googledocsService.lockNode(nodeRef);
         }
         catch (GoogleDocsAuthenticationException gdae)
         {
-            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdae.getMessage());
+            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdae.getMessage(), gdae);
         }
         catch (GoogleDocsServiceException gdse)
         {
             if (gdse.getPassedStatusCode() > -1)
             {
-                throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage());
+                throw new WebScriptException(gdse.getPassedStatusCode(), gdse.getMessage(), gdse);
             }
             else
             {
@@ -202,7 +208,7 @@ public class UploadContent
         }
         catch (GoogleDocsRefreshTokenException gdrte)
         {
-            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage());
+            throw new WebScriptException(HttpStatus.SC_BAD_GATEWAY, gdrte.getMessage(), gdrte);
         }
         catch (IOException ioe)
         {
@@ -214,6 +220,7 @@ public class UploadContent
         }
 
         model.put(MODEL_NODEREF, nodeRef.toString());
+        model.put(MODEL_EDITOR_URL, file.getAlternateLink());
         
         }
         else

@@ -1,3 +1,17 @@
+/**
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
+ *
+ * This file is part of Alfresco
+ *
+ * Alfresco is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * Alfresco is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with Alfresco. If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
 
 package org.alfresco.integrations.google.docs.webscripts;
 
@@ -7,6 +21,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.services.drive.model.File;
 import org.alfresco.integrations.google.docs.GoogleDocsConstants;
 import org.alfresco.integrations.google.docs.GoogleDocsModel;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
@@ -30,20 +46,17 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.extensions.surf.util.Content;
 import org.springframework.extensions.webscripts.Cache;
-import org.springframework.extensions.webscripts.DeclarativeWebScript;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.WebScriptException;
 import org.springframework.extensions.webscripts.WebScriptRequest;
-import org.springframework.social.google.api.drive.DriveFile;
 
 
 public class RemoveContent
-    extends DeclarativeWebScript
+    extends GoogleDocsWebScripts
 {
     private static final Log    log              = LogFactory.getLog(RemoveContent.class);
 
     private GoogleDocsService   googledocsService;
-    private NodeService         nodeService;
     private TransactionService  transactionService;
 
     private static final String JSON_KEY_NODEREF = "nodeRef";
@@ -73,6 +86,8 @@ public class RemoveContent
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
+        getGoogleDocsServiceSubsystem();
+
         Map<String, Object> model = new HashMap<String, Object>();
 
         boolean success = false;
@@ -86,10 +101,12 @@ public class RemoveContent
         {
             try
             {
+                Credential credential = googledocsService.getCredential();
+
                 /* Get the metadata for the file we are working on */
-                DriveFile driveFile = googledocsService.getDriveFile(nodeRef);
+                File file = googledocsService.getDriveFile(credential, nodeRef);
                 /* remove it from users Google account and free it in the repo */
-                googledocsService.removeContent(nodeRef, driveFile, (Boolean)map.get(JSON_KEY_FORCE));
+                googledocsService.removeContent(credential, nodeRef, file, (Boolean)map.get(JSON_KEY_FORCE));
 
                 /* if we reach this point all should be completed */
                 success = true;

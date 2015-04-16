@@ -1,5 +1,6 @@
 <#escape x as jsonUtils.encodeJSONString(x)>
 {
- "nodeRef": "${nodeRef}"
+ "nodeRef": "${nodeRef}",
+ "editorUrl": "${editorUrl}"
 }
 </#escape>
