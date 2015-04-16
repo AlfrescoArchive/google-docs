@@ -19,9 +19,14 @@ package org.alfresco.integrations.google.docs.utils;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.alfresco.repo.security.permissions.AccessDeniedException;
+import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransactionCallback;
 import org.alfresco.service.cmr.model.FileFolderService;
 import org.alfresco.service.cmr.repository.MimetypeService;
 import org.alfresco.service.cmr.repository.NodeRef;
+import org.alfresco.service.cmr.site.SiteInfo;
+import org.alfresco.service.cmr.site.SiteService;
+import org.alfresco.service.transaction.TransactionService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -40,6 +45,8 @@ public class FileNameUtil
 
     private MimetypeService     mimetypeService;
     private FileFolderService   filefolderService;
+    private SiteService         siteService;
+    private TransactionService  transactionService;
 
 
     public void setMimetypeService(MimetypeService mimetypeService)
@@ -51,6 +58,18 @@ public class FileNameUtil
     public void setFileFolderService(FileFolderService filefolderService)
     {
         this.filefolderService = filefolderService;
+    }
+
+
+    public void setSiteService(SiteService siteService)
+    {
+        this.siteService = siteService;
+    }
+
+
+    public void setTransactionService(TransactionService transactionService)
+    {
+        this.transactionService = transactionService;
     }
 
 
@@ -168,4 +187,40 @@ public class FileNameUtil
         return mimetypeService.getExtension(mimetype);
     }
 
+
+    /**
+     * This method gets the {@link SiteInfo} for the Share Site which contains the given NodeRef.
+     * If the given NodeRef is not contained within a Share Site or current user has no access to site,
+     * then <code>null</code> is returned.
+     * 
+     * @param nodeRef   the node whose containing site's info is to be found.
+     * @return SiteInfo  site information for the containing site or <code>null</code> if node is not in a site
+     * or user has no permissions to access site information.
+     */
+    public SiteInfo resolveSiteInfo(final NodeRef nodeRef)
+    {
+        SiteInfo siteInfo = null;
+        try
+        {
+            // MNT-13804 fix, resolve site in separate transaction, so that in case of ADE it will not fail main transaction
+            siteInfo = transactionService.getRetryingTransactionHelper().doInTransaction(new RetryingTransactionCallback<SiteInfo>()
+            {
+                @Override
+                public SiteInfo execute() throws Throwable
+                {
+                    return siteService.getSite(nodeRef);
+                }
+            }, true, true);
+        }
+        catch (org.alfresco.repo.security.permissions.AccessDeniedException e)
+        {
+            // When the user does not have permission to access the site node
+            // We can't get the name of the site that the node is located in
+            // So we can't place it in a site specific folder.
+            // It will be placed in the root of the Working Directory
+            log.debug("User does not have access to the containing sites info.  The document will be created in the root of the working directory. {" + nodeRef.toString() + "}");
+        }
+        
+        return siteInfo;
+    }
 }
