@@ -788,16 +788,33 @@
                                         showSpinner: true
                                     });
 
-                                    Alfresco.GoogleDocs.request.call(this, {
-                                        url: actionUrl,
-                                        method: "POST",
-                                        dataObj: {
-                                            nodeRef: record.nodeRef,
-                                            override: false
-                                        },
-                                        successCallback: success,
-                                        failureCallback: failure
+                                    Alfresco.GoogleDocs.requestOAuthURL.call(this, {
+                                        onComplete: {
+                                            fn: function () {
+                                                Alfresco.GoogleDocs.checkGoogleLogin.call(this, {
+                                                    onLoggedIn : {
+                                                        fn: function () {
+                                                            Alfresco.GoogleDocs.request.call(this, {
+                                                                url: actionUrl,
+                                                                method: "POST",
+                                                                dataObj: {
+                                                                    nodeRef: record.nodeRef,
+                                                                    override: false
+                                                                },
+                                                                successCallback: success,
+                                                                failureCallback: failure
+                                                            });
+                                                        },
+                                                        scope: this
+                                                    }
+                                                });
+                                            },
+                                            scope: this
+                                        }
                                     });
+
+                                    //Begin
+                                         //End
                                 },
                                 isDefault: true
                             },
