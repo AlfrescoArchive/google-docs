@@ -328,7 +328,7 @@
             <ref bean="policyComponent"/>
         </property>
         <property name="nodeService">
-            <ref bean="NodeService"/>
+            <ref bean="nodeService"/>
         </property>
     </bean>
 

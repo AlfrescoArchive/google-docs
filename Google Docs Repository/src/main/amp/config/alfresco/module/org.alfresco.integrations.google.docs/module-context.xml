@@ -45,7 +45,7 @@
     <bean id="webscript.org.alfresco.integrations.google.docs.UploadContent.post"
           class="org.alfresco.integrations.google.docs.webscripts.UploadContent" parent="webscript">
         <property name="nodeService">
-            <ref bean="NodeService"/>
+            <ref bean="nodeService"/>
         </property>
         <property name="versionService">
             <ref bean="VersionService"/>
@@ -55,7 +55,7 @@
     <bean id="webscript.org.alfresco.integrations.google.docs.SaveContent.post"
           class="org.alfresco.integrations.google.docs.webscripts.SaveContent" parent="webscript">
         <property name="nodeService">
-            <ref bean="NodeService"/>
+            <ref bean="nodeService"/>
         </property>
         <property name="versionService">
             <ref bean="VersionService"/>
@@ -74,14 +74,14 @@
     <bean id="webscript.org.alfresco.integrations.google.docs.IsLatestRevision.get"
           class="org.alfresco.integrations.google.docs.webscripts.IsLatestRevision">
         <property name="nodeService">
-            <ref bean="NodeService"/>
+            <ref bean="nodeService"/>
         </property>
     </bean>
 
     <bean id="webscript.org.alfresco.integrations.google.docs.RemoveContent.post"
           class="org.alfresco.integrations.google.docs.webscripts.RemoveContent">
         <property name="nodeService">
-            <ref bean="NodeService"/>
+            <ref bean="nodeService"/>
         </property>
         <property name="transactionService">
             <ref bean="transactionService"/>
@@ -91,7 +91,7 @@
     <bean id="webscript.org.alfresco.integrations.google.docs.DiscardContent.post"
           class="org.alfresco.integrations.google.docs.webscripts.DiscardContent">
         <property name="nodeService">
-            <ref bean="NodeService"/>
+            <ref bean="nodeService"/>
         </property>
         <property name="transactionService">
             <ref bean="transactionService"/>
