@@ -20,21 +20,6 @@
         </property>
     </bean>
 
-    <bean id="fileNameUtil" class="org.alfresco.integrations.google.docs.utils.FileNameUtil">
-        <property name="mimetypeService">
-            <ref bean="mimetypeService"/>
-        </property>
-        <property name="fileFolderService">
-            <ref bean="FileFolderService"/>
-        </property>
-        <property name="siteService">
-            <ref bean="SiteService"/>
-        </property>
-        <property name="transactionService">
-            <ref bean="transactionService"/>
-        </property>
-    </bean>
-
     <!-- Custom WebScripts -->
     <bean id="webscript.org.alfresco.integrations.google.docs.AuthURL.get"
           class="org.alfresco.integrations.google.docs.webscripts.AuthURL"
@@ -81,9 +66,6 @@
         <property name="siteService">
             <ref bean="SiteService"/>
         </property>
-        <property name="filenameUtil">
-            <ref bean="fileNameUtil"/>
-        </property>
     </bean>
 
     <bean id="webscript.org.alfresco.integrations.google.docs.HasConcurrentEditors.get"
@@ -116,9 +98,6 @@
         </property>
         <property name="siteService">
             <ref bean="SiteService"/>
-        </property>
-        <property name="filenameUtil">
-            <ref bean="fileNameUtil"/>
         </property>
     </bean>
 
