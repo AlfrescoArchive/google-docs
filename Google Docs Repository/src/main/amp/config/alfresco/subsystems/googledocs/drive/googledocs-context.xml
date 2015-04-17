@@ -314,12 +314,21 @@
         </property>
     </bean>
 
+    <bean id="fileNameUtil" class="org.alfresco.integrations.google.docs.utils.FileNameUtil">
+        <property name="mimetypeService">
+            <ref bean="mimetypeService"/>
+        </property>
+        <property name="fileFolderService">
+            <ref bean="FileFolderService"/>
+        </property>
+    </bean>
+
     <bean id="editinginGoogleAspect" class="org.alfresco.integrations.google.docs.model.EditingInGoogleAspect" init-method="init">
         <property name="policyComponent">
             <ref bean="policyComponent"/>
         </property>
         <property name="nodeService">
-            <ref bean="NodeService"/>
+            <ref bean="nodeService"/>
         </property>
     </bean>
 
