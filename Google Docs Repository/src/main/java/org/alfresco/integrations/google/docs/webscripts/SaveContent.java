@@ -28,7 +28,6 @@ import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthentication
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsServiceException;
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
-import org.alfresco.integrations.google.docs.utils.FileNameUtil;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.security.permissions.AccessDeniedException;
@@ -69,7 +68,6 @@ public class SaveContent
     private VersionService      versionService;
     private TransactionService  transactionService;
     private SiteService         siteService;
-    private FileNameUtil        filenameUtil;
 
     private static final String JSON_KEY_NODEREF         = "nodeRef";
     private static final String JSON_KEY_MAJORVERSION    = "majorVersion";
@@ -111,12 +109,6 @@ public class SaveContent
     }
 
 
-    public void setFilenameUtil(FileNameUtil filenameUtil)
-    {
-        this.filenameUtil = filenameUtil;
-    }
-
-
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
@@ -140,7 +132,18 @@ public class SaveContent
             //Is the node in a site?
             if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
             {
-                siteInfo = filenameUtil.resolveSiteInfo(nodeRef);
+                try
+                {
+                    siteInfo = siteService.getSite(nodeRef);
+                }
+                catch (org.alfresco.repo.security.permissions.AccessDeniedException e)
+                {
+                    // When the user does not have permission to access the site node
+                    // We can't get the name of the site that the node is located in
+                    // So we can't place it in a site specific folder.
+                    // It will be placed in the root of the Working Directory
+                    log.debug("User does not have access to the containing sites info.  The document will be retrieved from the root of the working directory. {" + nodeRef.toString() + "}");
+                }
             }
 
             if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
