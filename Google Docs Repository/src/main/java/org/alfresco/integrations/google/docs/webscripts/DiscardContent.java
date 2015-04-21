@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  * 
  * This file is part of Alfresco
  * 
@@ -24,6 +24,8 @@ import java.util.Map;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.drive.model.File;
+
+import org.alfresco.integrations.google.docs.GoogleDocsConstants;
 import org.alfresco.integrations.google.docs.GoogleDocsModel;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsAuthenticationException;
 import org.alfresco.integrations.google.docs.exceptions.GoogleDocsRefreshTokenException;
@@ -61,7 +63,6 @@ public class DiscardContent
     private static final Log    log               = LogFactory.getLog(DiscardContent.class);
 
     private GoogleDocsService   googledocsService;
-    private NodeService         nodeService;
     private TransactionService  transactionService;
     private SiteService         siteService;
 
@@ -98,19 +99,6 @@ public class DiscardContent
         this.siteService = siteService;
     }
 
-
-    public void setPermissionService(PermissionService permissionService)
-    {
-        this.permissionService = permissionService;
-    }
-
-
-    public void setAuthorityService(AuthorityService authorityService)
-    {
-        this.authorityService = authorityService;
-    }
-
-
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
@@ -136,7 +124,26 @@ public class DiscardContent
 
                     if (!Boolean.valueOf(map.get(JSON_KEY_OVERRIDE).toString()))
                     {
-                        SiteInfo siteInfo = siteService.getSite(nodeRef);
+                        SiteInfo siteInfo = null;
+                        String pathElement = getPathElement(nodeRef, 2);
+
+                        //Is the node in a site?
+                        if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
+                        {
+                            try
+                            {
+                                siteInfo = siteService.getSite(nodeRef);
+                            }
+                            catch (org.alfresco.repo.security.permissions.AccessDeniedException e)
+                            {
+                                // When the user does not have permission to access the site node
+                                // We can't get the name of the site that the node is located in
+                                // So we can't place it in a site specific folder.
+                                // It will be placed in the root of the Working Directory
+                                log.debug("User does not have access to the containing sites info.  The document will be deleted from the root of the working directory. {" + nodeRef.toString() + "}");
+                            }
+                        }
+
                         //The second part of this test maybe too exclusive.  What if the user has write permissions to the node
                         // but not membership in the containing site? Should the test just ask if the user has write permission
                         // to the node?

@@ -9,3 +9,5 @@
 .idea/*
 atlassian-ide-plugin.xml
 *.iml
+
+Google Docs Share/src/main/amp/config/alfresco/web-extension/custom-slingshot-googledocs-context.xml

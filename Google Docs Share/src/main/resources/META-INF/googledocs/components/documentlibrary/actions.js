@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  *
  * This file is part of Alfresco
  *
@@ -412,11 +412,9 @@
                                                 Alfresco.util.Ajax.jsonPost({
                                                     url: actionUrl,
                                                     dataObj: {
-                                                        nodeRef: me.getData().nodeRef,
+                                                        nodeRef: record.nodeRef,
                                                         override: me.saveDiscardConfirmed,
-                                                        removeFromDrive: true,
-                                                        majorVersion: me.getData().majorVersion,
-                                                        description: me.getData().description
+                                                        removeFromDrive: true
                                                     },
                                                     successCallback: success,
                                                     failureCallback: failure
@@ -496,6 +494,14 @@
                                 displayTime: 2.5,
                                 showSpinner: false
                             });
+
+                            //GOOGLEDOCS-305 reload the page after error message is shown.
+                            window.setTimeout(
+                                function()
+                                {
+                                    location.reload();
+                                },
+                                2500);
                         }
                     }
                 },
@@ -753,6 +759,14 @@
                                 displayTime: 2.5,
                                 showSpinner: false
                             });
+
+                            //GOOGLEDOCS-305 reload the page after error message is shown.
+                            window.setTimeout(
+                                function()
+                                {
+                                    location.reload();
+                                },
+                                2500);
                         }
                     }
                 };
@@ -774,16 +788,33 @@
                                         showSpinner: true
                                     });
 
-                                    Alfresco.GoogleDocs.request.call(this, {
-                                        url: actionUrl,
-                                        method: "POST",
-                                        dataObj: {
-                                            nodeRef: record.nodeRef,
-                                            override: false
-                                        },
-                                        successCallback: success,
-                                        failureCallback: failure
+                                    Alfresco.GoogleDocs.requestOAuthURL.call(this, {
+                                        onComplete: {
+                                            fn: function () {
+                                                Alfresco.GoogleDocs.checkGoogleLogin.call(this, {
+                                                    onLoggedIn : {
+                                                        fn: function () {
+                                                            Alfresco.GoogleDocs.request.call(this, {
+                                                                url: actionUrl,
+                                                                method: "POST",
+                                                                dataObj: {
+                                                                    nodeRef: record.nodeRef,
+                                                                    override: false
+                                                                },
+                                                                successCallback: success,
+                                                                failureCallback: failure
+                                                            });
+                                                        },
+                                                        scope: this
+                                                    }
+                                                });
+                                            },
+                                            scope: this
+                                        }
                                     });
+
+                                    //Begin
+                                         //End
                                 },
                                 isDefault: true
                             },

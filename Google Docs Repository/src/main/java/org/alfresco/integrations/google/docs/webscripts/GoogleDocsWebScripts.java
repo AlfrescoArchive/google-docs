@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  * 
  * This file is part of Alfresco
  * 
@@ -18,6 +18,9 @@ package org.alfresco.integrations.google.docs.webscripts;
 
 import org.alfresco.integrations.google.docs.service.GoogleDocsService;
 import org.alfresco.repo.management.subsystems.ApplicationContextFactory;
+import org.alfresco.service.cmr.repository.NodeRef;
+import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.repository.Path;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -34,9 +37,9 @@ public abstract class GoogleDocsWebScripts
 
     protected ApplicationContext  applicationContext;
 
+    protected NodeService nodeService;
 
     abstract void setGoogledocsService(GoogleDocsService googledocsService);
-
 
     public void setApplicationContext(ApplicationContext applicationContext)
     {
@@ -56,5 +59,13 @@ public abstract class GoogleDocsWebScripts
         {
             // googledocs_v2 bean is not present on Community
         }
+    }
+
+    protected String getPathElement(NodeRef nodeRef, int position)
+    {
+        Path path = nodeService.getPath(nodeRef);
+        Path.Element element = path.get(position);
+
+        return element.toString();
     }
 }
