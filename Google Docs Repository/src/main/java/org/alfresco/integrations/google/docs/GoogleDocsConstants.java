@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2013 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  * 
  * This file is part of Alfresco
  * 
@@ -34,8 +34,8 @@ public interface GoogleDocsConstants
     public static final String REDIRECT_URI = "http://www.alfresco.com/google-auth-return.html";
 
     // Google OAuth2 Scopes
-    public static final String       SCOPE  = "https://docs.google.com/feeds/ https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email";
-    public static final List<String> SCOPES = Collections.unmodifiableList(Arrays.asList("https://www.googleapis.com/auth/drive.file","https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/userinfo.profile","https://www.googleapis.com/auth/userinfo.email"));
+    public static final String       SCOPE  = "https://docs.google.com/feeds/ https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email";
+    public static final List<String> SCOPES = Collections.unmodifiableList(Arrays.asList("https://docs.google.com/feeds/", "https://www.googleapis.com/auth/drive.file","https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/userinfo.profile","https://www.googleapis.com/auth/userinfo.email"));
 
     // Google docsService Client Name
     public static final String APPLICATION_NAME = "Alfresco-GoogleDocs/3.0";
@@ -73,6 +73,9 @@ public interface GoogleDocsConstants
     public static final String ALF_MY_FILES_FOLDER = "My Files";
 
     public static final String ALF_SHARED_PATH_FQNS_ELEMENT = "{http://www.alfresco.org/model/application/1.0}shared";
+    public static final String ALF_SITES_PATH_FQNS_ELEMENT = "{http://www.alfresco.org/model/site/1.0}sites";
+
+    public static final String GOOGLE_ERROR_UNMUTABLE = "File not mutable";
 
     /*
      * There is no standard 419. Some say not set (like Alfresco); Apache says WebDav INSUFFICIENT_SPACE_ON_RESOURCE.

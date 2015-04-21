@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  * 
  * This file is part of Alfresco
  * 
@@ -58,7 +58,6 @@ public class UploadContent
     private static final Log    log           = LogFactory.getLog(UploadContent.class);
 
     private GoogleDocsService   googledocsService;
-    private NodeService         nodeService;
     private VersionService      versionService;
 
     private static final String PARAM_NODEREF                    = "nodeRef";

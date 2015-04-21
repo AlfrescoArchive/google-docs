@@ -34,6 +34,8 @@
                 <override>document-delete</override>
                 <override>document-manage-granular-permissions</override>
                 <override>document-manage-repo-permissions</override>
+                <override>document-copy-to</override>
+                <override>document-move-to</override>
             </action>
             <action id="google-docs-cancel-action-link" type="javascript" icon="document-cancel-editing" label="googledocs.actions.cancel">
                 <param name="function">onGoogledocsActionCancel</param>
@@ -44,6 +46,8 @@
                 <override>document-edit-metadata</override>
                 <override>document-manage-granular-permissions</override>
                 <override>document-manage-repo-permissions</override>
+                <override>document-copy-to</override>
+                <override>document-move-to</override>
             </action>
             <action id="google-docs-checkin-action-link" type="javascript" icon="document-upload-new-version" label="googledocs.actions.checkin">
                 <param name="function">onGoogledocsActionCheckin</param>

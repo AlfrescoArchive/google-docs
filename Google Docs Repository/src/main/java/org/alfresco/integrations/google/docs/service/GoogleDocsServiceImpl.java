@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2013 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  *
  * This file is part of Alfresco
  *
@@ -93,6 +93,7 @@ import org.alfresco.service.cmr.model.FileInfo;
 import org.alfresco.service.cmr.oauth2.OAuth2CredentialsStoreService;
 import org.alfresco.service.cmr.remotecredentials.OAuth2CredentialsInfo;
 import org.alfresco.service.cmr.remoteticket.NoSuchSystemException;
+import org.alfresco.service.cmr.repository.AspectMissingException;
 import org.alfresco.service.cmr.repository.ContentReader;
 import org.alfresco.service.cmr.repository.ContentWriter;
 import org.alfresco.service.cmr.repository.MimetypeService;
@@ -561,7 +562,7 @@ public class GoogleDocsServiceImpl
             TokenResponseException,
             GoogleDocsServiceException
     {
-        Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credential).build();
+        Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credential).setApplicationName(GoogleDocsConstants.APPLICATION_NAME).build();
         Userinfoplus userInfo = null;
         try
         {
@@ -988,7 +989,7 @@ public class GoogleDocsServiceImpl
 
             renameNode(nodeRef, file.getTitle());
 
-            saveSharedInfo(credential, nodeRef, resourceID);
+            saveSharedInfo(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1));
 
             if (removeFromDrive)
             {
@@ -1039,7 +1040,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getDocument(credential, nodeRef, resourceID, removeFromDrive);
+        getDocument(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1), removeFromDrive);
     }
 
 
@@ -1058,7 +1059,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getDocument(credential, nodeRef, resourceID, false);
+        getDocument(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1), false);
     }
 
 
@@ -1102,7 +1103,7 @@ public class GoogleDocsServiceImpl
 
             renameNode(nodeRef, file.getTitle());
 
-            saveSharedInfo(credential, nodeRef, resourceID);
+            saveSharedInfo(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1));
 
             if (removeFromDrive)
             {
@@ -1148,7 +1149,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getSpreadSheet(credential, nodeRef, resourceID, removeFromDrive);
+        getSpreadSheet(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1), removeFromDrive);
     }
 
 
@@ -1173,7 +1174,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getSpreadSheet(credential, nodeRef, resourceID, false);
+        getSpreadSheet(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1), false);
     }
 
 
@@ -1217,7 +1218,7 @@ public class GoogleDocsServiceImpl
 
             renameNode(nodeRef, file.getTitle());
 
-            saveSharedInfo(credential, nodeRef, resourceID);
+            saveSharedInfo(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1));
 
             if (removeFromDrive)
             {
@@ -1263,7 +1264,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getPresentation(credential, nodeRef, resourceID, removeFromDrive);
+        getPresentation(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1), removeFromDrive);
     }
 
 
@@ -1288,7 +1289,7 @@ public class GoogleDocsServiceImpl
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        getPresentation(credential, nodeRef, resourceID, false);
+        getPresentation(credential, nodeRef, resourceID.substring(resourceID.lastIndexOf(':') + 1), false);
     }
 
 
@@ -1965,108 +1966,111 @@ public class GoogleDocsServiceImpl
         credential = credential == null ? getCredential() : credential;
         Drive drive = getDriveApi(credential);
 
-        String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
-
         boolean concurrentChange = false;
 
-        try
+        if (nodeService.hasAspect(nodeRef, GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE))
         {
-            RevisionList revisionList = drive.revisions().list(resourceID.substring(resourceID.lastIndexOf(':') + 1)).execute();
-            List<Revision> revisions = revisionList.getItems();
+            String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
 
-            if (revisions.size() > 1)
+            try
             {
+                RevisionList revisionList = drive.revisions().list(resourceID.substring(resourceID.lastIndexOf(':') + 1)).execute();
+                List<Revision> revisions = revisionList.getItems();
 
-
-                log.debug("Revisions Found");
-                Collections.sort(revisions, Collections.reverseOrder(new FileRevisionComparator()));
-
-                // Find any revisions occurring within the last 'idleThreshold'
-                // seconds
-                List<Revision> workingList = new ArrayList<Revision>();
-
-                Calendar bufferTime = Calendar.getInstance();
-                bufferTime.add(Calendar.SECOND, -idleThreshold);
-
-                for (Revision entry : revisions)
+                if (revisions.size() > 1)
                 {
-                    Date d = new Date(entry.getModifiedDate().getValue());
-                    if (d.after(new Date(bufferTime.getTimeInMillis())))
-                    {
-                        workingList.add(entry);
-                    }
-                    else
-                    {
-                        // once we past 'idleThreshold' seconds get out of here
-                        break;
-                    }
-                }
+                    log.debug("Revisions Found");
+                    Collections.sort(revisions, Collections.reverseOrder(new FileRevisionComparator()));
 
-                // If there any revisions that occurred within the last
-                // 'idleThreshold' seconds of time....
-                if (workingList.size() > 0)
-                {
-                    log.debug("Revisions within threshhold found");
-                    // Filter the current user from the list
-                    for (int i = workingList.size() - 1; i >= 0; i--)
-                    {
-                        Revision revision = workingList.get(i);
-                        String emailAddress = getDriveUser(credential).getEmailAddress();
+                    // Find any revisions occurring within the last 'idleThreshold'
+                    // seconds
+                    List<Revision> workingList = new ArrayList<Revision>();
 
-                        // if there is no author -- the entry is the initial
-                        // creation
-                        if (revision.getLastModifyingUser().getEmailAddress() != null)
+                    Calendar bufferTime = Calendar.getInstance();
+                    bufferTime.add(Calendar.SECOND, -idleThreshold);
+
+                    for (Revision entry : revisions)
+                    {
+                        Date d = new Date(entry.getModifiedDate().getValue());
+                        if (d.after(new Date(bufferTime.getTimeInMillis())))
                         {
-                            if (revision.getLastModifyingUser().getEmailAddress().equals(emailAddress))
+                            workingList.add(entry);
+                        }
+                        else
+                        {
+                            // once we past 'idleThreshold' seconds get out of here
+                            break;
+                        }
+                    }
+
+                    // If there any revisions that occurred within the last
+                    // 'idleThreshold' seconds of time....
+                    if (workingList.size() > 0)
+                    {
+                        log.debug("Revisions within threshhold found");
+                        // Filter the current user from the list
+                        for (int i = workingList.size() - 1; i >= 0; i--)
+                        {
+                            Revision revision = workingList.get(i);
+                            String emailAddress = getDriveUser(credential).getEmailAddress();
+
+                            // if there is no author -- the entry is the initial
+                            // creation
+                            if (revision.getLastModifyingUser().getEmailAddress() != null)
+                            {
+                                if (revision.getLastModifyingUser().getEmailAddress().equals(emailAddress))
+                                {
+                                    workingList.remove(i);
+                                }
+                            }
+                            else
                             {
                                 workingList.remove(i);
                             }
                         }
-                        else
-                        {
-                            workingList.remove(i);
-                        }
                     }
-                }
 
-                // Are there are changes by other users within the last
-                // 'idleThreshold' seconds
-                if (workingList.size() > 0)
-                {
-                    log.debug("Revisions not made by current user found.");
-                    concurrentChange = true;
-                }
-
-            }
-            else
-            {
-                String emailAddress = getDriveUser(credential).getEmailAddress();
-
-
-                // if the authors list is empty -- the author was the original
-                // creator and it is the initial copy
-                if (revisions.get(0).getLastModifyingUser().getEmailAddress() != null)
-                {
-
-                    if (!revisions.get(0).getLastModifyingUser().getEmailAddress().equals(emailAddress))
+                    // Are there are changes by other users within the last
+                    // 'idleThreshold' seconds
+                    if (workingList.size() > 0)
                     {
-                        Calendar bufferTime = Calendar.getInstance();
-                        bufferTime.add(Calendar.SECOND, -idleThreshold);
+                        log.debug("Revisions not made by current user found.");
+                        concurrentChange = true;
+                    }
 
-                        Date dt = new Date(revisions.get(0).getModifiedDate().getValue());
-                        if (dt.before(new Date(bufferTime.getTimeInMillis())))
+                }
+                else
+                {
+                    String emailAddress = getDriveUser(credential).getEmailAddress();
+
+                    // if the authors list is empty -- the author was the original
+                    // creator and it is the initial copy
+                    if (revisions.get(0).getLastModifyingUser().getEmailAddress() != null)
+                    {
+                        if (!revisions.get(0).getLastModifyingUser().getEmailAddress().equals(emailAddress))
                         {
-                            log.debug("Revisions not made by current user found.");
-                            concurrentChange = true;
+                            Calendar bufferTime = Calendar.getInstance();
+                            bufferTime.add(Calendar.SECOND, -idleThreshold);
+
+                            Date dt = new Date(revisions.get(0).getModifiedDate().getValue());
+                            if (dt.before(new Date(bufferTime.getTimeInMillis())))
+                            {
+                                log.debug("Revisions not made by current user found.");
+                                concurrentChange = true;
+                            }
                         }
                     }
                 }
-            }
 
+            }
+            catch (GoogleJsonResponseException e)
+            {
+                throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
+            }
         }
-        catch (GoogleJsonResponseException e)
+        else
         {
-            throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
+            throw new AspectMissingException(GoogleDocsModel.ASPECT_EDITING_IN_GOOGLE, nodeRef);
         }
 
         log.debug("Concurrent Edits: " + concurrentChange);
@@ -2080,7 +2084,8 @@ public class GoogleDocsServiceImpl
             GoogleDocsRefreshTokenException,
             IOException
     {
-        log.debug("Get Document list entry for resource " + resourceID);
+        log.debug("Get Document list entry for resource " + resourceID.substring(resourceID.lastIndexOf(':') + 1));
+
         //Get the users drive credential if not provided;
         credential = credential == null ? getCredential() : credential;
         Drive drive = getDriveApi(credential);
@@ -2110,14 +2115,14 @@ public class GoogleDocsServiceImpl
         credential = credential == null ? getCredential() : credential;
 
         String resourceID = nodeService.getProperty(nodeRef, GoogleDocsModel.PROP_RESOURCE_ID).toString();
-        log.debug("Node " + nodeRef + " maps to Resource ID " + resourceID);
+        log.debug("Node " + nodeRef + " maps to Resource ID " + resourceID.substring(resourceID.lastIndexOf(':') + 1));
 
         if (resourceID == null)
         {
             throw new NotInGoogleDriveException(nodeRef);
         }
 
-        return getDriveFile(credential, resourceID);
+        return getDriveFile(credential, resourceID.substring(resourceID.lastIndexOf(':') + 1));
     }
 
 
@@ -2191,7 +2196,16 @@ public class GoogleDocsServiceImpl
         {
             try
             {
-                SiteInfo siteInfo = siteService.getSite(nodeRef);
+                SiteInfo siteInfo = null;
+                String pathElement = getPathElement(nodeRef, 2);
+
+                //Is the node in a site?
+                if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
+                {
+                    siteInfo = siteService.getSite(nodeRef);
+                }
+
+                //If this is not in a site following current behaviour we will not updated the activity stream
                 if (siteInfo != null)
                 {
                     String activityType = FILE_UPDATED;
@@ -2269,7 +2283,8 @@ public class GoogleDocsServiceImpl
             }
             User user = getDriveUser(credential);
             log.debug("Fetching permissions for file with resource ID " + resourceId);
-            PermissionList permissionList = drive.permissions().list(resourceId).execute();
+
+            PermissionList permissionList = drive.permissions().list(resourceId.substring(resourceId.lastIndexOf(':') + 1)).execute();
 
             for (Permission permission : permissionList.getItems())
             {
@@ -2340,7 +2355,7 @@ public class GoogleDocsServiceImpl
         //Get the users drive credential if not provided;
         credential = credential == null ? getCredential() : credential;
 
-        List<GooglePermission> permissionsMap = getFilePermissions(credential, resourceId);
+        List<GooglePermission> permissionsMap = getFilePermissions(credential, resourceId.substring(resourceId.lastIndexOf(':') + 1));
         Serializable permissionsList = buildPermissionsPropertyValue(permissionsMap);
         Map<QName, Serializable> aspectProperties = new HashMap<QName, Serializable>();
         aspectProperties.put(GoogleDocsModel.PROP_PERMISSIONS, permissionsList);
@@ -2545,20 +2560,30 @@ public class GoogleDocsServiceImpl
 
         // create working directory
         String folderName = null;
-        SiteInfo siteInfo = siteService.getSite(nodeRef);
+        String pathElement = getPathElement(nodeRef, 2);
+        SiteInfo siteInfo = null;
 
-        //Is the node in a site?
-        if (siteInfo != null)
+        //Is the node located under a site?
+        if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))
         {
-            folderName = siteInfo.getShortName();
+            try
+            {
+                siteInfo = siteService.getSite(nodeRef);
+                folderName = siteInfo.getShortName();
+            }
+            catch (org.alfresco.repo.security.permissions.AccessDeniedException e)
+            {
+                // When the user does not have permission to access the site node
+                // We can't get the name of the site that the node is located in
+                // So we can't place it in a site specific folder.
+                // It will be placed in the root of the Working Directory
+                log.debug("User does not have access to the containing sites info.  The document will be created in the root of the working directory. {" + nodeRef.toString() + "}");
+            }
         }
         else
         {
-            Path path = nodeService.getPath(nodeRef);
-
-            //Get the element in the path that should be Shared Files node
-            Path.Element element = path.get(2);
-            if (element.toString().equals(GoogleDocsConstants.ALF_SHARED_PATH_FQNS_ELEMENT))
+            //is it in the shared folder path?
+            if (pathElement.equals(GoogleDocsConstants.ALF_SHARED_PATH_FQNS_ELEMENT))
             {
                 folderName = GoogleDocsConstants.ALF_SHARED_FILES_FOLDER;
             }
@@ -2569,13 +2594,22 @@ public class GoogleDocsServiceImpl
             }
         }
 
-        //If the foldername is never set, which it should always be, place it directly the working directory
+        //If the foldername is not set (GOOGLEDOCS-301) place it directly the working directory
         if (folderName != null)
         {
             file = createFolder(credential, file.getId(), folderName, null);
         }
 
         return file;
+    }
+
+
+    private String getPathElement(NodeRef nodeRef, int position)
+    {
+        Path path = nodeService.getPath(nodeRef);
+        Path.Element element = path.get(position);
+
+        return element.toString();
     }
 
 
@@ -2749,11 +2783,18 @@ public class GoogleDocsServiceImpl
         {
             if (HttpStatus.SC_NOT_FOUND == e.getStatusCode())
             {
-                log.debug("Directory not found in Google Drive.");
+                log.debug("Directory not found in Google Drive. This is not a fatal issue.");
+            }
+            else if(HttpStatus.SC_FORBIDDEN == e.getStatusCode())
+            {
+                if (e.getMessage().equals(GoogleDocsConstants.GOOGLE_ERROR_UNMUTABLE))
+                {
+                    log.debug("Unable to delete remote file. Google claims it is unmutable.");
+                }
             }
             else
             {
-                throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
+                log.debug("Google has reported an issue deleting the folder.  This is not a fatal issue. " + e.getDetails());
             }
         }
     }

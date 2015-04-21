@@ -3,14 +3,14 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.alfresco.integrations</groupId>
     <artifactId>alfresco-googledocs-repo</artifactId>
-    <version>3.0.0-${buildnumber}</version>
+    <version>3.0.2-${buildnumber}</version>
     <packaging>amp</packaging>
     <name>Alfresco / Google Docs Repo Module</name>
 
     <parent>
         <groupId>org.alfresco.integrations</groupId>
         <artifactId>alfresco-GoogleDocs</artifactId>
-        <version>3.0.0-${buildnumber}</version>
+        <version>3.0.2-${buildnumber}</version>
     </parent>
 
     <properties>
@@ -137,6 +137,28 @@
                         <nonFilteredFileExtension>docx</nonFilteredFileExtension>
                         <nonFilteredFileExtension>xlsx</nonFilteredFileExtension>
                     </nonFilteredFileExtensions>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>2.6.1</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>src/main/resources/org/alfresco/integrations/google/docs/service</directory>
+                            <includes>
+                                <include>**/client_secret.json</include>
+                            </includes>
+                            <followSymlinks>false</followSymlinks>
+                        </fileset>
+                        <fileset>
+                            <directory>src/main/amp/config/alfresco/subsystems/googledocs/drive</directory>
+                            <includes>
+                                <include>**/google-customResponse-context.xml</include>
+                            </includes>
+                            <followSymlinks>false</followSymlinks>
+                        </fileset>
+                    </filesets>
                 </configuration>
             </plugin>
         </plugins>
@@ -271,12 +293,12 @@
             </build>
         </profile>
         <profile>
-            <id>4</id>
+            <id>42</id>
             <properties>
-                <alfresco-community.version>4.2.f</alfresco-community.version>
-                <alfresco-enterprise.version>4.2.4</alfresco-enterprise.version>
+                <alfresco-community.version>4.2.e</alfresco-community.version>
+                <alfresco-enterprise.version>4.2.0</alfresco-enterprise.version>
                 <alfresco.min.version>4.2.0</alfresco.min.version>
-                <alfresco.max.version>4.99.99</alfresco.max.version>
+                <alfresco.max.version>4.2.3</alfresco.max.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -296,11 +318,81 @@
                             <classifier>4.2</classifier>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>include-google-customResponse-context</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy file="src/main/customResponseContextFiles/slingshotDocLibCustomResponse/google-customResponse-context.xml"
+                                              tofile="src/main/amp/config/alfresco/subsystems/googledocs/drive/google-customResponse-context.xml"/>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>424</id>
+            <properties>
+                <alfresco-community.version>4.2.f</alfresco-community.version>
+                <alfresco-enterprise.version>4.2.4</alfresco-enterprise.version>
+                <alfresco.min.version>4.2.4</alfresco.min.version>
+                <alfresco.max.version>4.99.99</alfresco.max.version>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                    <version>2.3.2</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.alfresco.maven.plugin</groupId>
+                        <artifactId>alfresco-maven-plugin</artifactId>
+                        <version>1.1.1</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <classifier>4.2.4</classifier>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>include-google-customResponse-context</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy file="src/main/customResponseContextFiles/registerSlingshotCustomResponse/google-customResponse-context.xml"
+                                              tofile="src/main/amp/config/alfresco/subsystems/googledocs/drive/google-customResponse-context.xml"/>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
         <profile>
             <id>5</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
@@ -311,6 +403,25 @@
                         <configuration>
                             <classifier>5.0</classifier>
                         </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>include-google-customResponse-context</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy file="src/main/customResponseContextFiles/registerSlingshotCustomResponse/google-customResponse-context.xml"
+                                              tofile="src/main/amp/config/alfresco/subsystems/googledocs/drive/google-customResponse-context.xml"/>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

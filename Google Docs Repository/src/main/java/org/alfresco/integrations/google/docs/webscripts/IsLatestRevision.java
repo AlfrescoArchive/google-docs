@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2013 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  * 
  * This file is part of Alfresco
  * 
@@ -51,7 +51,6 @@ public class IsLatestRevision
     private static final Log    log                      = LogFactory.getLog(IsLatestRevision.class);
 
     private GoogleDocsService   googledocsService;
-    private NodeService         nodeService;
 
     private boolean             isLatestRevision         = false;
 
