@@ -38,6 +38,8 @@ import org.alfresco.repo.version.Version2Model;
 import org.alfresco.service.cmr.dictionary.ConstraintException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.security.AccessStatus;
+import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.cmr.version.Version;
@@ -68,6 +70,7 @@ public class SaveContent
     private VersionService      versionService;
     private TransactionService  transactionService;
     private SiteService         siteService;
+    private PermissionService   permissionService;
 
     private static final String JSON_KEY_NODEREF         = "nodeRef";
     private static final String JSON_KEY_MAJORVERSION    = "majorVersion";
@@ -109,6 +112,12 @@ public class SaveContent
     }
 
 
+    public void setPermissionService(PermissionService permissionService)
+    {
+        this.permissionService = permissionService;
+    }
+
+
     @Override
     protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache)
     {
@@ -146,7 +155,8 @@ public class SaveContent
                 }
             }
 
-            if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
+            if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser())
+                    || (permissionService.hasPermission(nodeRef, PermissionService.WRITE) == AccessStatus.ALLOWED))
             {
 
                 if (!(Boolean)map.get(JSON_KEY_OVERRIDE))
