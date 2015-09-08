@@ -59,16 +59,16 @@
         </actions>
         <actionGroups>
             <actionGroup id="document-browse">
-                <action index="250" id="google-docs-edit-action-link"/>
-                <action index="250" id="google-docs-checkin-action-link"/>
-                <action index="250" id="google-docs-resume-action-link"/>
-                <action index="250" id="google-docs-cancel-action-link"/>
+                <action index="250" subgroup="25" id="google-docs-edit-action-link"/>
+                <action index="250" subgroup="25" id="google-docs-checkin-action-link"/>
+                <action index="250" subgroup="25" id="google-docs-resume-action-link"/>
+                <action index="250" subgroup="25" id="google-docs-cancel-action-link"/>
             </actionGroup>
             <actionGroup id="document-details">
-                <action index="250" id="google-docs-edit-action-link"/>
-                <action index="250" id="google-docs-checkin-action-link"/>
-                <action index="250" id="google-docs-resume-action-link"/>
-                <action index="250" id="google-docs-cancel-action-link"/>
+                <action index="250" subgroup="25" id="google-docs-edit-action-link"/>
+                <action index="250" subgroup="25" id="google-docs-checkin-action-link"/>
+                <action index="250" subgroup="25" id="google-docs-resume-action-link"/>
+                <action index="250" subgroup="25" id="google-docs-cancel-action-link"/>
             </actionGroup>
         </actionGroups>
     </config>
