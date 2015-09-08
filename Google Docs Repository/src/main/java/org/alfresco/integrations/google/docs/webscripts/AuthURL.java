@@ -43,11 +43,11 @@ public class AuthURL
 
     private final static String MODEL_AUTHURL       = "authURL";
     private final static String MODEL_AUTHENTICATED = "authenticated";
-    private final static String MODEL_PERMISSIONS = "permissions";
+    private final static String MODEL_PERMISSIONS   = "permissions";
 
     private final static String PARAM_STATE         = "state";
     private final static String PARAM_OVERRIDE      = "override";
-    private final static String PARAM_NODEREF         = "nodeRef";
+    private final static String PARAM_NODEREF       = "nodeRef";
 
     private GoogleDocsService   googledocsService;
 

@@ -571,6 +571,9 @@
                                             });
 
                                             this.versionDialog.render(document.body);
+
+                                            var elements = Dom.getElementsByClassName('yui-button', 'span');
+                                            Dom.addClass(elements[0], 'alf-primary-button');
                                         }
 
                                         var majorVersion, minorVersion;
@@ -752,6 +755,9 @@
                                             isDefault: true
                                         }]
                                 });
+
+                            var elements = Dom.getElementsByClassName('yui-button', 'span', 'prompt');
+                            Dom.addClass(elements[0], 'alf-primary-button');
                         }
                         else {
                             Alfresco.GoogleDocs.showMessage({
@@ -827,6 +833,9 @@
                                 isDefault: true
                             }]
                     });
+
+                var elements = Dom.getElementsByClassName('yui-button', 'span', 'prompt');
+                Dom.addClass(elements[0], 'alf-primary-button');
             }
         }),
 
