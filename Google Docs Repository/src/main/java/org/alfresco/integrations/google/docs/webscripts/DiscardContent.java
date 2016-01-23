@@ -39,8 +39,6 @@ import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransacti
 import org.alfresco.service.cmr.repository.InvalidNodeRefException;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
-import org.alfresco.service.cmr.security.AccessStatus;
-import org.alfresco.service.cmr.security.PermissionService;
 import org.alfresco.service.cmr.site.SiteInfo;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.transaction.TransactionService;
@@ -64,7 +62,6 @@ public class DiscardContent
     private GoogleDocsService   googledocsService;
     private TransactionService  transactionService;
     private SiteService         siteService;
-    private PermissionService   permissionService;
 
     private static final String JSON_KEY_NODEREF  = "nodeRef";
     private static final String JSON_KEY_OVERRIDE = "override";
@@ -93,12 +90,6 @@ public class DiscardContent
     public void setSiteService(SiteService siteService)
     {
         this.siteService = siteService;
-    }
-
-
-    public void setPermissionService(PermissionService permissionService)
-    {
-        this.permissionService = permissionService;
     }
 
     @Override
@@ -148,8 +139,7 @@ public class DiscardContent
                         //The second part of this test maybe too exclusive.  What if the user has write permissions to the node
                         // but not membership in the containing site? Should the test just ask if the user has write permission
                         // to the node?
-                        if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser())
-                                || (permissionService.hasPermission(nodeRef, PermissionService.WRITE) == AccessStatus.ALLOWED))
+                        if (siteInfo == null || siteService.isMember(siteInfo.getShortName(), AuthenticationUtil.getRunAsUser()))
                         {
                             if (googledocsService.hasConcurrentEditors(credential, nodeRef))
                             {

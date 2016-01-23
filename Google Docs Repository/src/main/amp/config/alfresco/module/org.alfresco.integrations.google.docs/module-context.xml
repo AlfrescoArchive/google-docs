@@ -66,9 +66,6 @@
         <property name="siteService">
             <ref bean="SiteService"/>
         </property>
-        <property name="permissionService">
-            <ref bean="permissionService"/>
-        </property>
     </bean>
 
     <bean id="webscript.org.alfresco.integrations.google.docs.HasConcurrentEditors.get"
@@ -101,9 +98,6 @@
         </property>
         <property name="siteService">
             <ref bean="SiteService"/>
-        </property>
-        <property name="permissionService">
-            <ref bean="permissionService"/>
         </property>
     </bean>
 
