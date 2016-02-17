@@ -94,7 +94,6 @@
                 <value>getDriveUser</value>
                 <value>getDriveFile</value>
                 <value>getContentType</value>
-                <value>hasConcurrentEditors</value>
                 <value>isGoogleDocsLockOwner</value>
                 <value>isLockedByGoogleDocs</value>
                 <value>getGoogleDocsLockOwner</value>

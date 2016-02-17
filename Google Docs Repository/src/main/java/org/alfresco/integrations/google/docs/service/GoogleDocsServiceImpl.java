@@ -2065,6 +2065,17 @@ public class GoogleDocsServiceImpl
             }
             catch (GoogleJsonResponseException e)
             {
+                //GOOGLEDOC-326 - need to handle case where 500 is returned but it actually maybe (or should be) a 404
+                if (HttpStatus.SC_INTERNAL_SERVER_ERROR == e.getStatusCode())
+                {
+                    File file = getDriveFile(credential, nodeRef);
+
+                    if (file == null)
+                    {
+                        throw new GoogleDocsServiceException("Unable to retrived Revisions. The file can no longer be found in Drive.", HttpStatus.SC_NOT_FOUND, e);
+                    }
+                }
+
                 throw new GoogleDocsServiceException(e.getMessage(), e.getStatusCode(), e);
             }
         }

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.alfresco.integrations</groupId>
     <artifactId>alfresco-googledocs-share</artifactId>
-    <version>3.0.2-${buildnumber}</version>
+    <version>3.0.3-${buildnumber}</version>
     <packaging>amp</packaging>
     <name>Alfresco / Google Docs Share Module</name>
 
@@ -14,7 +14,7 @@
     <parent>
         <groupId>org.alfresco.integrations</groupId>
         <artifactId>alfresco-GoogleDocs</artifactId>
-        <version>3.0.2-${buildnumber}</version>
+        <version>3.0.3-${buildnumber}</version>
     </parent>
 
     <dependencies>
