@@ -190,7 +190,7 @@ public class CreateContent
     private NodeRef createFile(final NodeRef parentNodeRef, final String contentType, final String mimetype)
     {
         String baseName = getNewFileName(contentType), fileExt = fileNameUtil.getExtension(mimetype);
-        final StringBuffer sb = new StringBuffer(baseName);
+        final StringBuilder sb = new StringBuilder(baseName);
         if (fileExt != null && !fileExt.equals(""))
         {
             sb.append(".").append(fileExt);

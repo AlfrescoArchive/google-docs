@@ -1809,7 +1809,7 @@ public class GoogleDocsServiceImpl
 
         List<FileInfo> page = results.getPage();
         FileInfo fileInfo = null;
-        if (page.size() > 0)
+        if (!page.isEmpty())
         {
             fileInfo = page.get(0);
             lastDup = fileInfo.getNodeRef();
@@ -2005,7 +2005,7 @@ public class GoogleDocsServiceImpl
 
                     // If there any revisions that occurred within the last
                     // 'idleThreshold' seconds of time....
-                    if (workingList.size() > 0)
+                    if (!workingList.isEmpty())
                     {
                         log.debug("Revisions within threshhold found");
                         // Filter the current user from the list
@@ -2032,7 +2032,7 @@ public class GoogleDocsServiceImpl
 
                     // Are there are changes by other users within the last
                     // 'idleThreshold' seconds
-                    if (workingList.size() > 0)
+                    if (!workingList.isEmpty())
                     {
                         log.debug("Revisions not made by current user found.");
                         concurrentChange = true;
