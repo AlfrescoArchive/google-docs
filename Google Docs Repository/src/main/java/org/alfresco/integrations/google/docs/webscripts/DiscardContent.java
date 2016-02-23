@@ -365,12 +365,9 @@ public class DiscardContent
         googledocsService.unlockNode(nodeRef);
         boolean deleted = googledocsService.deleteContent(credential, nodeRef, file);
 
-        if (deleted)
+        if (deleted && nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
         {
-            if (nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY))
-            {
-                nodeService.deleteNode(nodeRef);
-            }
+            nodeService.deleteNode(nodeRef);
         }
 
         return deleted;

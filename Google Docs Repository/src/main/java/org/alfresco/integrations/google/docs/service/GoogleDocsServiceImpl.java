@@ -625,12 +625,9 @@ public class GoogleDocsServiceImpl
             {
                 Date expiresIn = null;
 
-                if (credential.getExpirationTimeMilliseconds() != null)
+                if (credential.getExpirationTimeMilliseconds() != null && credential.getExpirationTimeMilliseconds() > 0L)
                 {
-                    if (credential.getExpirationTimeMilliseconds() > 0L)
-                    {
-                        expiresIn = new Date(new Date().getTime() + credential.getExpirationTimeMilliseconds());
-                    }
+                    expiresIn = new Date(new Date().getTime() + credential.getExpirationTimeMilliseconds());
                 }
 
                 try
@@ -755,16 +752,13 @@ public class GoogleDocsServiceImpl
                 // In the "rare" case that no refresh token is returned and the
                 // users credentials are no longer there we need to skip this
                 // next check
-                if (credentialInfo != null)
+                if (credentialInfo != null && credentialInfo.getOAuthRefreshToken() != null)
                 {
                     // If there is a persisted refresh ticket...add it to the
                     // accessGrant so that it is persisted across the update
-                    if (credentialInfo.getOAuthRefreshToken() != null)
-                    {
-                        response.setRefreshToken(credentialInfo.getOAuthRefreshToken());
+                    response.setRefreshToken(credentialInfo.getOAuthRefreshToken());
 
-                        log.debug("Persisting Refresh Token across reauth");
-                    }
+                    log.debug("Persisting Refresh Token across reauth");
                 }
             }
 
@@ -1937,13 +1931,10 @@ public class GoogleDocsServiceImpl
         // Get the last known node with the same name (+number) in the same folder
         NodeRef lastDup = findLastDuplicate(nodeRef, name);
 
-        if (lastDup != null)
+        if (lastDup != null && !lastDup.equals(fileInfo.getNodeRef()))
         {
             // if it is not the same file increment (or add number to) the filename
-            if (!lastDup.equals(fileInfo.getNodeRef()))
-            {
-                name = filenameUtil.incrementFileName(fileFolderService.getFileInfo(lastDup).getName(), fileInfo.getContentData().getMimetype());
-            }
+            name = filenameUtil.incrementFileName(fileFolderService.getFileInfo(lastDup).getName(), fileInfo.getContentData().getMimetype());
         }
 
         // If there is no change in the name we don't want to make a change in
@@ -2045,19 +2036,17 @@ public class GoogleDocsServiceImpl
 
                     // if the authors list is empty -- the author was the original
                     // creator and it is the initial copy
-                    if (revisions.get(0).getLastModifyingUser().getEmailAddress() != null)
+                    if (revisions.get(0).getLastModifyingUser().getEmailAddress() != null
+                        && !revisions.get(0).getLastModifyingUser().getEmailAddress().equals(emailAddress))
                     {
-                        if (!revisions.get(0).getLastModifyingUser().getEmailAddress().equals(emailAddress))
-                        {
-                            Calendar bufferTime = Calendar.getInstance();
-                            bufferTime.add(Calendar.SECOND, -idleThreshold);
+                        Calendar bufferTime = Calendar.getInstance();
+                        bufferTime.add(Calendar.SECOND, -idleThreshold);
 
-                            Date dt = new Date(revisions.get(0).getModifiedDate().getValue());
-                            if (dt.before(new Date(bufferTime.getTimeInMillis())))
-                            {
-                                log.debug("Revisions not made by current user found.");
-                                concurrentChange = true;
-                            }
+                        Date dt = new Date(revisions.get(0).getModifiedDate().getValue());
+                        if (dt.before(new Date(bufferTime.getTimeInMillis())))
+                        {
+                            log.debug("Revisions not made by current user found.");
+                            concurrentChange = true;
                         }
                     }
                 }
