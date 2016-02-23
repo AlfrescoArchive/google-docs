@@ -236,7 +236,7 @@ public class UploadContent
         final Map<String, Serializable> result = new HashMap<String, Serializable>();
         Content content = req.getContent();
         String jsonStr = null;
-        JSONObject json = null;
+        JSONObject json;
 
         try
         {

@@ -84,9 +84,9 @@ public class IsLatestRevision
         log.debug("Comparing Node Revision Id from Alfresco and Google: " + nodeRef);
 
         /* The revision Id persisted on the node */
-        String currentRevision = null;
+        String currentRevision;
         /* The latest revision Id from Google for the file */
-        String latestRevision = null;
+        String latestRevision;
 
         try
         {

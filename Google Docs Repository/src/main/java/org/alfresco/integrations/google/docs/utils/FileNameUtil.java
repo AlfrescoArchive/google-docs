@@ -65,7 +65,7 @@ public class FileNameUtil
 
     public String incrementFileName(String name, String mimetype)
     {
-        String newname = null;
+        String newname;
         String extension = mimetypeService.getExtension(mimetype);
 
         log.debug("Extension: " + extension);

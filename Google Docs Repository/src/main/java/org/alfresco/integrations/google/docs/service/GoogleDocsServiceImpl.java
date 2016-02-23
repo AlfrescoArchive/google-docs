@@ -429,7 +429,7 @@ public class GoogleDocsServiceImpl
 
     public String getContentType(NodeRef nodeRef)
     {
-        String contentType = null;
+        String contentType;
 
         String mimetype = fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype();
 
@@ -563,7 +563,7 @@ public class GoogleDocsServiceImpl
             GoogleDocsServiceException
     {
         Oauth2 userInfoService = new Oauth2.Builder(new NetHttpTransport(), new JacksonFactory(), credential).setApplicationName(GoogleDocsConstants.APPLICATION_NAME).build();
-        Userinfoplus userInfo = null;
+        Userinfoplus userInfo;
         try
         {
             userInfo = userInfoService.userinfo().get().execute();
@@ -595,8 +595,8 @@ public class GoogleDocsServiceImpl
 
         if (credentialInfo.getOAuthRefreshToken() != null)
         {
-            Credential credential = null;
-            boolean success = false;
+            Credential credential;
+            boolean success;
             try
             {
                 credential = new Credential.Builder(BearerToken.authorizationHeaderAccessMethod()).setJsonFactory(jsonFactory).setTransport(httpTransport).setClientAuthentication(new ClientParametersAuthentication(clientSecrets.getDetails().getClientId(), clientSecrets.getDetails().getClientSecret())).setTokenServerEncodedUrl(clientSecrets.getDetails().getTokenUri()).build();
@@ -708,7 +708,7 @@ public class GoogleDocsServiceImpl
 
         if (state != null)
         {
-            GoogleAuthorizationCodeRequestUrl urlBuilder = null;
+            GoogleAuthorizationCodeRequestUrl urlBuilder;
 
             if (StringUtils.isBlank(getGoogleUserName()))
             {
@@ -739,7 +739,7 @@ public class GoogleDocsServiceImpl
             throws GoogleDocsServiceException,
             IOException
     {
-        boolean authenticationComplete = false;
+        boolean authenticationComplete;
 
         GoogleTokenResponse response = getFlow().newTokenRequest(authorizationCode).setRedirectUri(GoogleDocsConstants.REDIRECT_URI).execute();
 
@@ -802,7 +802,7 @@ public class GoogleDocsServiceImpl
         Drive drive = getDriveApi(credential);
         log.debug("Create Google Document for node " + nodeRef);
 
-        File file = null;
+        File file;
         String name = fileFolderService.getFileInfo(nodeRef).getName();
         // To be editable a new document must use the Google Document mimetype.
         String mimetype = GoogleDocsConstants.DOCUMENT_MIMETYPE;
@@ -858,7 +858,7 @@ public class GoogleDocsServiceImpl
 
         log.debug("Create Google Spreadsheet for node " + nodeRef);
 
-        File file = null;
+        File file;
         String name = fileFolderService.getFileInfo(nodeRef).getName();
         // To be editable, a new spreadsheet must use the Google Spreadsheet mimetype.
         String mimetype = GoogleDocsConstants.SPREADSHEET_MIMETYPE;
@@ -914,7 +914,7 @@ public class GoogleDocsServiceImpl
 
         log.debug("Create Google Presentation for node " + nodeRef);
 
-        File file = null;
+        File file;
         String name = fileFolderService.getFileInfo(nodeRef).getName();
         // To be editable a new presentation must use the Google Presentation mimetype
         String mimetype = GoogleDocsConstants.PRESENTATION_MIMETYPE;
@@ -972,7 +972,7 @@ public class GoogleDocsServiceImpl
 
         try
         {
-            String mimetype = null;
+            String mimetype;
 
             mimetype = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
             log.debug("Current mimetype: " + fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype()
@@ -1086,7 +1086,7 @@ public class GoogleDocsServiceImpl
 
         try
         {
-            String mimetype = null;
+            String mimetype;
 
             mimetype = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
             log.debug("Current mimetype: " + fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype()
@@ -1201,7 +1201,7 @@ public class GoogleDocsServiceImpl
 
         try
         {
-            String mimetype = null;
+            String mimetype;
 
             mimetype = validateMimeType(fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype());
             log.debug("Current mimetype: " + fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype()
@@ -1454,7 +1454,7 @@ public class GoogleDocsServiceImpl
 
         Drive drive = getDriveApi(credential);
 
-        boolean deleted = false;
+        boolean deleted;
 
         try
         {
@@ -1808,7 +1808,7 @@ public class GoogleDocsServiceImpl
         PagingResults<FileInfo> results = fileFolderService.list(nodeService.getPrimaryParent(nodeRef).getParentRef(), true, false, addWildCardInName(name, fileFolderService.getFileInfo(nodeRef).getContentData().getMimetype()), null, sortProps, new PagingRequest(CannedQueryPageDetails.DEFAULT_PAGE_SIZE));
 
         List<FileInfo> page = results.getPage();
-        FileInfo fileInfo = null;
+        FileInfo fileInfo;
         if (page.size() > 0)
         {
             fileInfo = page.get(0);
@@ -2101,7 +2101,7 @@ public class GoogleDocsServiceImpl
         credential = credential == null ? getCredential() : credential;
         Drive drive = getDriveApi(credential);
 
-        File file = null;
+        File file;
 
         try
         {
@@ -2183,7 +2183,7 @@ public class GoogleDocsServiceImpl
         credential = credential == null ? getCredential() : credential;
         Drive drive = getDriveApi(credential);
 
-        User user = null;
+        User user;
 
         try
         {
@@ -2572,7 +2572,7 @@ public class GoogleDocsServiceImpl
         // create working directory
         String folderName = null;
         String pathElement = getPathElement(nodeRef, 2);
-        SiteInfo siteInfo = null;
+        SiteInfo siteInfo;
 
         //Is the node located under a site?
         if (pathElement.equals(GoogleDocsConstants.ALF_SITES_PATH_FQNS_ELEMENT))

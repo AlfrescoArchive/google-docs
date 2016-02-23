@@ -116,7 +116,7 @@ public class SaveContent
 
         Map<String, Object> model = new HashMap<String, Object>();
 
-        boolean success = false;
+        boolean success;
 
         Map<String, Serializable> map = parseContent(req);
         final NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
@@ -330,7 +330,7 @@ public class SaveContent
         final Map<String, Serializable> result = new HashMap<String, Serializable>();
         Content content = req.getContent();
         String jsonStr = null;
-        JSONObject json = null;
+        JSONObject json;
 
         try
         {

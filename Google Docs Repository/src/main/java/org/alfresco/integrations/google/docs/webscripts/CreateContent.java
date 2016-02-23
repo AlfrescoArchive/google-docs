@@ -101,8 +101,8 @@ public class CreateContent
 
             log.debug("ContentType: " + contentType + "; Parent: " + parentNodeRef);
 
-            NodeRef newNode = null;
-            File file = null;
+            NodeRef newNode;
+            File file;
             try
             {
                 Credential credential = googledocsService.getCredential();
