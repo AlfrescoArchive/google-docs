@@ -104,7 +104,7 @@ public class DiscardContent
     {
         getGoogleDocsServiceSubsystem();
 
-        Map<String, Object> model = new HashMap<String, Object>();
+        Map<String, Object> model = new HashMap<>();
 
         Map<String, Serializable> map = parseContent(req);
         final NodeRef nodeRef = (NodeRef)map.get(JSON_KEY_NODEREF);
@@ -379,7 +379,7 @@ public class DiscardContent
 
     private Map<String, Serializable> parseContent(final WebScriptRequest req)
     {
-        final Map<String, Serializable> result = new HashMap<String, Serializable>();
+        final Map<String, Serializable> result = new HashMap<>();
         Content content = req.getContent();
         String jsonStr = null;
         JSONObject json;

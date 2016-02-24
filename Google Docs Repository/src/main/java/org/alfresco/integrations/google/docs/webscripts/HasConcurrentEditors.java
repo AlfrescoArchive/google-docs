@@ -55,7 +55,7 @@ public class HasConcurrentEditors
     {
         getGoogleDocsServiceSubsystem();
 
-        Map<String, Object> model = new HashMap<String, Object>();
+        Map<String, Object> model = new HashMap<>();
 
         String param_nodeRef = req.getParameter(PARAM_NODEREF);
         NodeRef nodeRef = new NodeRef(param_nodeRef);

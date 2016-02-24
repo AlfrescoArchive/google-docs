@@ -91,7 +91,7 @@ public class CreateContent
         // Set Service Beans
         this.getGoogleDocsServiceSubsystem();
 
-        Map<String, Object> model = new HashMap<String, Object>();
+        Map<String, Object> model = new HashMap<>();
 
         if (googledocsService.isEnabled())
         {
@@ -199,7 +199,7 @@ public class CreateContent
 
         while (i <= maxCount)
         {
-            List<String> parts = new ArrayList<String>(1);
+            List<String> parts = new ArrayList<>(1);
             parts.add(QName.createQName(NamespaceService.CONTENT_MODEL_1_0_URI, sb.toString()).toPrefixString());
             try
             {

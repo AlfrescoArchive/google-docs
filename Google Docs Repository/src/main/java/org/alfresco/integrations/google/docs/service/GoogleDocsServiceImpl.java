@@ -155,10 +155,10 @@ public class GoogleDocsServiceImpl
     private FileNameUtil      filenameUtil;
 
     // Property Mappings
-    private Map<String, String>              importFormats     = new HashMap<String, String>();
-    private Map<String, Map<String, String>> exportFormats     = new HashMap<String, Map<String, String>>();
-    private Map<String, String>              upgradeMappings   = new HashMap<String, String>();
-    private Map<String, String>              downgradeMappings = new HashMap<String, String>();
+    private Map<String, String>              importFormats     = new HashMap<>();
+    private Map<String, Map<String, String>> exportFormats     = new HashMap<>();
+    private Map<String, String>              upgradeMappings   = new HashMap<>();
+    private Map<String, String>              downgradeMappings = new HashMap<>();
 
     // New Content
     private Resource newDocument;
@@ -392,7 +392,7 @@ public class GoogleDocsServiceImpl
      */
     private Set<String> getExportableMimeTypes(String type)
     {
-        Set<String> mimetypes = new HashSet<String>();
+        Set<String> mimetypes = new HashSet<>();
 
         if (exportFormats.containsKey(type))
         {
@@ -1610,7 +1610,7 @@ public class GoogleDocsServiceImpl
             }
 
             // Get the googleMetadata to reference the Node
-            Map<QName, Serializable> aspectProperties = new HashMap<QName, Serializable>();
+            Map<QName, Serializable> aspectProperties = new HashMap<>();
             aspectProperties.put(GoogleDocsModel.PROP_CURRENT_PERMISSIONS, buildPermissionsPropertyValue(permissions));
             aspectProperties.put(GoogleDocsModel.PROP_RESOURCE_ID, file.getId());
             aspectProperties.put(GoogleDocsModel.PROP_EDITORURL, file.getAlternateLink());
@@ -1797,8 +1797,8 @@ public class GoogleDocsServiceImpl
     {
         NodeRef lastDup = null;
 
-        List<Pair<QName, Boolean>> sortProps = new ArrayList<Pair<QName, Boolean>>(1);
-        sortProps.add(new Pair<QName, Boolean>(ContentModel.PROP_NAME, false));
+        List<Pair<QName, Boolean>> sortProps = new ArrayList<>(1);
+        sortProps.add(new Pair<>(ContentModel.PROP_NAME, false));
 
         if (name == null)
         {
@@ -1984,7 +1984,7 @@ public class GoogleDocsServiceImpl
 
                     // Find any revisions occurring within the last 'idleThreshold'
                     // seconds
-                    List<Revision> workingList = new ArrayList<Revision>();
+                    List<Revision> workingList = new ArrayList<>();
 
                     Calendar bufferTime = Calendar.getInstance();
                     bufferTime.add(Calendar.SECOND, -idleThreshold);
@@ -2284,7 +2284,7 @@ public class GoogleDocsServiceImpl
         credential = credential == null ? getCredential() : credential;
         Drive drive = getDriveApi(credential);
 
-        List<GooglePermission> permissionsMap = new ArrayList<GooglePermission>();
+        List<GooglePermission> permissionsMap = new ArrayList<>();
 
         try
         {
@@ -2368,7 +2368,7 @@ public class GoogleDocsServiceImpl
 
         List<GooglePermission> permissionsMap = getFilePermissions(credential, resourceId.substring(resourceId.lastIndexOf(':') + 1));
         Serializable permissionsList = buildPermissionsPropertyValue(permissionsMap);
-        Map<QName, Serializable> aspectProperties = new HashMap<QName, Serializable>();
+        Map<QName, Serializable> aspectProperties = new HashMap<>();
         aspectProperties.put(GoogleDocsModel.PROP_PERMISSIONS, permissionsList);
         log.debug("File permissions: " + permissionsList);
 
@@ -2399,7 +2399,7 @@ public class GoogleDocsServiceImpl
         {
             return null;
         }
-        ArrayList<String> permissionsList = new ArrayList<String>(permissions.size());
+        ArrayList<String> permissionsList = new ArrayList<>(permissions.size());
         for (GooglePermission p : permissions)
         {
             permissionsList.add(p.getAuthorityType() + "|" + p.getAuthorityId() + "|" + p.getRoleName());
@@ -2424,7 +2424,7 @@ public class GoogleDocsServiceImpl
         List<String> propVals = (List<String>)nodeService.getProperty(nodeRef, qName);
         if (propVals != null)
         {
-            List<GooglePermission> permissions = new ArrayList<GooglePermission>(propVals.size());
+            List<GooglePermission> permissions = new ArrayList<>(propVals.size());
             for (String val : propVals)
             {
                 try
@@ -2473,7 +2473,7 @@ public class GoogleDocsServiceImpl
             String roleName = p.getRoleName(), authorityType = p.getAuthorityType();
             String role;
             String type;
-            List<String> additionalRoles = new ArrayList<String>();
+            List<String> additionalRoles = new ArrayList<>();
             if (roleName.equals(GooglePermission.role.reader.toString()))
             {
                 role = GooglePermission.role.reader.toString();
@@ -2726,7 +2726,7 @@ public class GoogleDocsServiceImpl
             credential = getCredential();
         }
 
-        List<File> files = new ArrayList<File>();
+        List<File> files = new ArrayList<>();
         FileList fileList = null;
         Drive drive = getDriveApi(credential);
 

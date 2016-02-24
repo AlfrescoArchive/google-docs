@@ -99,7 +99,7 @@ public class UploadContent
     {
         getGoogleDocsServiceSubsystem();
 
-        Map<String, Object> model = new HashMap<String, Object>();
+        Map<String, Object> model = new HashMap<>();
 
         if (googledocsService.isEnabled())
         {
@@ -167,7 +167,7 @@ public class UploadContent
             if (!nodeService.hasAspect(nodeRef, ContentModel.ASPECT_TEMPORARY)
                 && !nodeService.hasAspect(nodeRef, ContentModel.ASPECT_VERSIONABLE))
             {
-                Map<String, Serializable> versionProperties = new HashMap<String, Serializable>();
+                Map<String, Serializable> versionProperties = new HashMap<>();
                 versionProperties.put(Version2Model.PROP_VERSION_TYPE, VersionType.MAJOR);
 
                 nodeService.setProperty(nodeRef, ContentModel.PROP_AUTO_VERSION, true);
@@ -233,7 +233,7 @@ public class UploadContent
 
     private Map<String, Serializable> parseContent(final WebScriptRequest req)
     {
-        final Map<String, Serializable> result = new HashMap<String, Serializable>();
+        final Map<String, Serializable> result = new HashMap<>();
         Content content = req.getContent();
         String jsonStr = null;
         JSONObject json = null;
@@ -266,7 +266,7 @@ public class UploadContent
                             + permissionData.toString());
                 }
                 JSONArray jsonPerms = permissionData.getJSONArray(JSON_KEY_PERMISSIONS_ITEMS);
-                ArrayList<GooglePermission> permissions = new ArrayList<GoogleDocsService.GooglePermission>(jsonPerms.length());
+                ArrayList<GooglePermission> permissions = new ArrayList<>(jsonPerms.length());
                 for (int i = 0; i < jsonPerms.length(); i++)
                 {
                     JSONObject jsonPerm = jsonPerms.getJSONObject(i);

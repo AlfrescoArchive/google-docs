@@ -76,7 +76,7 @@ public class IsLatestRevision
     {
         getGoogleDocsServiceSubsystem();
 
-        Map<String, Object> model = new HashMap<String, Object>();
+        Map<String, Object> model = new HashMap<>();
 
         /* Get the nodeRef to test */
         String param_nodeRef = req.getParameter(PARAM_NODEREF);

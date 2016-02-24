@@ -88,7 +88,7 @@ public class RemoveContent
     {
         getGoogleDocsServiceSubsystem();
 
-        Map<String, Object> model = new HashMap<String, Object>();
+        Map<String, Object> model = new HashMap<>();
 
         boolean success = false;
 
@@ -188,7 +188,7 @@ public class RemoveContent
 
     private Map<String, Serializable> parseContent(final WebScriptRequest req)
     {
-        final Map<String, Serializable> result = new HashMap<String, Serializable>();
+        final Map<String, Serializable> result = new HashMap<>();
         Content content = req.getContent();
         String jsonStr = null;
         JSONObject json = null;

@@ -53,7 +53,7 @@ public class CompleteAuth
     {
         getGoogleDocsServiceSubsystem();
 
-        Map<String, Object> model = new HashMap<String, Object>();
+        Map<String, Object> model = new HashMap<>();
 
         boolean authenticated = false;
 

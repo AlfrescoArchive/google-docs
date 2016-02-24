@@ -65,7 +65,7 @@ public class AuthURL
 
         String nodeRef = req.getParameter(PARAM_NODEREF);
         
-        Map<String, Object> model = new HashMap<String, Object>();
+        Map<String, Object> model = new HashMap<>();
 
         boolean authenticated = false;
 
